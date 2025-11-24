@@ -3,11 +3,11 @@ package routes
 import (
 	"context"
 	"fmt"
+	"github.com/simhozebs/mugo/internal/config"
+	"github.com/simhozebs/mugo/internal/shared"
 	"google.golang.org/adk/session"
 	"google.golang.org/genai"
 	"log"
-	"server/internal/config"
-	"server/internal/shared"
 )
 
 // ConversationRequest is the request body for conversation endpoint.

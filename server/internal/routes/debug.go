@@ -6,8 +6,8 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"google.golang.org/adk/session"
 	"net/http"
-	"server/internal/config"
-	"server/internal/shared"
+	"github.com/simhozebs/mugo/internal/config"
+	"github.com/simhozebs/mugo/internal/shared"
 )
 
 type DebugGetMessagesRequest struct {

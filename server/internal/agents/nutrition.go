@@ -2,9 +2,9 @@ package agents
 
 import (
 	"context"
+	"github.com/simhozebs/mugo/internal/config"
 	"log"
 	"os"
-	"server/internal/config"
 
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"

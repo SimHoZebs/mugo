@@ -1,13 +1,13 @@
-package adk
+package main
 
 import (
 	"context"
+	"github.com/simhozebs/mugo/internal/agents"
 	"google.golang.org/adk/cmd/launcher/adk"
 	"google.golang.org/adk/cmd/launcher/full"
 	"google.golang.org/adk/server/restapi/services"
 	"log"
 	"os"
-	"server/agents"
 )
 
 func main() {

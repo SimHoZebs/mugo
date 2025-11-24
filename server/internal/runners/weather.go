@@ -2,9 +2,9 @@ package runners
 
 import (
 	"log"
-	"server/internal/agents"
-	"server/internal/config"
-	"server/internal/shared"
+	"github.com/simhozebs/mugo/internal/agents"
+	"github.com/simhozebs/mugo/internal/config"
+	"github.com/simhozebs/mugo/internal/shared"
 
 	"google.golang.org/adk/runner"
 )

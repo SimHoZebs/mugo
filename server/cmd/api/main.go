@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -7,9 +7,9 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
+	"github.com/simhozebs/mugo/internal/routes"
 	"log"
 	"net/http"
-	"server/internal/routes"
 )
 
 // GreetingOutput represents the greeting operation response.

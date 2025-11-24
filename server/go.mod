@@ -1,4 +1,4 @@
-module server
+module github.com/simhozebs/mugo
 
 go 1.24.4
 
