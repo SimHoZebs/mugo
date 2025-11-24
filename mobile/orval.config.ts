@@ -7,12 +7,10 @@ export default defineConfig({
       target: "http://localhost:8888/openapi.json",
     },
     output: {
-      mode: "single",
-      // We'll generate the client here
-      target: "./lib/generated-api.ts",
+      mode: "tags-split",
+      target: "./lib/api",
       client: "fetch", // Uses native fetch (perfect for React Native)
-      baseUrl: "http://localhost:8888", // Default base URL
+      baseUrl: process.env.EXPO_PUBLIC_API_URL || "http://172.23.25.61:8888",
     },
   },
 });
-

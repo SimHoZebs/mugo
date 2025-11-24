@@ -1,26 +1,25 @@
-import { Image } from "expo-image";
 import { Platform, StyleSheet, View, Text, Pressable } from "react-native";
 import { useState } from "react";
 
 import { HelloWave } from "@/components/hello-wave";
-import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { Link } from "expo-router";
 import TotalMacroPanel from "@/components/TotalMacroPanel";
 import MealCard from "@/components/MealCard";
 import InputBar from "@/components/InputBar";
 import { ProgressRing } from "@/components/ProgressRing";
-import { api } from "@/lib/api";
+import { getGreetingByName } from "@/lib/api/default/default";
 
 export default function HomeScreen() {
   const [serverResponse, setServerResponse] = useState<string>("");
 
   const testServerConnection = async () => {
     try {
-      const response = await api.api.health.get();
-      if (response.data) {
-        setServerResponse(`Server says: ${JSON.stringify(response.data)}`);
+      const response = await getGreetingByName("John");
+      if (response.status === 200) {
+        setServerResponse(
+          `Server says: ${JSON.stringify(response.data.message)}`,
+        );
       }
     } catch (error) {
       setServerResponse(`Error: ${error}`);
