@@ -1,4 +1,4 @@
-package constants
+package config
 
 const (
 	AppName   = "LazyFood"

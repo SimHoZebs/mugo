@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
-	"server/constants"
+	"server/internal/config"
 
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
@@ -29,7 +29,7 @@ type NutritionResponse struct {
 func Nutrition() (agent.Agent, error) {
 	ctx := context.Background()
 	model, err := gemini.NewModel(ctx,
-		constants.ModelName,
+		config.ModelName,
 		&genai.ClientConfig{APIKey: os.Getenv("GOOGLE_API_KEY")})
 	if err != nil {
 		log.Fatalf("Failed to create model: %v", err)

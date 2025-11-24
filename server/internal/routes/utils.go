@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"server/shared"
+	"server/internal/shared"
 
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/session"

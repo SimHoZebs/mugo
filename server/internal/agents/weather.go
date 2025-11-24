@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 	"os"
-	"server/constants"
-	"server/tools"
+	"server/internal/config"
+	"server/internal/tools"
 
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
@@ -31,7 +31,7 @@ type WeatherResponse struct {
 func Weather() (agent.Agent, error) {
 	ctx := context.Background()
 	model, err := gemini.NewModel(ctx,
-		constants.ModelName,
+		config.ModelName,
 		&genai.ClientConfig{APIKey: os.Getenv("GOOGLE_API_KEY")})
 	if err != nil {
 		log.Fatalf("Failed to create model: %v", err)

@@ -2,22 +2,22 @@ package runners
 
 import (
 	"log"
-	"server/agents"
-	"server/constants"
-	"server/shared"
+	"server/internal/agents"
+	"server/internal/config"
+	"server/internal/shared"
 
 	"google.golang.org/adk/runner"
 )
 
-func NewNutrition() (*shared.AgentService, error) {
-	agent, err := agents.Nutrition()
+func NewWeather() (*shared.AgentService, error) {
+	agent, err := agents.Weather()
 	if err != nil {
-		log.Fatalf("failed to create nutrition agent: %v", err)
+		log.Fatalf("failed to create weather agent: %v", err)
 	}
 
 	runnerConfig := runner.Config{
 		Agent:          agent,
-		AppName:        constants.AppName,
+		AppName:        config.AppName,
 		SessionService: shared.GetGlobalInMemorySessionService(),
 	}
 

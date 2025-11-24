@@ -2,28 +2,26 @@ package runners
 
 import (
 	"log"
-	"server/agents"
-	"server/constants"
-	"server/shared"
+	"server/internal/agents"
+	"server/internal/config"
+	"server/internal/shared"
 
 	"google.golang.org/adk/runner"
 )
 
-func NewWeather() (*shared.AgentService, error) {
-	agent, err := agents.Weather()
+func NewEcho() (*shared.AgentService, error) {
+	agent, err := agents.NewEchoAgent()
 	if err != nil {
-		log.Fatalf("failed to create weather agent: %v", err)
+		log.Fatalf("failed to create echo agent: %v", err)
 	}
 
 	runnerConfig := runner.Config{
 		Agent:          agent,
-		AppName:        constants.AppName,
+		AppName:        config.AppName,
 		SessionService: shared.GetGlobalInMemorySessionService(),
 	}
 
-	agentRunner, err := runner.New(
-		runnerConfig,
-	)
+	agentRunner, err := runner.New(runnerConfig)
 	if err != nil {
 		log.Fatalf("Failed to create runner: %v", err)
 	}

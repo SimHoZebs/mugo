@@ -6,8 +6,8 @@ import (
 	"google.golang.org/adk/session"
 	"google.golang.org/genai"
 	"log"
-	"server/constants"
-	"server/shared"
+	"server/internal/config"
+	"server/internal/shared"
 )
 
 // ConversationRequest is the request body for conversation endpoint.
@@ -44,7 +44,7 @@ func ConversationHandler(ctx context.Context, agentService *shared.AgentService,
 	}
 
 	listRes, err := agentService.SessionService.List(ctx, &session.ListRequest{
-		AppName: constants.AppName,
+		AppName: config.AppName,
 		UserID:  input.Body.UserID,
 	})
 

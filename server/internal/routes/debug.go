@@ -6,8 +6,8 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"google.golang.org/adk/session"
 	"net/http"
-	"server/constants"
-	"server/shared"
+	"server/internal/config"
+	"server/internal/shared"
 )
 
 type DebugGetMessagesRequest struct {
@@ -42,7 +42,7 @@ func RegisterDebugEndpoints(api huma.API, prefix string) {
 			UserId string `path:"user_id" example:"user_12345" doc:"User ID to list sessions for"`
 		}) (response *debugListSessionsResponse, err error) {
 			listRes, err := shared.GetGlobalInMemorySessionService().List(ctx, &session.ListRequest{
-				AppName: constants.AppName,
+				AppName: config.AppName,
 				UserID:  input.UserId,
 			})
 
@@ -80,7 +80,7 @@ func RegisterDebugEndpoints(api huma.API, prefix string) {
 
 			getResp, err := shared.GetGlobalInMemorySessionService().Get(
 				ctx, &session.GetRequest{
-					AppName:   constants.AppName,
+					AppName:   config.AppName,
 					UserID:    input.UserId,
 					SessionID: input.SessionId,
 				})

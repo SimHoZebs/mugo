@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"server/agents"
-	"server/runners"
+	"server/internal/agents"
+	"server/internal/runners"
 
 	"github.com/danielgtaylor/huma/v2"
 	"google.golang.org/genai"
