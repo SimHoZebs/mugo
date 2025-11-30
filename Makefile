@@ -8,3 +8,6 @@ orval:
 
 server:
 	cd ./server/ && infisical run -- go run ./cmd/api/main.go
+
+adk:
+	cd ./server/ && infisical run -- go run ./cmd/adk/main.go web api webui

@@ -1,6 +1,6 @@
 package config
 
 const (
-	AppName   = "LazyFood"
+	AppName   = "mugo"
 	ModelName = "gemini-2.5-flash"
 )

@@ -1,10 +1,10 @@
 package runners
 
 import (
-	"log"
 	"github.com/simhozebs/mugo/internal/agents"
 	"github.com/simhozebs/mugo/internal/config"
 	"github.com/simhozebs/mugo/internal/shared"
+	"log"
 
 	"google.golang.org/adk/runner"
 )

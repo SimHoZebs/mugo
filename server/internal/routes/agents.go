@@ -3,9 +3,9 @@ package routes
 import (
 	"context"
 	"fmt"
-	"log"
 	"github.com/simhozebs/mugo/internal/agents"
 	"github.com/simhozebs/mugo/internal/runners"
+	"log"
 
 	"github.com/danielgtaylor/huma/v2"
 	"google.golang.org/genai"
