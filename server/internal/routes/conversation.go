@@ -3,11 +3,11 @@ package routes
 import (
 	"context"
 	"fmt"
+
+	"github.com/simhozebs/mugo/internal/adk"
 	"github.com/simhozebs/mugo/internal/config"
-	"github.com/simhozebs/mugo/internal/shared"
-	"google.golang.org/adk/session"
+	"google.golang.org/adk/server/restapi/models"
 	"google.golang.org/genai"
-	"log"
 )
 
 // ConversationRequest is the request body for conversation endpoint.
@@ -24,38 +24,32 @@ type ConversationResponse struct {
 	}
 }
 
-func ConversationHandler(ctx context.Context, agentService *shared.AgentService, input *struct {
+// ConversationHandler handles conversation requests using the echo agent.
+func ConversationHandler(ctx context.Context, adkClient *adk.Client, input *struct {
 	Body ConversationRequest `body:""`
 }) (*ConversationResponse, error) {
-	content := genai.NewContentFromText(input.Body.Message, genai.RoleUser)
+	appName, ok := config.AgentMapping["echo"]
+	if !ok {
+		return nil, fmt.Errorf("echo agent not configured")
+	}
 
-	log.Printf("Handler parsed input: %+v", input.Body)
-	log.Printf("Calling runner.Run with user=%q session=%q app=%q", input.Body.UserID, input.Body.SessionID, "demo_app")
+	fmt.Printf("Conversation request: %s (user: %s, session: %s)\n",
+		input.Body.Message, input.Body.UserID, input.Body.SessionID)
 
-	text, err := ProcessQuery(ctx, ProcessAgentRequest{
-		UserID:       input.Body.UserID,
-		SessionID:    input.Body.SessionID,
-		AgentService: *agentService,
-		Message:      content,
-	},
-	)
+	result, err := adkClient.RunWithAutoSession(ctx, models.RunAgentRequest{
+		AppName:   appName,
+		UserId:    input.Body.UserID,
+		SessionId: input.Body.SessionID,
+		NewMessage: genai.Content{
+			Role:  string(genai.RoleUser),
+			Parts: []*genai.Part{{Text: input.Body.Message}},
+		},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("agent processing failed: %w", err)
 	}
 
-	listRes, err := agentService.SessionService.List(ctx, &session.ListRequest{
-		AppName: config.AppName,
-		UserID:  input.Body.UserID,
-	})
-
-	var sessionIds []string
-	for _, s := range listRes.Sessions {
-		sessionIds = append(sessionIds, s.ID())
-	}
-	println("Current sessions for user:", input.Body.UserID, len(sessionIds))
-
 	resp := &ConversationResponse{}
-	resp.Body.Text = text
-
+	resp.Body.Text = result.FinalText
 	return resp, nil
 }

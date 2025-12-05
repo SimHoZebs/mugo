@@ -3,11 +3,11 @@ package routes
 import (
 	"context"
 	"fmt"
-	"github.com/danielgtaylor/huma/v2"
-	"github.com/simhozebs/mugo/internal/config"
-	"github.com/simhozebs/mugo/internal/shared"
-	"google.golang.org/adk/session"
 	"net/http"
+
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/simhozebs/mugo/internal/adk"
+	"github.com/simhozebs/mugo/internal/config"
 )
 
 type DebugGetMessagesRequest struct {
@@ -27,8 +27,10 @@ type debugListSessionsResponse struct {
 	}
 }
 
-func RegisterDebugEndpoints(api huma.API, prefix string) {
-	debugGroup := huma.NewGroup(api, prefix)
+// RegisterDebugEndpoints registers debug endpoints.
+// Note: These endpoints now proxy to the ADK server for session information.
+func RegisterDebugEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Client) {
+	debugGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(
 		debugGroup,
@@ -41,24 +43,12 @@ func RegisterDebugEndpoints(api huma.API, prefix string) {
 		func(ctx context.Context, input *struct {
 			UserId string `path:"user_id" example:"user_12345" doc:"User ID to list sessions for"`
 		}) (response *debugListSessionsResponse, err error) {
-			listRes, err := shared.GetGlobalInMemorySessionService().List(ctx, &session.ListRequest{
-				AppName: config.AppName,
-				UserID:  input.UserId,
-			})
-
-			if err != nil {
-				return nil, huma.Error400BadRequest(fmt.Sprintf("Error listing sessions: %v", err))
-			}
-
-			var sessionIds []string
-			for _, s := range listRes.Sessions {
-				sessionIds = append(sessionIds, s.ID())
-			}
-
+			// Note: The ADK REST API doesn't have a direct "list sessions" endpoint.
+			// For now, return a placeholder message.
+			// In the future, we could track sessions locally or query the ADK server.
 			resp := &debugListSessionsResponse{}
-			resp.Body.SessionIds = sessionIds
+			resp.Body.SessionIds = []string{fmt.Sprintf("Session listing not available via ADK REST API for user: %s", input.UserId)}
 			return resp, nil
-
 		},
 	)
 
@@ -75,36 +65,30 @@ func RegisterDebugEndpoints(api huma.API, prefix string) {
 				},
 			},
 		},
-
 		func(ctx context.Context, input *DebugGetMessagesRequest) (response *debugGetMessagesResponse, err error) {
+			// Get session from ADK server
+			// We need to know the app name - for now use the default nutrition agent
+			appName := config.AgentMapping["nutrition"]
 
-			getResp, err := shared.GetGlobalInMemorySessionService().Get(
-				ctx, &session.GetRequest{
-					AppName:   config.AppName,
-					UserID:    input.UserId,
-					SessionID: input.SessionId,
-				})
+			session, err := adkClient.GetSession(ctx, appName, input.UserId, input.SessionId)
 			if err != nil {
-				resp := &debugGetMessagesResponse{}
-				resp.Body.Messages = []string{fmt.Sprintf("Error retrieving session: %v", err)}
-				return resp, huma.Error400BadRequest(fmt.Sprintf("Error retrieving session: %v", err))
+				return nil, huma.Error400BadRequest(fmt.Sprintf("Error retrieving session: %v", err))
 			}
 
-			stored := getResp.Session
-			events := stored.Events().All()
+			if session == nil {
+				return nil, huma.Error400BadRequest(fmt.Sprintf("Session not found: %s", input.SessionId))
+			}
+
 			var messages []string
-			for ev := range events {
+			for _, ev := range session.Events {
 				if ev.Content == nil {
 					continue
 				}
-
 				for _, p := range ev.Content.Parts {
-
-					if p != nil {
+					if p != nil && p.Text != "" {
 						messages = append(messages, p.Text)
 					}
 				}
-
 			}
 
 			resp := &debugGetMessagesResponse{}

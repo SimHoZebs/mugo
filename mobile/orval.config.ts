@@ -10,7 +10,7 @@ export default defineConfig({
       mode: "tags-split",
       target: "./lib/api",
       client: "fetch", // Uses native fetch (perfect for React Native)
-      baseUrl: process.env.EXPO_PUBLIC_API_URL || "http://172.23.25.61:8888",
+      baseUrl: process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.216:8888",
     },
   },
 });

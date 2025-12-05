@@ -11,3 +11,9 @@ server:
 
 adk:
 	cd ./server/ && infisical run -- go run ./cmd/adk/main.go web api webui
+
+adk-api:
+	cd ./server/ && infisical run -- go run ./cmd/adk/main.go web api
+
+adk-help:
+	cd ./server/ && infisical run -- go run ./cmd/adk/main.go --help

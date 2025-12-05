@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/simhozebs/mugo/internal/config"
 	"log"
 	"os"
 
+	"github.com/simhozebs/mugo/internal/config"
+	"github.com/simhozebs/mugo/internal/models"
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
 	adkmodel "google.golang.org/adk/model"
@@ -15,43 +16,8 @@ import (
 	"google.golang.org/genai"
 )
 
-type NutritionRequest struct {
-	Body struct {
-		UserID    string `json:"user_id" example:"user_12345" doc:"User ID of the requester"`
-		SessionID string `json:"session_id" example:"session_12345" doc:"Session ID for the conversation"`
-		Text      string `json:"text" example:"I ate a chicken sandwich" doc:"Description of food eaten"`
-	}
-}
-
-type NutritionResponse struct {
-	Body struct {
-		Analysis string `json:"analysis" example:"{...}" doc:"Nutritional analysis and assumptions"`
-	}
-}
-
-type Assumption struct {
-	ID           string  `json:"id,omitempty"`
-	Category     string  `json:"category,omitempty"`
-	Field        string  `json:"field,omitempty"`
-	AssumedValue float64 `json:"assumed_value"`
-	Unit         string  `json:"unit,omitempty"`
-	Confidence   string  `json:"confidence,omitempty"`
-	Rationale    string  `json:"rationale,omitempty"`
-}
-
-type Macros struct {
-	Calories float64 `json:"calories"`
-	Protein  float64 `json:"protein"`
-	Carbs    float64 `json:"carbs"`
-	Fat      float64 `json:"fat"`
-}
-
-type NutritionPayload struct {
-	Macros      Macros       `json:"macros"`
-	Assumptions []Assumption `json:"assumptions"`
-}
-
-func Nutrition() (agent.Agent, error) {
+// MacroEstimator creates the nutrition estimation agent.
+func MacroEstimator() (agent.Agent, error) {
 	ctx := context.Background()
 	model, err := gemini.NewModel(ctx,
 		config.ModelName,
@@ -106,7 +72,7 @@ func Nutrition() (agent.Agent, error) {
 			return resp, nil
 		}
 
-		var payload NutritionPayload
+		var payload models.NutritionPayload
 		if err := json.Unmarshal([]byte(text), &payload); err != nil {
 			// Strict mode: fail the agent invocation so schema violations are visible
 			return nil, fmt.Errorf("nutrition agent: response did not match expected schema: %w", err)
@@ -131,7 +97,7 @@ func Nutrition() (agent.Agent, error) {
 	})
 
 	return llmagent.New(llmagent.Config{
-		Name:        "nutrition_agent",
+		Name:        "macro_estimator",
 		Model:       model,
 		Description: "Estimates nutritional value (macros) and lists assumptions based on food description.",
 		Instruction: `You are a nutritional estimation assistant.

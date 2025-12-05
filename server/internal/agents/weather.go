@@ -2,11 +2,11 @@ package agents
 
 import (
 	"context"
-	"github.com/simhozebs/mugo/internal/config"
-	"github.com/simhozebs/mugo/internal/tools"
 	"log"
 	"os"
 
+	"github.com/simhozebs/mugo/internal/config"
+	"github.com/simhozebs/mugo/internal/tools"
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
 	"google.golang.org/adk/model/gemini"
@@ -14,20 +14,7 @@ import (
 	"google.golang.org/genai"
 )
 
-type WeatherRequest struct {
-	Body struct {
-		UserID    string `json:"user_id" example:"user_12345" doc:"User ID of the requester"`
-		SessionID string `json:"session_id" example:"session_12345" doc:"Session ID for the conversation"`
-		City      string `json:"city" example:"San Francisco" doc:"City to get weather for"`
-	}
-}
-
-type WeatherResponse struct {
-	Body struct {
-		Forecast string `json:"forecast" example:"Sunny with a high of 75°F" doc:"Weather forecast for the specified city"`
-	}
-}
-
+// Weather creates the weather agent.
 func Weather() (agent.Agent, error) {
 	ctx := context.Background()
 	model, err := gemini.NewModel(ctx,
@@ -49,5 +36,4 @@ func Weather() (agent.Agent, error) {
 		Instruction: "You are a helpful assistant that tells the current weather in a city. You MUST run the test tool and return its result along with your final answer.",
 		Tools:       []tool.Tool{testTool},
 	})
-
 }

@@ -14,7 +14,7 @@ func main() {
 	ctx := context.Background()
 	weatherAgent, err := agents.Weather()
 	echoAgent, err := agents.NewEchoAgent()
-	nutritionAgent, err := agents.Nutrition()
+	nutritionAgent, err := agents.MacroEstimator()
 
 	agentLoader, err := services.NewMultiAgentLoader(weatherAgent, echoAgent, nutritionAgent)
 	if err != nil {
