@@ -13,13 +13,13 @@ import MealCard from "@/components/MealCard";
 import InputBar from "@/components/InputBar";
 import { postAgentsNutrition } from "@/lib/api/default/default";
 import { NutritionResponseBody } from "@/lib/api/conversationAPI.schemas";
-import { ScrollView } from "react-native";
 import { defaultMeals } from "@/constants/defaultMeals";
+import useGlobalStore from "@/lib/store";
 
 export default function HomeScreen() {
   const [sessionId] = useState(() => uuid7());
-  const [meals, setMeals] =
-    useState<Array<NutritionResponseBody["analysis"]>>(defaultMeals);
+  const meals = useGlobalStore((state) => state.meals);
+  const setMeals = useGlobalStore((state) => state.setMeals);
 
   const handleSubmitNutrition = async (text: string) => {
     try {
@@ -32,7 +32,7 @@ export default function HomeScreen() {
         throw new Error(`Server error: ${response.data}`);
       }
       const nutritionData = response.data.analysis;
-      setMeals((prevMeals) => [nutritionData, ...prevMeals]);
+      setMeals([...meals, nutritionData]);
     } catch (error) {
       console.error("Error submitting nutrition:", error);
     }
@@ -45,6 +45,7 @@ export default function HomeScreen() {
       </ThemedText>
 
       <TotalMacroPanel />
+
       <KeyboardAwareScrollView>
         <ThemedView className="gap-4">
           {meals.map((meal, index) => (

@@ -6,3 +6,7 @@ expo-env.d.ts
 # @end expo-cli
 
 api/
+
+# build
+android/
+ios/

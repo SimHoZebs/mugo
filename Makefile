@@ -1,7 +1,10 @@
-.PHONY: server mobile
+.PHONY: server mobile emulator
 
 mobile:
 	cd ./mobile/ && infisical run -- nr start --android
+
+emulator:
+	~/Android/sdk/emulator/emulator -avd Medium_Phone_API_36.1 &
 
 orval:
 	cd ./mobile/ && infisical run -- nr orval

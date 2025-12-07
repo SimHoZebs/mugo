@@ -43,9 +43,11 @@
     "react-native-svg": "^15.12.1",
     "react-native-web": "~0.21.2",
     "react-native-worklets": "0.5.1",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@redux-devtools/extension": "^3.3.0",
     "@tailwindcss/postcss": "^4.1.17",
     "@types/react": "~19.1.17",
     "eslint": "^9.39.1",
