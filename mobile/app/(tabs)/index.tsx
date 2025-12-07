@@ -1,106 +1,105 @@
-import {
-  Platform,
-  StyleSheet,
-  View,
-  Text,
-  Pressable,
-  KeyboardAvoidingView,
-} from "react-native";
+import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { useState } from "react";
 import "react-native-get-random-values";
 import { v7 as uuid7 } from "uuid";
 
-import { HelloWave } from "@/components/hello-wave";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import TotalMacroPanel from "@/components/TotalMacroPanel";
 import MealCard from "@/components/MealCard";
 import InputBar from "@/components/InputBar";
-import { ProgressRing } from "@/components/ProgressRing";
-import {
-  getGreetingByName,
-  postAgentsNutrition,
-} from "@/lib/api/default/default";
+import { postAgentsNutrition } from "@/lib/api/default/default";
+import { NutritionResponseBody } from "@/lib/api/conversationAPI.schemas";
+import { ScrollView } from "react-native";
+
+const defaultMeals: Array<NutritionResponseBody["analysis"]> = [
+  {
+    name: "Oatmeal with Berries",
+    assumptions: [
+      {
+        id: "1",
+        field: "portion_size",
+        assumed_value: 1,
+        unit: "cup",
+        confidence: "high",
+        rationale: "Standard serving size for oatmeal",
+      },
+    ],
+    macros: {
+      calories: 320,
+      protein: 12,
+      carbs: 45,
+      fat: 8,
+    },
+  },
+  {
+    name: "Grilled Chicken Salad",
+    assumptions: [
+      {
+        id: "2",
+        field: "portion_size",
+        assumed_value: 150,
+        unit: "grams",
+        confidence: "medium",
+        rationale: "Typical chicken breast portion",
+      },
+    ],
+    macros: {
+      calories: 450,
+      protein: 35,
+      carbs: 20,
+      fat: 18,
+    },
+  },
+];
 
 export default function HomeScreen() {
-  const [serverResponse, setServerResponse] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
   const [sessionId] = useState(() => uuid7());
+  const [meals, setMeals] =
+    useState<Array<NutritionResponseBody["analysis"]>>(defaultMeals);
 
   const handleSubmitNutrition = async (text: string) => {
-    setIsLoading(true);
     try {
       const response = await postAgentsNutrition({
         text,
         session_id: sessionId,
         user_id: "user-1",
       });
-      console.log("Nutrition response:", response.data);
+      if (response.status !== 200) {
+        throw new Error(`Server error: ${response.data}`);
+      }
+      const nutritionData = response.data.analysis;
+      setMeals((prevMeals) => [nutritionData, ...prevMeals]);
     } catch (error) {
       console.error("Error submitting nutrition:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const testServerConnection = async () => {
-    try {
-      const response = await getGreetingByName("John");
-      if (response.status === 200) {
-        setServerResponse(
-          `Server says: ${JSON.stringify(response.data.message)}`,
-        );
-      }
-    } catch (error) {
-      setServerResponse(`Error: ${error}`);
-      console.error("Error connecting to server:", error);
     }
   };
 
   return (
-    <KeyboardAvoidingView behavior="height">
-      <ThemedView className="pt-16 h-full w-full gap-4">
-        <ThemedText className="px-4" type="title">
-          Tuesday
-        </ThemedText>
-        <Pressable onPress={() => alert("Hello!")} className="px-4">
-          <HelloWave />
-        </Pressable>
+    <ThemedView className="h-full w-full">
+      <ThemedText className="px-4" type="title">
+        Tuesday
+      </ThemedText>
 
-        <Pressable
-          onPress={testServerConnection}
-          className="mx-4 p-4 bg-blue-500 rounded-lg"
-        >
-          <ThemedText className="text-white text-center">
-            Test Server Connection
-          </ThemedText>
-        </Pressable>
+      <TotalMacroPanel />
+      <ScrollView className="flex gap-4">
+        <MealCard />
+        {meals.map((meal, index) => (
+          <MealCard key={index} mealData={meal} />
+        ))}
+      </ScrollView>
 
-        {serverResponse && (
-          <ThemedView className="mx-4 p-4 bg-gray-100 rounded-lg">
-            <ThemedText>{serverResponse}</ThemedText>
-          </ThemedView>
-        )}
-
-        <TotalMacroPanel />
-        <ThemedView className="flex-1 gap-4 p-4">
-          <MealCard />
-          <MealCard />
-          <ProgressRing
-            label="Calories"
-            current={1200}
-            goal={2000}
-            color="#34D399"
-            size="lg"
-            unit="kcal"
-          />
-        </ThemedView>
-        <InputBar
-          onSubmitEditing={(event) =>
-            handleSubmitNutrition(event.nativeEvent.text)
-          }
-        />
-      </ThemedView>
-    </KeyboardAvoidingView>
+      <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
+        <InputBar onSubmit={handleSubmitNutrition}>
+          <InputBar.Action onPress={() => console.log("Mic pressed")}>
+            <ThemedText className="text-lg">🎤</ThemedText>
+          </InputBar.Action>
+          <InputBar.Input placeholder="Describe your meals..." />
+          <InputBar.Action onPress={() => console.log("Camera pressed")}>
+            <ThemedText className="text-lg">📷</ThemedText>
+          </InputBar.Action>
+        </InputBar>
+      </KeyboardStickyView>
+    </ThemedView>
   );
 }

@@ -2,6 +2,7 @@ package models
 
 // NutritionPayload is the structured response from the nutrition agent.
 type NutritionPayload struct {
+	Name        string       `json:"name"`
 	Macros      Macros       `json:"macros"`
 	Assumptions []Assumption `json:"assumptions"`
 }

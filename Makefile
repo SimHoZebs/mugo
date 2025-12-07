@@ -1,7 +1,7 @@
 .PHONY: server mobile
 
 mobile:
-	cd ./mobile/ && infisical run -- nr start
+	cd ./mobile/ && infisical run -- nr start --android
 
 orval:
 	cd ./mobile/ && infisical run -- nr orval

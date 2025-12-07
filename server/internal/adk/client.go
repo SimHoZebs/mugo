@@ -164,6 +164,7 @@ func (c *Client) RunWithAutoSession(ctx context.Context, runReq models.RunAgentR
 	// Check if the error is due to session not found
 	errStr := err.Error()
 	if !strings.Contains(errStr, "session") || !strings.Contains(errStr, "not found") {
+		fmt.Printf("Run failed with non-session error: %v\n", err)
 		return nil, err
 	}
 

@@ -102,7 +102,10 @@ func MacroEstimator() (agent.Agent, error) {
 		Description: "Estimates nutritional value (macros) and lists assumptions based on food description.",
 		Instruction: `You are a nutritional estimation assistant.
 Your goal is to estimate the macronutrients for the food described by the user.
-You MUST also provide a list of assumptions you made to reach these estimates.
+You MUST provide:
+1. A short, descriptive name for the meal (e.g., "Grilled Chicken Caesar Salad", "Homemade Beef Tacos")
+2. The estimated macronutrients (calories, protein, carbs, fat)
+3. A list of assumptions you made to reach these estimates
 `,
 		OutputSchema:        schema,
 		AfterModelCallbacks: []llmagent.AfterModelCallback{onAfterModelAssignIDs},
