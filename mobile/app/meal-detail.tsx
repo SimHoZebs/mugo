@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { View, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { KeyboardStickyView } from "react-native-keyboard-controller";
+import {
+  KeyboardAwareScrollView,
+  KeyboardStickyView,
+} from "react-native-keyboard-controller";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Assumption } from "@/lib/api/conversationAPI.schemas";
@@ -42,12 +45,10 @@ export default function MealDetailScreen() {
   };
 
   return (
-    <ThemedView className="flex-1">
-      <ScrollView className="flex-1 px-4">
+    <ThemedView className="flex-1 px-3">
+      <KeyboardAwareScrollView className="flex-1 px-4">
         <View className="pt-4 pb-6">
-          <ThemedText type="title">
-            {params.title || "Meal Details"}
-          </ThemedText>
+          <ThemedText type="title">{params.title || "Meal Details"}</ThemedText>
           {params.description && (
             <ThemedText className="text-stone-500 dark:text-stone-400 mt-1">
               {params.description}
@@ -106,7 +107,7 @@ export default function MealDetailScreen() {
             ))}
           </View>
         )}
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
         <InputBar onSubmit={handleSubmitCorrection} isLoading={isSubmitting}>

@@ -49,7 +49,7 @@ export default function MealCard({ mealData }: Props) {
   const hasAssumptions = assumptions && assumptions.length > 0;
 
   return (
-    <Pressable onPress={handlePress} className="mb-6">
+    <Pressable onPress={handlePress}>
       <ThemedView className="p-4 border border-stone-300 dark:border-stone-700 rounded-xl">
         <View className="flex-row justify-between items-start mb-1">
           <ThemedText type="defaultSemiBold" className="flex-1">

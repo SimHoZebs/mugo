@@ -1,4 +1,7 @@
-import { KeyboardStickyView } from "react-native-keyboard-controller";
+import {
+  KeyboardAwareScrollView,
+  KeyboardStickyView,
+} from "react-native-keyboard-controller";
 import { useState } from "react";
 import "react-native-get-random-values";
 import { v7 as uuid7 } from "uuid";
@@ -11,47 +14,7 @@ import InputBar from "@/components/InputBar";
 import { postAgentsNutrition } from "@/lib/api/default/default";
 import { NutritionResponseBody } from "@/lib/api/conversationAPI.schemas";
 import { ScrollView } from "react-native";
-
-const defaultMeals: Array<NutritionResponseBody["analysis"]> = [
-  {
-    name: "Oatmeal with Berries",
-    assumptions: [
-      {
-        id: "1",
-        field: "portion_size",
-        assumed_value: 1,
-        unit: "cup",
-        confidence: "high",
-        rationale: "Standard serving size for oatmeal",
-      },
-    ],
-    macros: {
-      calories: 320,
-      protein: 12,
-      carbs: 45,
-      fat: 8,
-    },
-  },
-  {
-    name: "Grilled Chicken Salad",
-    assumptions: [
-      {
-        id: "2",
-        field: "portion_size",
-        assumed_value: 150,
-        unit: "grams",
-        confidence: "medium",
-        rationale: "Typical chicken breast portion",
-      },
-    ],
-    macros: {
-      calories: 450,
-      protein: 35,
-      carbs: 20,
-      fat: 18,
-    },
-  },
-];
+import { defaultMeals } from "@/constants/defaultMeals";
 
 export default function HomeScreen() {
   const [sessionId] = useState(() => uuid7());
@@ -76,20 +39,21 @@ export default function HomeScreen() {
   };
 
   return (
-    <ThemedView className="h-full w-full">
+    <ThemedView className="h-full w-full gap-4 pt-8">
       <ThemedText className="px-4" type="title">
         Tuesday
       </ThemedText>
 
       <TotalMacroPanel />
-      <ScrollView className="flex gap-4">
-        <MealCard />
-        {meals.map((meal, index) => (
-          <MealCard key={index} mealData={meal} />
-        ))}
-      </ScrollView>
+      <KeyboardAwareScrollView>
+        <ThemedView className="gap-4">
+          {meals.map((meal, index) => (
+            <MealCard key={index} mealData={meal} />
+          ))}
+        </ThemedView>
+      </KeyboardAwareScrollView>
 
-      <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
+      <KeyboardStickyView offset={{ closed: 0, opened: 80 }}>
         <InputBar onSubmit={handleSubmitNutrition}>
           <InputBar.Action onPress={() => console.log("Mic pressed")}>
             <ThemedText className="text-lg">🎤</ThemedText>
