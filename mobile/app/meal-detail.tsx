@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, ScrollView } from "react-native";
+import { View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import {
   KeyboardAwareScrollView,
@@ -7,27 +7,27 @@ import {
 } from "react-native-keyboard-controller";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { Assumption } from "@/lib/api/conversationAPI.schemas";
 import InputBar from "@/components/InputBar";
 import { MacroRow } from "@/components/MacroRow";
 import { AssumptionCard } from "@/components/AssumptionCard";
+import { postAgentsNutrition } from "@/lib/api/default/default";
+import useGlobalStore from "@/lib/store";
 
 export default function MealDetailScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const params = useLocalSearchParams<{
-    title: string;
-    description: string;
-    calories: string;
-    protein: string;
-    carbs: string;
-    fat: string;
-    assumptions: string;
-  }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const meal = useGlobalStore((state) => state.meals.find((m) => m.id === id));
 
-  const assumptions: Assumption[] = params.assumptions
-    ? JSON.parse(params.assumptions)
-    : [];
+  if (!meal) {
+    return (
+      <ThemedView className="flex-1 items-center justify-center">
+        <ThemedText>Meal not found</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  const assumptions = meal.nutrition.assumptions;
 
   const handleSubmitCorrection = async (text: string) => {
     if (isSubmitting) return;
@@ -35,6 +35,11 @@ export default function MealDetailScreen() {
     setIsSubmitting(true);
     try {
       // TODO: Call API endpoint for AI correction
+      const response = await postAgentsNutrition({
+        text,
+        session_id: meal.sessionId,
+        user_id: "user-1",
+      });
       console.log("Submitting correction:", text);
       // await submitCorrection({ text, mealId: params.id });
     } catch (error) {
@@ -48,12 +53,9 @@ export default function MealDetailScreen() {
     <ThemedView className="flex-1 px-3">
       <KeyboardAwareScrollView className="flex-1 px-4">
         <View className="pt-4 pb-6">
-          <ThemedText type="title">{params.title || "Meal Details"}</ThemedText>
-          {params.description && (
-            <ThemedText className="text-stone-500 dark:text-stone-400 mt-1">
-              {params.description}
-            </ThemedText>
-          )}
+          <ThemedText type="title">
+            {meal.nutrition.name || "Meal Details"}
+          </ThemedText>
         </View>
 
         {/* Macros Section */}
@@ -65,25 +67,25 @@ export default function MealDetailScreen() {
           <View className="bg-white dark:bg-stone-900 rounded-xl p-4 border border-stone-200 dark:border-stone-700">
             <MacroRow
               label="Calories"
-              value={parseFloat(params.calories || "0")}
+              value={meal.nutrition.macros.calories}
               unit="kcal"
               colorClass="bg-amber-500"
             />
             <MacroRow
               label="Protein"
-              value={parseFloat(params.protein || "0")}
+              value={meal.nutrition.macros.protein}
               unit="g"
               colorClass="bg-emerald-500"
             />
             <MacroRow
               label="Carbs"
-              value={parseFloat(params.carbs || "0")}
+              value={meal.nutrition.macros.carbs}
               unit="g"
               colorClass="bg-blue-500"
             />
             <MacroRow
               label="Fat"
-              value={parseFloat(params.fat || "0")}
+              value={meal.nutrition.macros.fat}
               unit="g"
               colorClass="bg-violet-500"
             />

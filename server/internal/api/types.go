@@ -14,7 +14,8 @@ type NutritionRequest struct {
 // NutritionResponse is the response body for the nutrition endpoint.
 type NutritionResponse struct {
 	Body struct {
-		Analysis models.NutritionPayload `json:"analysis" doc:"Nutritional analysis and assumptions"`
+		Analysis  models.NutritionPayload `json:"analysis" doc:"Nutritional analysis and assumptions"`
+		SessionID string                  `json:"session_id" example:"session_67890" doc:"Session ID for continued conversation"`
 	}
 }
 

@@ -75,6 +75,7 @@ func RegisterAgentEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clie
 			return nil, fmt.Errorf("failed to parse nutrition response: %w", err)
 		}
 		resp.Body.Analysis = payload
+		resp.Body.SessionID = input.Body.SessionID
 		return resp, nil
 	})
 }

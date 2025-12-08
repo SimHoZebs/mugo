@@ -1,13 +1,11 @@
 import { Pressable, View } from "react-native";
 import { useRouter } from "expo-router";
-import { NutritionPayload } from "@/lib/api/conversationAPI.schemas";
 import { ThemedText } from "./themed-text";
 import { ThemedView } from "./themed-view";
+import { Meal } from "@/lib/types";
 
-interface Props {
-  title?: string;
-  description?: string;
-  mealData?: NutritionPayload;
+interface MealCardProps {
+  meal: Meal;
 }
 
 interface MacroPillProps {
@@ -27,25 +25,18 @@ function MacroPill({ value, unit, colorClass }: MacroPillProps) {
   );
 }
 
-export default function MealCard({ mealData }: Props) {
+export default function MealCard(props: MealCardProps) {
   const router = useRouter();
 
   const handlePress = () => {
     router.push({
       pathname: "/meal-detail",
-      params: {
-        title: mealData?.name || "Meal Detail",
-        calories: mealData?.macros?.calories?.toString() || "0",
-        protein: mealData?.macros?.protein?.toString() || "0",
-        carbs: mealData?.macros?.carbs?.toString() || "0",
-        fat: mealData?.macros?.fat?.toString() || "0",
-        assumptions: JSON.stringify(mealData?.assumptions || []),
-      },
+      params: { id: props.meal.id },
     });
   };
 
-  const macros = mealData?.macros;
-  const assumptions = mealData?.assumptions;
+  const macros = props.meal.nutrition.macros;
+  const assumptions = props.meal.nutrition.assumptions;
   const hasAssumptions = assumptions && assumptions.length > 0;
 
   return (
@@ -53,7 +44,7 @@ export default function MealCard({ mealData }: Props) {
       <ThemedView className="p-4 border border-stone-300 dark:border-stone-700 rounded-xl">
         <View className="flex-row justify-between items-start mb-1">
           <ThemedText type="defaultSemiBold" className="flex-1">
-            {mealData?.name || "Unnamed Meal"}
+            {props.meal.nutrition.name}
           </ThemedText>
           {hasAssumptions && (
             <View className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/50 rounded">

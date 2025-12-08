@@ -2,7 +2,6 @@ import {
   KeyboardAwareScrollView,
   KeyboardStickyView,
 } from "react-native-keyboard-controller";
-import { useState } from "react";
 import "react-native-get-random-values";
 import { v7 as uuid7 } from "uuid";
 
@@ -12,27 +11,31 @@ import TotalMacroPanel from "@/components/TotalMacroPanel";
 import MealCard from "@/components/MealCard";
 import InputBar from "@/components/InputBar";
 import { postAgentsNutrition } from "@/lib/api/default/default";
-import { NutritionResponseBody } from "@/lib/api/conversationAPI.schemas";
-import { defaultMeals } from "@/constants/defaultMeals";
 import useGlobalStore from "@/lib/store";
 
 export default function HomeScreen() {
-  const [sessionId] = useState(() => uuid7());
   const meals = useGlobalStore((state) => state.meals);
   const setMeals = useGlobalStore((state) => state.setMeals);
 
   const handleSubmitNutrition = async (text: string) => {
+    const newMealId = uuid7();
+    const newSessionId = uuid7();
+
     try {
       const response = await postAgentsNutrition({
         text,
-        session_id: sessionId,
+        session_id: newSessionId,
         user_id: "user-1",
       });
       if (response.status !== 200) {
         throw new Error(`Server error: ${response.data}`);
       }
-      const nutritionData = response.data.analysis;
-      setMeals([...meals, nutritionData]);
+      const newMeal = {
+        id: newMealId,
+        sessionId: newSessionId,
+        nutrition: response.data.analysis,
+      };
+      setMeals([...meals, newMeal]);
     } catch (error) {
       console.error("Error submitting nutrition:", error);
     }
@@ -44,12 +47,12 @@ export default function HomeScreen() {
         Tuesday
       </ThemedText>
 
-      <TotalMacroPanel />
+      <TotalMacroPanel meals={meals} />
 
       <KeyboardAwareScrollView>
-        <ThemedView className="gap-4">
-          {meals.map((meal, index) => (
-            <MealCard key={index} mealData={meal} />
+        <ThemedView className="gap-4 px-4">
+          {meals.map((meal) => (
+            <MealCard key={meal.id} meal={meal} />
           ))}
         </ThemedView>
       </KeyboardAwareScrollView>

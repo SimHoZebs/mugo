@@ -1,12 +1,8 @@
 import { View } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { Macros } from "@/lib/api/conversationAPI.schemas";
-import useGlobalStore from "@/lib/store";
-
-interface Props {
-  macros?: Macros;
-}
+import { NutritionPayload } from "@/lib/api/conversationAPI.schemas";
+import { Meal } from "@/lib/types";
 
 interface MacroItemProps {
   label: string;
@@ -15,42 +11,54 @@ interface MacroItemProps {
   dotColor: string;
 }
 
-function MacroItem({ label, value, unit, dotColor }: MacroItemProps) {
+function MacroItem(props: MacroItemProps) {
   return (
-    <View className="items-center">
-      <View className="flex-row items-center gap-1.5 mb-0.5">
-        <View className={`w-2 h-2 rounded-full ${dotColor}`} />
+    <View className="items-center flex-1">
+      <View className="flex-row items-center gap-1.5">
+        <View className={`w-2 h-2 rounded-full ${props.dotColor}`} />
         <ThemedText className="text-xs text-stone-500 dark:text-stone-400">
-          {label}
+          {props.label}
         </ThemedText>
       </View>
       <ThemedText type="defaultSemiBold">
-        {Math.round(value)}
-        {unit}
+        {Math.round(props.value)}
+        {props.unit}
       </ThemedText>
     </View>
   );
 }
 
-export default function TotalMacroPanel({ macros }: Props) {
-  const meals = useGlobalStore((state) => state.meals);
+interface TotalMarcoPanelProps {
+  meals: Meal[];
+}
+
+export default function TotalMacroPanel(props: TotalMarcoPanelProps) {
+  const meals = props.meals;
+
   const totalCalories = meals.reduce(
-    (sum, meal) => sum + meal.macros.calories,
+    (sum, meal) => sum + meal.nutrition.macros.calories,
     0,
   );
   const totalProtein = meals.reduce(
-    (sum, meal) => sum + meal.macros.protein,
+    (sum, meal) => sum + meal.nutrition.macros.protein,
     0,
   );
-  const totalCarbs = meals.reduce((sum, meal) => sum + meal.macros.carbs, 0);
-  const totalFat = meals.reduce((sum, meal) => sum + meal.macros.fat, 0);
+  const totalCarbs = meals.reduce(
+    (sum, meal) => sum + meal.nutrition.macros.carbs,
+    0,
+  );
+  const totalFat = meals.reduce(
+    (sum, meal) => sum + meal.nutrition.macros.fat,
+    0,
+  );
 
   return (
     <ThemedView className="p-4 w-full border-b border-stone-200 dark:border-stone-700 rounded-lg">
       <ThemedText className="text-xs text-stone-500 dark:text-stone-400 mb-3">
         Today's Total
       </ThemedText>
-      <View className="flex-row justify-between">
+
+      <View className="flex-row justify-evenly">
         <MacroItem
           label="Calories"
           value={totalCalories}
