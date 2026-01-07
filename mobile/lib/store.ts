@@ -1,12 +1,18 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import type {} from "@redux-devtools/extension"; // required for devtools typing
-import { Meal } from "./types";
+import { Meal, UserProfile, DietaryPreference } from "./types";
 
 interface GlobalState {
   meals: Meal[];
   setMeals: (meals: Meal[]) => void;
   updateMeal: (id: string, meal: Meal) => void;
+  userProfile: UserProfile;
+  setUserProfile: (profile: UserProfile) => void;
+  updateUserProfile: (profile: Partial<UserProfile>) => void;
+  addDietaryPreference: (preference: DietaryPreference) => void;
+  updateDietaryPreference: (id: string, text: string) => void;
+  removeDietaryPreference: (id: string) => void;
 }
 
 const useGlobalStore = create<GlobalState>()(
@@ -260,6 +266,46 @@ const useGlobalStore = create<GlobalState>()(
         updateMeal: (id, meal) =>
           set((state) => ({
             meals: state.meals.map((m) => (m.id === id ? meal : m)),
+          })),
+        userProfile: {
+          name: "",
+          dietaryPreferences: [],
+          weight: 0,
+          height: 0,
+          unitSystem: "metric",
+        },
+        setUserProfile: (profile) => set(() => ({ userProfile: profile })),
+        updateUserProfile: (profile) =>
+          set((state) => ({
+            userProfile: { ...state.userProfile, ...profile },
+          })),
+        addDietaryPreference: (preference: DietaryPreference) =>
+          set((state) => ({
+            userProfile: {
+              ...state.userProfile,
+              dietaryPreferences: [
+                ...state.userProfile.dietaryPreferences,
+                preference,
+              ],
+            },
+          })),
+        updateDietaryPreference: (id: string, text: string) =>
+          set((state) => ({
+            userProfile: {
+              ...state.userProfile,
+              dietaryPreferences: state.userProfile.dietaryPreferences.map((p) =>
+                p.id === id ? { ...p, text } : p,
+              ),
+            },
+          })),
+        removeDietaryPreference: (id: string) =>
+          set((state) => ({
+            userProfile: {
+              ...state.userProfile,
+              dietaryPreferences: state.userProfile.dietaryPreferences.filter(
+                (p) => p.id !== id,
+              ),
+            },
           })),
       }),
       {

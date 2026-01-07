@@ -55,7 +55,7 @@ export default function TotalMacroPanel(props: TotalMarcoPanelProps) {
   return (
     <ThemedView className="p-4 w-full border-b border-stone-200 dark:border-stone-700 rounded-lg">
       <ThemedText className="text-xs text-stone-500 dark:text-stone-400 mb-3">
-        Today's Total
+        Today&apos;s Total
       </ThemedText>
 
       <View className="flex-row justify-evenly">

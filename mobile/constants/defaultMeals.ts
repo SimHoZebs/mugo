@@ -215,3 +215,4 @@ export const defaultMeals: Array<NutritionResponseBody["analysis"]> = [
     },
   },
 ];
+
