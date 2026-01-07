@@ -20,7 +20,10 @@ func NewUserRepository(queries *dbgenerated.Queries) *UserRepository {
 }
 
 func (r *UserRepository) Create(ctx context.Context, username string, metadata map[string]interface{}) (*models.User, error) {
-	metadataJSON, _ := json.Marshal(metadata)
+	metadataJSON, err := json.Marshal(metadata)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal metadata: %w", err)
+	}
 	arg := dbgenerated.CreateUserParams{
 		Username: username,
 		Metadata: metadataJSON,

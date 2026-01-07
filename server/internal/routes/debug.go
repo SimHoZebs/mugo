@@ -8,6 +8,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/simhozebs/mugo/internal/adk"
 	"github.com/simhozebs/mugo/internal/config"
+	"github.com/simhozebs/mugo/internal/db"
 )
 
 type DebugGetMessagesRequest struct {
@@ -29,7 +30,7 @@ type debugListSessionsResponse struct {
 
 // RegisterDebugEndpoints registers debug endpoints.
 // Note: These endpoints now proxy to the ADK server for session information.
-func RegisterDebugEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Client) {
+func RegisterDebugEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Client, database *db.Database) {
 	debugGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(
@@ -43,11 +44,17 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clie
 		func(ctx context.Context, input *struct {
 			UserId string `path:"user_id" example:"user_12345" doc:"User ID to list sessions for"`
 		}) (response *debugListSessionsResponse, err error) {
-			// Note: The ADK REST API doesn't have a direct "list sessions" endpoint.
-			// For now, return a placeholder message.
-			// In the future, we could track sessions locally or query the ADK server.
 			resp := &debugListSessionsResponse{}
-			resp.Body.SessionIds = []string{fmt.Sprintf("Session listing not available via ADK REST API for user: %s", input.UserId)}
+			if database != nil {
+				conversations, err := database.ConversationRepository.ListByUser(ctx, input.UserId)
+				if err == nil {
+					for _, c := range conversations {
+						resp.Body.SessionIds = append(resp.Body.SessionIds, c.SessionID)
+					}
+					return resp, nil
+				}
+			}
+			resp.Body.SessionIds = []string{fmt.Sprintf("Could not retrieve sessions for user: %s", input.UserId)}
 			return resp, nil
 		},
 	)
@@ -66,8 +73,6 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clie
 			},
 		},
 		func(ctx context.Context, input *DebugGetMessagesRequest) (response *debugGetMessagesResponse, err error) {
-			// Get session from ADK server
-			// We need to know the app name - for now use the default nutrition agent
 			appName := config.AgentMapping["nutrition"]
 
 			session, err := adkClient.GetSession(ctx, appName, input.UserId, input.SessionId)

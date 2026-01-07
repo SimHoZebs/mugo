@@ -4,18 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/simhozebs/mugo/internal/adk"
 	"github.com/simhozebs/mugo/internal/api"
 	"github.com/simhozebs/mugo/internal/config"
+	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/models"
 	adkmodels "google.golang.org/adk/server/restapi/models"
 	"google.golang.org/genai"
 )
 
 // RegisterAgentEndpoints registers all agent-related endpoints.
-func RegisterAgentEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Client) {
+func RegisterAgentEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Client, database *db.Database) {
 	agentsGroup := huma.NewGroup(humaAPI, prefix)
 
 	// Weather endpoint
@@ -76,6 +78,22 @@ func RegisterAgentEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clie
 		}
 		resp.Body.Analysis = payload
 		resp.Body.SessionID = input.Body.SessionID
+
+		// Persist to database if available
+		if database != nil {
+			_, _ = database.MealLogRepository.Create(ctx,
+				input.Body.UserID,
+				input.Body.SessionID,
+				payload.Name,
+				string(payload.MealType),
+				time.Now(),
+				payload.Macros,
+				payload.Assumptions,
+				"ai_estimated",
+				payload,
+			)
+		}
+
 		return resp, nil
 	})
 }

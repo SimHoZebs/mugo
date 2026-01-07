@@ -3,9 +3,9 @@ package db
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/simhozebs/mugo/internal/config"
 	dbgenerated "github.com/simhozebs/mugo/internal/db/dbgenerated"
 )
 
@@ -15,20 +15,24 @@ type Pool struct {
 }
 
 func NewPool(ctx context.Context) (*Pool, error) {
-	databaseURL := os.Getenv("DATABASE_URL")
+	databaseURL := config.GetDatabaseURL()
 	if databaseURL == "" {
 		return nil, fmt.Errorf("DATABASE_URL environment variable is not set")
 	}
 
-	config, err := pgxpool.ParseConfig(databaseURL)
+	pgxConfig, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse database URL: %w", err)
 	}
 
-	config.MinConns = 5
-	config.MaxConns = 25
+	pgxConfig.MinConns = int32(config.GetDatabaseMinConns())
+	pgxConfig.MaxConns = int32(config.GetDatabaseMaxConns())
+	pgxConfig.MaxConnLifetime = config.GetDatabaseMaxConnLifetime()
+	pgxConfig.MaxConnIdleTime = config.GetDatabaseMaxConnIdleTime()
+	pgxConfig.HealthCheckPeriod = config.GetDatabaseHealthCheckPeriod()
+	pgxConfig.ConnConfig.ConnectTimeout = config.GetDatabaseConnectTimeout()
 
-	pool, err := pgxpool.NewWithConfig(ctx, config)
+	pool, err := pgxpool.NewWithConfig(ctx, pgxConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create connection pool: %w", err)
 	}

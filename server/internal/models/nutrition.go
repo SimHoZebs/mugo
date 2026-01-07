@@ -1,8 +1,19 @@
 package models
 
+type MealType string
+
+const (
+	MealTypeBreakfast MealType = "breakfast"
+	MealTypeLunch     MealType = "lunch"
+	MealTypeDinner    MealType = "dinner"
+	MealTypeSnack     MealType = "snack"
+	MealTypeUnknown   MealType = "unknown"
+)
+
 // NutritionPayload is the structured response from the nutrition agent.
 type NutritionPayload struct {
 	Name        string       `json:"name"`
+	MealType    MealType     `json:"meal_type"`
 	Macros      Macros       `json:"macros"`
 	Assumptions []Assumption `json:"assumptions"`
 }

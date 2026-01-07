@@ -42,12 +42,21 @@ func (r *MealLogRepository) Create(ctx context.Context, userID, conversationID, 
 		}
 	}
 
-	macrosJSON, _ := json.Marshal(macros)
-	assumptionsJSON, _ := json.Marshal(assumptions)
+	macrosJSON, err := json.Marshal(macros)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal macros: %w", err)
+	}
+	assumptionsJSON, err := json.Marshal(assumptions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal assumptions: %w", err)
+	}
 
 	var rawResponseJSON []byte
 	if rawResponse != nil {
-		rawResponseJSON, _ = json.Marshal(rawResponse)
+		rawResponseJSON, err = json.Marshal(rawResponse)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal raw response: %w", err)
+		}
 	}
 
 	arg := dbgenerated.CreateMealLogParams{

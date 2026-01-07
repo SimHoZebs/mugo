@@ -163,6 +163,30 @@ func (r *NutritionSummaryRepository) GetWeekly(ctx context.Context, userID strin
 	return mapToWeeklySummary(result), nil
 }
 
+func (r *NutritionSummaryRepository) ListWeeklyByDateRange(ctx context.Context, userID string, startDate, endDate time.Time) ([]*models.WeeklyNutritionSummary, error) {
+	parsedUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user UUID: %w", err)
+	}
+	pgUUID := pgtype.UUID{
+		Bytes: [16]byte(parsedUUID),
+		Valid: true,
+	}
+	arg := dbgenerated.ListWeeklyNutritionSummariesByUserAndDateRangeParams{
+		UserID:        pgUUID,
+		WeekStartDate: pgtype.Date{Time: startDate, Valid: true},
+	}
+	results, err := r.queries.ListWeeklyNutritionSummariesByUserAndDateRange(ctx, arg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list weekly nutrition summaries by date range: %w", err)
+	}
+	summaries := make([]*models.WeeklyNutritionSummary, len(results))
+	for i, s := range results {
+		summaries[i] = mapToWeeklySummary(s)
+	}
+	return summaries, nil
+}
+
 func mapToDailySummary(s dbgenerated.DailyNutritionSummary) *models.DailyNutritionSummary {
 	return &models.DailyNutritionSummary{
 		ID:            s.ID.String(),

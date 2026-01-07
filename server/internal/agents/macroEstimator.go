@@ -55,6 +55,10 @@ func MacroEstimator() (agent.Agent, error) {
 					Required: []string{"assumed_value"},
 				},
 			},
+			"meal_type": {
+				Type:        genai.TypeString,
+				Description: "The type of meal (breakfast, lunch, dinner, or snack)",
+			},
 		},
 		Required: []string{"macros", "assumptions"},
 	}
@@ -74,7 +78,6 @@ func MacroEstimator() (agent.Agent, error) {
 
 		var payload models.NutritionPayload
 		if err := json.Unmarshal([]byte(text), &payload); err != nil {
-			// Strict mode: fail the agent invocation so schema violations are visible
 			return nil, fmt.Errorf("nutrition agent: response did not match expected schema: %w", err)
 		}
 
@@ -106,6 +109,7 @@ You MUST provide:
 1. A short, descriptive name for the meal (e.g., "Grilled Chicken Caesar Salad", "Homemade Beef Tacos")
 2. The estimated macronutrients (calories, protein, carbs, fat)
 3. A list of assumptions you made to reach these estimates
+4. The meal type (breakfast, lunch, dinner, or snack) - use conversation context if available, otherwise infer from the food name
 `,
 		OutputSchema:        schema,
 		AfterModelCallbacks: []llmagent.AfterModelCallback{onAfterModelAssignIDs},
