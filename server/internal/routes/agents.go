@@ -17,7 +17,7 @@ import (
 )
 
 // RegisterAgentEndpoints registers all agent-related endpoints.
-func RegisterAgentEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Client, database *db.Database) {
+func RegisterAgentEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Client, lazyDB *db.LazyDatabase) {
 	agentsGroup := huma.NewGroup(humaAPI, prefix)
 
 	// Weather endpoint
@@ -80,7 +80,7 @@ func RegisterAgentEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clie
 		resp.Body.SessionID = input.Body.SessionID
 
 		// Persist to database if available
-		if database != nil {
+		if database, err := lazyDB.GetDatabase(); err == nil {
 			_, _ = database.MealLogRepository.Create(ctx,
 				input.Body.UserID,
 				input.Body.SessionID,

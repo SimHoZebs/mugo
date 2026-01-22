@@ -22,12 +22,17 @@ type GetConversationResponse struct {
 }
 
 // RegisterConversationEndpoints registers conversation endpoints.
-func RegisterConversationEndpoints(humaAPI huma.API, prefix string, database *db.Database) {
+func RegisterConversationEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatabase) {
 	conversationsGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Get(conversationsGroup, "/{user_id}", func(ctx context.Context, input *struct {
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 	}) (*ListConversationsResponse, error) {
+		database, err := lazyDB.GetDatabase()
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+		}
+
 		conversations, err := database.ConversationRepository.ListByUser(ctx, input.UserID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list conversations: %w", err)
@@ -42,6 +47,11 @@ func RegisterConversationEndpoints(humaAPI huma.API, prefix string, database *db
 		UserID    string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		SessionID string `path:"session_id" example:"session_12345" doc:"Session ID"`
 	}) (*GetConversationResponse, error) {
+		database, err := lazyDB.GetDatabase()
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+		}
+
 		conversation, err := database.ConversationRepository.GetBySessionID(ctx, input.UserID, input.SessionID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get conversation: %w", err)
@@ -55,6 +65,11 @@ func RegisterConversationEndpoints(humaAPI huma.API, prefix string, database *db
 	huma.Get(conversationsGroup, "/{conversation_id}", func(ctx context.Context, input *struct {
 		ConversationID string `path:"conversation_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Conversation ID"`
 	}) (*GetConversationResponse, error) {
+		database, err := lazyDB.GetDatabase()
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+		}
+
 		conversation, err := database.ConversationRepository.GetByID(ctx, input.ConversationID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get conversation: %w", err)

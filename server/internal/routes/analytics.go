@@ -35,13 +35,18 @@ type ListWeeklySummariesResponse struct {
 }
 
 // RegisterAnalyticsEndpoints registers nutrition analytics endpoints.
-func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, database *db.Database) {
+func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatabase) {
 	analyticsGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Get(analyticsGroup, "/daily/{user_id}", func(ctx context.Context, input *struct {
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		Date   string `query:"date" example:"2025-01-07" doc:"Date (YYYY-MM-DD), defaults to today"`
 	}) (*GetDailySummaryResponse, error) {
+		database, err := lazyDB.GetDatabase()
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+		}
+
 		date := parseDate(input.Date)
 		if input.Date == "" {
 			date = time.Now()
@@ -64,6 +69,11 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, database *db.Da
 		Limit     int    `query:"limit" default:"30" doc:"Maximum number of days to return"`
 		Offset    int    `query:"offset" default:"0" doc:"Number of days to skip"`
 	}) (*ListDailySummariesResponse, error) {
+		database, err := lazyDB.GetDatabase()
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+		}
+
 		summaries, err := database.NutritionRepository.ListDailyByDateRange(ctx, input.UserID, parseDate(input.StartDate), parseDate(input.EndDate))
 		if err != nil {
 			return nil, fmt.Errorf("failed to list daily summaries: %w", err)
@@ -78,6 +88,11 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, database *db.Da
 		UserID        string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		WeekStartDate string `query:"week_start_date" example:"2025-01-06" doc:"Week start date (YYYY-MM-DD), defaults to current week"`
 	}) (*GetWeeklySummaryResponse, error) {
+		database, err := lazyDB.GetDatabase()
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+		}
+
 		weekStart := parseDate(input.WeekStartDate)
 		if input.WeekStartDate == "" {
 			now := time.Now()
@@ -101,6 +116,11 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, database *db.Da
 		Limit     int    `query:"limit" default:"12" doc:"Maximum number of weeks to return"`
 		Offset    int    `query:"offset" default:"0" doc:"Number of weeks to skip"`
 	}) (*ListWeeklySummariesResponse, error) {
+		database, err := lazyDB.GetDatabase()
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+		}
+
 		summaries, err := database.NutritionRepository.ListWeeklyByDateRange(ctx, input.UserID, parseDate(input.StartDate), parseDate(input.EndDate))
 		if err != nil {
 			return nil, fmt.Errorf("failed to list weekly summaries: %w", err)

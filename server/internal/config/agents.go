@@ -71,12 +71,6 @@ func GetDatabaseConnectTimeout() time.Duration {
 	return getDurationEnv("DB_CONNECT_TIMEOUT", 5*time.Second)
 }
 
-// GetFailFastOnDBError returns whether to fail fast on database connection errors.
-// Defaults to true if not set.
-func GetFailFastOnDBError() bool {
-	return getBoolEnv("FAIL_FAST_ON_DB_ERROR", true)
-}
-
 func getIntEnv(key string, defaultValue int) int {
 	val := os.Getenv(key)
 	if val == "" {
@@ -99,16 +93,4 @@ func getDurationEnv(key string, defaultValue time.Duration) time.Duration {
 		return defaultValue
 	}
 	return duration
-}
-
-func getBoolEnv(key string, defaultValue bool) bool {
-	val := os.Getenv(key)
-	if val == "" {
-		return defaultValue
-	}
-	boolVal, err := strconv.ParseBool(val)
-	if err != nil {
-		return defaultValue
-	}
-	return boolVal
 }

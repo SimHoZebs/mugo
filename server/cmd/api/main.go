@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
@@ -15,7 +17,6 @@ import (
 	"github.com/simhozebs/mugo/internal/config"
 	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/routes"
-	"log"
 )
 
 // GreetingOutput represents the greeting operation response.
@@ -32,29 +33,16 @@ func main() {
 	// Handle shutdown signals
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sigChan
-		cancel()
-	}()
 
 	// Initialize ADK client
 	adkServerURL := config.GetADKServerURL()
 	adkClient := adk.NewClient(adkServerURL)
 	log.Printf("ADK client initialized with URL: %s", adkServerURL)
 
-	// Initialize database
-	var database *db.Database
-	database, err := db.NewDatabase(ctx)
-	if err != nil {
-		if config.GetFailFastOnDBError() {
-			log.Fatalf("Failed to connect to database: %v", err)
-		}
-		log.Printf("Warning: Failed to connect to database: %v", err)
-		log.Println("Server will run without database persistence")
-	} else {
-		defer database.Close()
-		log.Println("Database connected successfully")
-	}
+	// Initialize lazy database (connects on first use)
+	lazyDB := db.NewLazyDatabase(ctx)
+	defer lazyDB.Close()
+	log.Println("Lazy database initialized - will connect on first use")
 
 	r := chi.NewMux()
 	api := humachi.New(r, huma.DefaultConfig("Mugo API", "0.1.0"))
@@ -77,25 +65,50 @@ func main() {
 		}{Body: input.Body})
 	})
 
-	// Register agent endpoints with database
-	routes.RegisterAgentEndpoints(api, "/agents", adkClient, database)
-	routes.RegisterDebugEndpoints(api, "/debug", adkClient, database)
+	// Register agent endpoints with lazy database
+	routes.RegisterAgentEndpoints(api, "/agents", adkClient, lazyDB)
+	routes.RegisterDebugEndpoints(api, "/debug", adkClient, lazyDB)
 
-	// Register user and meal endpoints
-	if database != nil {
-		routes.RegisterUserEndpoints(api, "/users", database)
-		routes.RegisterMealEndpoints(api, "/meals", database)
-		routes.RegisterAnalyticsEndpoints(api, "/analytics", database)
-		routes.RegisterConversationEndpoints(api, "/conversations", database)
-	}
+	// Register user and meal endpoints (always registered, will connect on first use)
+	routes.RegisterUserEndpoints(api, "/users", lazyDB)
+	routes.RegisterMealEndpoints(api, "/meals", lazyDB)
+	routes.RegisterAnalyticsEndpoints(api, "/analytics", lazyDB)
+	routes.RegisterConversationEndpoints(api, "/conversations", lazyDB)
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8888"
 	}
 
-	log.Printf("Server starting on http://localhost:%s", port)
-	if err := http.ListenAndServe(":"+port, r); err != nil {
-		log.Fatalf("Server error: %v", err)
+	// Create HTTP server with explicit configuration for graceful shutdown
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: r,
+	}
+
+	// Start server in a goroutine so it doesn't block
+	serverErrors := make(chan error, 1)
+	go func() {
+		log.Printf("Server starting on http://localhost:%s", port)
+		serverErrors <- srv.ListenAndServe()
+	}()
+
+	// Block until we receive a signal or server error
+	select {
+	case err := <-serverErrors:
+		log.Fatalf("Server failed to start: %v", err)
+	case sig := <-sigChan:
+		log.Printf("Received signal %v, starting graceful shutdown...", sig)
+
+		// Give outstanding requests 5 seconds to complete
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer shutdownCancel()
+
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			log.Printf("Server forced to shutdown: %v", err)
+			srv.Close()
+		}
+
+		log.Println("Server stopped gracefully")
 	}
 }

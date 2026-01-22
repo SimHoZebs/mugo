@@ -29,7 +29,7 @@ type ListMealsByDateRangeRequest struct {
 }
 
 // RegisterMealEndpoints registers meal log endpoints.
-func RegisterMealEndpoints(humaAPI huma.API, prefix string, database *db.Database) {
+func RegisterMealEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatabase) {
 	mealsGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Get(mealsGroup, "/{user_id}", func(ctx context.Context, input *struct {
@@ -37,6 +37,11 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, database *db.Databas
 		Limit  int    `query:"limit" default:"50" doc:"Maximum number of meals to return"`
 		Offset int    `query:"offset" default:"0" doc:"Number of meals to skip"`
 	}) (*ListMealsResponse, error) {
+		database, err := lazyDB.GetDatabase()
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+		}
+
 		meals, err := database.MealLogRepository.ListByUser(ctx, input.UserID, input.Limit, input.Offset)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list meals: %w", err)
@@ -51,6 +56,11 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, database *db.Databas
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		Date   string `path:"date" example:"2025-01-07" doc:"Date (YYYY-MM-DD)"`
 	}) (*ListMealsResponse, error) {
+		database, err := lazyDB.GetDatabase()
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+		}
+
 		meals, err := database.MealLogRepository.ListByUserAndDate(ctx, input.UserID, parseDate(input.Date))
 		if err != nil {
 			return nil, fmt.Errorf("failed to list meals by date: %w", err)
@@ -66,6 +76,11 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, database *db.Databas
 		StartDate string `query:"start_date" example:"2025-01-01" doc:"Start date (YYYY-MM-DD)"`
 		EndDate   string `query:"end_date" example:"2025-01-31" doc:"End date (YYYY-MM-DD)"`
 	}) (*ListMealsResponse, error) {
+		database, err := lazyDB.GetDatabase()
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+		}
+
 		meals, err := database.MealLogRepository.ListByUserAndDateRange(ctx, input.UserID, parseDate(input.StartDate), parseDate(input.EndDate))
 		if err != nil {
 			return nil, fmt.Errorf("failed to list meals by date range: %w", err)
@@ -80,6 +95,11 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, database *db.Databas
 		UserID         string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		ConversationID string `path:"conversation_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Conversation ID"`
 	}) (*ListMealsResponse, error) {
+		database, err := lazyDB.GetDatabase()
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+		}
+
 		meals, err := database.MealLogRepository.ListByConversation(ctx, input.ConversationID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list meals by conversation: %w", err)
@@ -93,6 +113,11 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, database *db.Databas
 	huma.Get(mealsGroup, "/meal/{meal_id}", func(ctx context.Context, input *struct {
 		MealID string `path:"meal_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Meal ID"`
 	}) (*GetMealResponse, error) {
+		database, err := lazyDB.GetDatabase()
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+		}
+
 		meal, err := database.MealLogRepository.GetByID(ctx, input.MealID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get meal: %w", err)

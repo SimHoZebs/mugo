@@ -30,7 +30,7 @@ type debugListSessionsResponse struct {
 
 // RegisterDebugEndpoints registers debug endpoints.
 // Note: These endpoints now proxy to the ADK server for session information.
-func RegisterDebugEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Client, database *db.Database) {
+func RegisterDebugEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Client, lazyDB *db.LazyDatabase) {
 	debugGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(
@@ -45,7 +45,7 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clie
 			UserId string `path:"user_id" example:"user_12345" doc:"User ID to list sessions for"`
 		}) (response *debugListSessionsResponse, err error) {
 			resp := &debugListSessionsResponse{}
-			if database != nil {
+			if database, err := lazyDB.GetDatabase(); err == nil {
 				conversations, err := database.ConversationRepository.ListByUser(ctx, input.UserId)
 				if err == nil {
 					for _, c := range conversations {
