@@ -10,7 +10,10 @@ import { ThemedView } from "@/components/themed-view";
 import TotalMacroPanel from "@/components/TotalMacroPanel";
 import MealCard from "@/components/MealCard";
 import InputBar from "@/components/InputBar";
-import { postAgentsNutrition } from "@/lib/api/default/default";
+import {
+  postAgentsNutrition,
+  getPostAgentsNutritionUrl,
+} from "@/lib/api/default/default";
 import useGlobalStore from "@/lib/store";
 
 export default function HomeScreen() {
@@ -21,12 +24,14 @@ export default function HomeScreen() {
     const newMealId = uuid7();
     const newSessionId = uuid7();
 
+    const payload = {
+      text,
+      session_id: newSessionId,
+      user_id: "user-1",
+    };
+
     try {
-      const response = await postAgentsNutrition({
-        text,
-        session_id: newSessionId,
-        user_id: "user-1",
-      });
+      const response = await postAgentsNutrition(payload);
       if (response.status !== 200) {
         throw new Error(`Server error: ${response.data}`);
       }
@@ -37,7 +42,12 @@ export default function HomeScreen() {
       };
       setMeals([...meals, newMeal]);
     } catch (error) {
-      console.error("Error submitting nutrition:", error);
+      console.error(
+        "Error submitting nutrition to:",
+        getPostAgentsNutritionUrl(),
+      );
+      console.error("Payload:", payload);
+      console.error("Error:", error);
     }
   };
 

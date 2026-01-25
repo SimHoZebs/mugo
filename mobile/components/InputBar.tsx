@@ -81,10 +81,8 @@ function Input({ placeholder = "Describe your meals..." }: InputProps) {
       <Pressable
         onPress={handleSubmit}
         disabled={!canSubmit}
-        className={`w-8 h-8 rounded-full items-center justify-center ${
-          canSubmit
-            ? "bg-emerald-500 active:bg-emerald-600"
-            : "bg-stone-300 dark:bg-stone-700"
+        className={`w-8 h-8 rounded-full  active:bg-emerald-600  dark:bg-stone-700 items-center justify-center ${
+          canSubmit ? "bg-emerald-500" : "bg-stone-300"
         }`}
       >
         <ThemedText className="text-white text-sm font-bold">
