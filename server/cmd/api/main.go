@@ -39,7 +39,6 @@ func main() {
 	adkClient := adk.NewClient(adkServerURL)
 	log.Printf("ADK client initialized with URL: %s", adkServerURL)
 
-	// Initialize lazy database (connects on first use)
 	lazyDB := db.NewLazyDatabase(ctx)
 	defer lazyDB.Close()
 	log.Println("Lazy database initialized - will connect on first use")
@@ -56,22 +55,13 @@ func main() {
 		return resp, nil
 	})
 
-	// Conversation endpoint (for testing with echo agent)
-	huma.Post(api, "/conversation", func(ctx context.Context, input *struct {
-		Body routes.ConversationRequest `body:""`
-	}) (*routes.ConversationResponse, error) {
-		return routes.ConversationHandler(ctx, adkClient, &struct {
-			Body routes.ConversationRequest `body:""`
-		}{Body: input.Body})
-	})
-
-	// Register agent endpoints with lazy database
-	routes.RegisterAgentEndpoints(api, "/agents", adkClient, lazyDB)
+	// Register agent endpoints (test endpoints only, no database)
+	routes.RegisterAgentEndpoints(api, "/agents", adkClient)
 	routes.RegisterDebugEndpoints(api, "/debug", adkClient, lazyDB)
 
 	// Register user and meal endpoints (always registered, will connect on first use)
 	routes.RegisterUserEndpoints(api, "/users", lazyDB)
-	routes.RegisterMealEndpoints(api, "/meals", lazyDB)
+	routes.RegisterMealEndpoints(api, "/meals", adkClient, lazyDB)
 	routes.RegisterAnalyticsEndpoints(api, "/analytics", lazyDB)
 	routes.RegisterConversationEndpoints(api, "/conversations", lazyDB)
 

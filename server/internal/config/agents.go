@@ -8,17 +8,8 @@ import (
 
 const (
 	AppName   = "mugo"
-	ModelName = "gemini-2.5-flash"
+	ModelName = "gemini-3-flash"
 )
-
-// AgentMapping maps API route names to ADK agent app names.
-// Key: route name (e.g., "nutrition")
-// Value: ADK app name (e.g., "macro_estimator")
-var AgentMapping = map[string]string{
-	"nutrition": "macro_estimator",
-	"weather":   "hello_time_agent",
-	"echo":      "echo_agent",
-}
 
 // GetADKServerURL returns ADK server URL from environment variable.
 // Defaults to "http://localhost:8080/api" if not set.

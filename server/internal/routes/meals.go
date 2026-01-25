@@ -2,13 +2,44 @@ package routes
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/simhozebs/mugo/internal/adk"
 	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/models"
+	adkmodels "google.golang.org/adk/server/restapi/models"
+	"google.golang.org/genai"
 )
+
+type CreateMealRequest struct {
+	Body struct {
+		UserID      string `json:"user_id" example:"user-123" doc:"User ID"`
+		SessionID   string `json:"session_id" example:"session-456" doc:"Session ID for conversation tracking"`
+		Description string `json:"description" example:"I ate a chicken sandwich" doc:"Description of the meal"`
+	}
+}
+
+type CreateMealResponse struct {
+	Body struct {
+		Meal *models.MealLog `json:"meal"`
+	}
+}
+
+type UpdateMealRequest struct {
+	MealID string `path:"meal_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Meal ID to update"`
+	Body   struct {
+		Correction string `json:"correction" example:"actually it was whole wheat bread" doc:"Correction or refinement to the meal"`
+	}
+}
+
+type UpdateMealResponse struct {
+	Body struct {
+		Meal *models.MealLog `json:"meal"`
+	}
+}
 
 type ListMealsResponse struct {
 	Body struct {
@@ -29,8 +60,127 @@ type ListMealsByDateRangeRequest struct {
 }
 
 // RegisterMealEndpoints registers meal log endpoints.
-func RegisterMealEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatabase) {
+func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Client, lazyDB *db.LazyDatabase) {
 	mealsGroup := huma.NewGroup(humaAPI, prefix)
+
+	// POST /meals - Create a new meal using nutrition agent
+	huma.Post(mealsGroup, "", func(ctx context.Context, input *CreateMealRequest) (*CreateMealResponse, error) {
+		fmt.Printf("Creating meal: %s (user: %s, session: %s)\n",
+			input.Body.Description, input.Body.UserID, input.Body.SessionID)
+
+		// Call nutrition agent via ADK
+		result, err := adkClient.RunWithAutoSession(ctx, adkmodels.RunAgentRequest{
+			AppName:   "macro_estimator",
+			UserId:    input.Body.UserID,
+			SessionId: input.Body.SessionID,
+			NewMessage: genai.Content{
+				Role:  string(genai.RoleUser),
+				Parts: []*genai.Part{{Text: input.Body.Description}},
+			},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("nutrition agent processing failed: %w", err)
+		}
+
+		// Parse nutrition payload
+		var payload models.NutritionPayload
+		if err := json.Unmarshal([]byte(result.FinalText), &payload); err != nil {
+			return nil, fmt.Errorf("failed to parse nutrition response: %w", err)
+		}
+
+		// Persist to database
+		database, err := lazyDB.GetDatabase()
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+		}
+
+		meal, err := database.MealLogRepository.Create(ctx,
+			input.Body.UserID,
+			input.Body.SessionID,
+			payload.Name,
+			string(payload.MealType),
+			time.Now(),
+			payload.Macros,
+			payload.Assumptions,
+			"ai_estimated",
+			payload,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create meal: %w", err)
+		}
+
+		resp := &CreateMealResponse{}
+		resp.Body.Meal = meal
+		return resp, nil
+	})
+
+	// PUT /meals/{meal_id} - Update/correct an existing meal
+	// Note: For MVP, this continues the conversation in the same session
+	// and creates a new meal entry. Future: implement proper update logic.
+	huma.Put(mealsGroup, "/{meal_id}", func(ctx context.Context, input *UpdateMealRequest) (*UpdateMealResponse, error) {
+		database, err := lazyDB.GetDatabase()
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+		}
+
+		// Get existing meal to retrieve session_id
+		meal, err := database.MealLogRepository.GetByID(ctx, input.MealID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get meal: %w", err)
+		}
+
+		sessionID := ""
+		if meal.ConversationID != nil {
+			sessionID = *meal.ConversationID
+		}
+
+		fmt.Printf("Updating meal %s with correction: %s (session: %s)\n",
+			input.MealID, input.Body.Correction, sessionID)
+
+		// Call nutrition agent with correction in same session
+		result, err := adkClient.RunWithAutoSession(ctx, adkmodels.RunAgentRequest{
+			AppName:   "macro_estimator",
+			UserId:    meal.UserID,
+			SessionId: sessionID,
+			NewMessage: genai.Content{
+				Role:  string(genai.RoleUser),
+				Parts: []*genai.Part{{Text: input.Body.Correction}},
+			},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("nutrition agent processing failed: %w", err)
+		}
+
+		// Parse updated nutrition payload
+		var payload models.NutritionPayload
+		if err := json.Unmarshal([]byte(result.FinalText), &payload); err != nil {
+			return nil, fmt.Errorf("failed to parse nutrition response: %w", err)
+		}
+
+		// Delete old meal and create new one with corrected data
+		if err := database.MealLogRepository.Delete(ctx, input.MealID); err != nil {
+			return nil, fmt.Errorf("failed to delete old meal: %w", err)
+		}
+
+		updatedMeal, err := database.MealLogRepository.Create(ctx,
+			meal.UserID,
+			sessionID,
+			payload.Name,
+			string(payload.MealType),
+			time.Now(),
+			payload.Macros,
+			payload.Assumptions,
+			"ai_estimated",
+			payload,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create updated meal: %w", err)
+		}
+
+		resp := &UpdateMealResponse{}
+		resp.Body.Meal = updatedMeal
+		return resp, nil
+	})
 
 	huma.Get(mealsGroup, "/{user_id}", func(ctx context.Context, input *struct {
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`

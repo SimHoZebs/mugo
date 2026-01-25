@@ -2,6 +2,22 @@ package api
 
 import "github.com/simhozebs/mugo/internal/models"
 
+// EchoRequest is the request body for the echo endpoint (testing).
+type EchoRequest struct {
+	Body struct {
+		UserID    string `json:"user_id" example:"user_12345" doc:"User ID of the requester"`
+		SessionID string `json:"session_id" example:"session_12345" doc:"Session ID for the conversation"`
+		Message   string `json:"message" example:"Hello, world!" doc:"Message to echo back"`
+	}
+}
+
+// EchoResponse is the response body for the echo endpoint (testing).
+type EchoResponse struct {
+	Body struct {
+		Echo string `json:"echo" example:"Hello, world!" doc:"Echoed message"`
+	}
+}
+
 // NutritionRequest is the request body for the nutrition endpoint.
 type NutritionRequest struct {
 	Body struct {
