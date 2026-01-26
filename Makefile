@@ -22,3 +22,6 @@ adk-api:
 
 adk-help:
 	cd ./server/ && infisical run -- go run ./cmd/adk/main.go --help
+
+sqlc:
+	cd ./server/ && go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate

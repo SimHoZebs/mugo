@@ -10,8 +10,10 @@ import { ThemedView } from "@/components/themed-view";
 import InputBar from "@/components/InputBar";
 import { MacroRow } from "@/components/MacroRow";
 import { AssumptionCard } from "@/components/AssumptionCard";
-import { postAgentsNutrition } from "@/lib/api/default/default";
 import useGlobalStore from "@/lib/store";
+
+// Temporary: Direct fetch until we regenerate API client with orval
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8888";
 
 export default function MealDetailScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,14 +36,21 @@ export default function MealDetailScreen() {
 
     setIsSubmitting(true);
     try {
-      // TODO: Call API endpoint for AI correction
-      const response = await postAgentsNutrition({
-        text,
-        session_id: meal.sessionId,
-        user_id: "user-1",
+      const response = await fetch(`${API_URL}/meals/${meal.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          correction: text,
+        }),
       });
-      console.log("Submitting correction:", text);
-      // await submitCorrection({ text, mealId: params.id });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Meal updated:", data.meal);
+      // TODO: Update the meal in global state
     } catch (error) {
       console.error("Failed to submit correction:", error);
     } finally {

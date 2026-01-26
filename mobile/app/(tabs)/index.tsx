@@ -10,42 +10,49 @@ import { ThemedView } from "@/components/themed-view";
 import TotalMacroPanel from "@/components/TotalMacroPanel";
 import MealCard from "@/components/MealCard";
 import InputBar from "@/components/InputBar";
-import {
-  postAgentsNutrition,
-  getPostAgentsNutritionUrl,
-} from "@/lib/api/default/default";
 import useGlobalStore from "@/lib/store";
+
+// Temporary: Direct fetch until we regenerate API client with orval
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8888";
 
 export default function HomeScreen() {
   const meals = useGlobalStore((state) => state.meals);
   const setMeals = useGlobalStore((state) => state.setMeals);
 
   const handleSubmitNutrition = async (text: string) => {
-    const newMealId = uuid7();
     const newSessionId = uuid7();
 
     const payload = {
-      text,
+      description: text,
       session_id: newSessionId,
       user_id: "user-1",
     };
 
     try {
-      const response = await postAgentsNutrition(payload);
-      if (response.status !== 200) {
-        throw new Error(`Server error: ${response.data}`);
+      const response = await fetch(`${API_URL}/meals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
       }
+
+      const data = await response.json();
       const newMeal = {
-        id: newMealId,
+        id: data.meal.id,
         sessionId: newSessionId,
-        nutrition: response.data.analysis,
+        nutrition: {
+          name: data.meal.food_name,
+          macros: data.meal.macros,
+          assumptions: data.meal.assumptions,
+          meal_type: data.meal.meal_type,
+        },
       };
       setMeals([...meals, newMeal]);
     } catch (error) {
-      console.error(
-        "Error submitting nutrition to:",
-        getPostAgentsNutritionUrl(),
-      );
+      console.error("Error submitting meal to:", `${API_URL}/meals`);
       console.error("Payload:", payload);
       console.error("Error:", error);
     }

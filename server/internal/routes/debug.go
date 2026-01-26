@@ -7,7 +7,6 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/simhozebs/mugo/internal/adk"
-	"github.com/simhozebs/mugo/internal/config"
 	"github.com/simhozebs/mugo/internal/db"
 )
 
@@ -73,7 +72,9 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clie
 			},
 		},
 		func(ctx context.Context, input *DebugGetMessagesRequest) (response *debugGetMessagesResponse, err error) {
-			appName := config.AgentMapping["nutrition"]
+			// Use macro_estimator agent for debug message retrieval
+			// Note: This could be made configurable via query param in the future
+			appName := "macro_estimator"
 
 			session, err := adkClient.GetSession(ctx, appName, input.UserId, input.SessionId)
 			if err != nil {
