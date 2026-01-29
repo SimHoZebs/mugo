@@ -5,22 +5,26 @@ import {
 import "react-native-get-random-values";
 import { v7 as uuid7 } from "uuid";
 
+import { useRef, useState } from "react";
+import { ScrollView } from "react-native";
+
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import TotalMacroPanel from "@/components/TotalMacroPanel";
 import MealCard from "@/components/MealCard";
 import InputBar from "@/components/InputBar";
 import useGlobalStore from "@/lib/store";
-
-// Temporary: Direct fetch until we regenerate API client with orval
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8888";
+import { getPostMealsUrl, postMeals } from "@/lib/api/default/default";
 
 export default function HomeScreen() {
   const meals = useGlobalStore((state) => state.meals);
   const setMeals = useGlobalStore((state) => state.setMeals);
+  const [pendingMealId, setPendingMealId] = useState<string | null>(null);
+  const scrollViewRef = useRef<ScrollView | null>(null);
 
   const handleSubmitNutrition = async (text: string) => {
     const newSessionId = uuid7();
+    const loadingMealId = `loading-${newSessionId}`;
 
     const payload = {
       description: text,
@@ -29,17 +33,17 @@ export default function HomeScreen() {
     };
 
     try {
-      const response = await fetch(`${API_URL}/meals`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      setPendingMealId(loadingMealId);
+      requestAnimationFrame(() =>
+        scrollViewRef.current?.scrollToEnd({ animated: true }),
+      );
+      const response = await postMeals(payload);
 
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
+      if (response.status !== 200) {
+        throw response.data;
       }
 
-      const data = await response.json();
+      const data = response.data;
       const newMeal = {
         id: data.meal.id,
         sessionId: newSessionId,
@@ -51,10 +55,11 @@ export default function HomeScreen() {
         },
       };
       setMeals([...meals, newMeal]);
+      setPendingMealId(null);
     } catch (error) {
-      console.error("Error submitting meal to:", `${API_URL}/meals`);
-      console.error("Payload:", payload);
+      console.error("Error submitting request to:", getPostMealsUrl());
       console.error("Error:", error);
+      setPendingMealId(null);
     }
   };
 
@@ -66,11 +71,12 @@ export default function HomeScreen() {
 
       <TotalMacroPanel meals={meals} />
 
-      <KeyboardAwareScrollView>
+      <KeyboardAwareScrollView ref={scrollViewRef}>
         <ThemedView className="gap-4 px-4">
           {meals.map((meal) => (
             <MealCard key={meal.id} meal={meal} />
           ))}
+          {pendingMealId && <MealCard key={pendingMealId} loading />}
         </ThemedView>
       </KeyboardAwareScrollView>
 

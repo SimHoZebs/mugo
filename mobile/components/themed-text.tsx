@@ -1,5 +1,4 @@
-import { type TextProps } from "react-native";
-import { Text } from "react-native";
+import { type TextProps, Text, View } from "react-native";
 
 import { useThemeColor } from "@/hooks/use-theme-color";
 
@@ -7,15 +6,25 @@ export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
   type?: "default" | "title" | "defaultSemiBold" | "subtitle" | "link";
+  loading?: boolean;
 };
 
 export function ThemedText({
   lightColor,
   darkColor,
   type = "default",
+  loading = false,
   className,
   ...rest
 }: ThemedTextProps & { className?: string }) {
+  if (loading) {
+    return (
+      <View
+        className={`rounded bg-stone-200 dark:bg-stone-700 ${className ?? ""}`}
+      />
+    );
+  }
+
   const color = useThemeColor({ light: lightColor, dark: darkColor }, "text");
 
   const typeClasses = {
