@@ -25,3 +25,6 @@ adk-help:
 
 sqlc:
 	cd ./server/ && go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate
+
+db:
+	infisical run -- docker compose up -d

@@ -8,7 +8,7 @@ import (
 
 const (
 	AppName   = "mugo"
-	ModelName = "gemini-3-flash"
+	ModelName = "gemini-3-flash-preview"
 )
 
 // GetADKServerURL returns ADK server URL from environment variable.
@@ -21,9 +21,10 @@ func GetADKServerURL() string {
 	return url
 }
 
-// GetDatabaseURL returns the database URL from environment variable.
 func GetDatabaseURL() string {
-	return os.Getenv("DATABASE_URL")
+	url := os.Getenv("DB_URL")
+	port := os.Getenv("DB_PORT")
+	return url + "/" + port
 }
 
 // GetDatabaseMinConns returns the minimum number of connections in the pool.
