@@ -59,16 +59,18 @@ type ListMealsByDateRangeRequest struct {
 	EndDate   string `query:"end_date" example:"2025-01-31" doc:"End date (YYYY-MM-DD)"`
 }
 
+const mealLogTags = "Logs"
+
 // RegisterMealEndpoints registers meal log endpoints.
 func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Client, lazyDB *db.LazyDatabase) {
 	mealsGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(mealsGroup, huma.Operation{
-		OperationID: "create-meal",
+		OperationID: "create-meal-log",
 		Method:      "POST",
 		Path:        "",
-		Summary:     "Create a new meal",
-		Tags:        []string{"Meals"},
+		Summary:     "Create a new meal-log",
+		Tags:        []string{mealLogTags},
 	}, func(ctx context.Context, input *CreateMealRequest) (*CreateMealResponse, error) {
 		fmt.Printf("Creating meal: %s (user: %s, session: %s)\n",
 			input.Body.Description, input.Body.UserID, input.Body.SessionID)
@@ -124,7 +126,7 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clien
 		Method:      "PUT",
 		Path:        "/{meal_id}",
 		Summary:     "Update/correct an existing meal",
-		Tags:        []string{"Meals"},
+		Tags:        []string{mealLogTags},
 	}, func(ctx context.Context, input *UpdateMealRequest) (*UpdateMealResponse, error) {
 		database, err := lazyDB.GetDatabase()
 		if err != nil {
@@ -195,7 +197,7 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clien
 		Method:      "GET",
 		Path:        "/{user_id}",
 		Summary:     "List meals for a user",
-		Tags:        []string{"Meals"},
+		Tags:        []string{mealLogTags},
 	}, func(ctx context.Context, input *struct {
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		Limit  int    `query:"limit" default:"50" doc:"Maximum number of meals to return"`
@@ -221,7 +223,7 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clien
 		Method:      "GET",
 		Path:        "/{user_id}/date/{date}",
 		Summary:     "List meals for a user on a specific date",
-		Tags:        []string{"Meals"},
+		Tags:        []string{mealLogTags},
 	}, func(ctx context.Context, input *struct {
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		Date   string `path:"date" example:"2025-01-07" doc:"Date (YYYY-MM-DD)"`
@@ -246,7 +248,7 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clien
 		Method:      "GET",
 		Path:        "/{user_id}/range",
 		Summary:     "List meals for a user in a date range",
-		Tags:        []string{"Meals"},
+		Tags:        []string{mealLogTags},
 	}, func(ctx context.Context, input *struct {
 		UserID    string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		StartDate string `query:"start_date" example:"2025-01-01" doc:"Start date (YYYY-MM-DD)"`
@@ -272,7 +274,7 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clien
 		Method:      "GET",
 		Path:        "/{user_id}/conversation/{conversation_id}",
 		Summary:     "List meals for a user in a conversation",
-		Tags:        []string{"Meals"},
+		Tags:        []string{mealLogTags},
 	}, func(ctx context.Context, input *struct {
 		UserID         string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		ConversationID string `path:"conversation_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Conversation ID"`
@@ -297,7 +299,7 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clien
 		Method:      "GET",
 		Path:        "/meal/{meal_id}",
 		Summary:     "Get a meal by ID",
-		Tags:        []string{"Meals"},
+		Tags:        []string{mealLogTags},
 	}, func(ctx context.Context, input *struct {
 		MealID string `path:"meal_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Meal ID"`
 	}) (*GetMealResponse, error) {

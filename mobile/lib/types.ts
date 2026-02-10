@@ -14,6 +14,7 @@ export type DietaryPreference = {
 };
 
 export type UserProfile = {
+  username: string;
   name: string;
   dietaryPreferences: DietaryPreference[];
   weight: number;

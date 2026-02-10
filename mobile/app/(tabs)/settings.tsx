@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Pressable, ScrollView } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
@@ -10,13 +10,29 @@ export default function SettingsScreen() {
   const userProfile = useGlobalStore((state) => state.userProfile);
   const updateUserProfile = useGlobalStore((state) => state.updateUserProfile);
   const [selectedUnit, setSelectedUnit] = useState<UnitSystem>(
-    userProfile.unitSystem,
+    userProfile?.unitSystem || "metric",
   );
+
+  useEffect(() => {
+    if (userProfile?.unitSystem) {
+      setSelectedUnit(userProfile.unitSystem);
+    }
+  }, [userProfile?.unitSystem]);
 
   const handleUnitChange = (unit: UnitSystem) => {
     setSelectedUnit(unit);
     updateUserProfile({ unitSystem: unit });
   };
+
+  if (!userProfile) {
+    return (
+      <ThemedView className="h-full w-full justify-center items-center px-4">
+        <ThemedText className="text-stone-500 text-center">
+          Please sign in on the Profile tab to access settings.
+        </ThemedText>
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView className="h-full w-full pt-8">
