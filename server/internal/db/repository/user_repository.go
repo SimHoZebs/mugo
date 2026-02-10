@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -19,14 +18,9 @@ func NewUserRepository(queries *dbgenerated.Queries) *UserRepository {
 	return &UserRepository{queries: queries}
 }
 
-func (r *UserRepository) Create(ctx context.Context, username string, metadata map[string]interface{}) (*models.User, error) {
-	metadataJSON, err := json.Marshal(metadata)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal metadata: %w", err)
-	}
+func (r *UserRepository) Create(ctx context.Context, username string) (*models.User, error) {
 	arg := dbgenerated.CreateUserParams{
 		Username: username,
-		Metadata: metadataJSON,
 	}
 	result, err := r.queries.CreateUser(ctx, arg)
 	if err != nil {
@@ -75,15 +69,51 @@ func (r *UserRepository) List(ctx context.Context) ([]*models.User, error) {
 	return users, nil
 }
 
-func mapToUser(u dbgenerated.User) *models.User {
-	var metadata map[string]interface{}
-	if u.Metadata != nil {
-		json.Unmarshal(u.Metadata, &metadata)
+func (r *UserRepository) Update(ctx context.Context, id string, username string) (*models.User, error) {
+	parsedUUID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID: %w", err)
 	}
+	pgUUID := pgtype.UUID{
+		Bytes: [16]byte(parsedUUID),
+		Valid: true,
+	}
+
+	arg := dbgenerated.UpdateUserParams{
+		ID:       pgUUID,
+		Username: username,
+	}
+
+	result, err := r.queries.UpdateUser(ctx, arg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update user: %w", err)
+	}
+
+	return mapToUser(result), nil
+}
+
+func (r *UserRepository) Delete(ctx context.Context, id string) error {
+	parsedUUID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid UUID: %w", err)
+	}
+	pgUUID := pgtype.UUID{
+		Bytes: [16]byte(parsedUUID),
+		Valid: true,
+	}
+
+	err = r.queries.DeleteUser(ctx, pgUUID)
+	if err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+
+	return nil
+}
+
+func mapToUser(u dbgenerated.User) *models.User {
 	return &models.User{
 		ID:        u.ID.String(),
 		Username:  u.Username,
-		Metadata:  metadata,
 		CreatedAt: u.CreatedAt.Time.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt: u.UpdatedAt.Time.Format("2006-01-02T15:04:05Z07:00"),
 	}
