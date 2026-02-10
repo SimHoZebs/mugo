@@ -3,7 +3,7 @@ include .env
 .PHONY: server mobile emulator
 
 mobile:
-	cd ./mobile/ && infisical run -- nr start --android
+	cd ./mobile/ && infisical run -- nr start
 
 emulator:
 	$(ANDROID_SDK_ROOT)/emulator/emulator -avd Medium_Phone_API_36.1 &

@@ -21,10 +21,9 @@ func GetADKServerURL() string {
 	return url
 }
 
+// GetDatabaseURL returns the database URL from environment variable.
 func GetDatabaseURL() string {
-	url := os.Getenv("DB_URL")
-	port := os.Getenv("DB_PORT")
-	return url + "/" + port
+	return os.Getenv("DATABASE_URL")
 }
 
 // GetDatabaseMinConns returns the minimum number of connections in the pool.
