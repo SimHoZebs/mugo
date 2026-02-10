@@ -25,7 +25,13 @@ type GetConversationResponse struct {
 func RegisterConversationEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatabase) {
 	conversationsGroup := huma.NewGroup(humaAPI, prefix)
 
-	huma.Get(conversationsGroup, "/{user_id}", func(ctx context.Context, input *struct {
+	huma.Register(conversationsGroup, huma.Operation{
+		OperationID: "list-conversations",
+		Method:      "GET",
+		Path:        "/{user_id}",
+		Summary:     "List conversations for a user",
+		Tags:        []string{"Conversations"},
+	}, func(ctx context.Context, input *struct {
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 	}) (*ListConversationsResponse, error) {
 		database, err := lazyDB.GetDatabase()
@@ -43,7 +49,13 @@ func RegisterConversationEndpoints(humaAPI huma.API, prefix string, lazyDB *db.L
 		return resp, nil
 	})
 
-	huma.Get(conversationsGroup, "/{user_id}/session/{session_id}", func(ctx context.Context, input *struct {
+	huma.Register(conversationsGroup, huma.Operation{
+		OperationID: "get-conversation-by-session",
+		Method:      "GET",
+		Path:        "/{user_id}/session/{session_id}",
+		Summary:     "Get a conversation by session ID",
+		Tags:        []string{"Conversations"},
+	}, func(ctx context.Context, input *struct {
 		UserID    string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		SessionID string `path:"session_id" example:"session_12345" doc:"Session ID"`
 	}) (*GetConversationResponse, error) {
@@ -62,7 +74,13 @@ func RegisterConversationEndpoints(humaAPI huma.API, prefix string, lazyDB *db.L
 		return resp, nil
 	})
 
-	huma.Get(conversationsGroup, "/{conversation_id}", func(ctx context.Context, input *struct {
+	huma.Register(conversationsGroup, huma.Operation{
+		OperationID: "get-conversation-by-id",
+		Method:      "GET",
+		Path:        "/{conversation_id}",
+		Summary:     "Get a conversation by ID",
+		Tags:        []string{"Conversations"},
+	}, func(ctx context.Context, input *struct {
 		ConversationID string `path:"conversation_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Conversation ID"`
 	}) (*GetConversationResponse, error) {
 		database, err := lazyDB.GetDatabase()

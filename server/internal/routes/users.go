@@ -38,7 +38,13 @@ type ListUsersResponse struct {
 func RegisterUserEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatabase) {
 	usersGroup := huma.NewGroup(humaAPI, prefix)
 
-	huma.Post(usersGroup, "", func(ctx context.Context, input *CreateUserRequest) (*CreateUserResponse, error) {
+	huma.Register(usersGroup, huma.Operation{
+		OperationID: "create-user",
+		Method:      "POST",
+		Path:        "",
+		Summary:     "Create a new user",
+		Tags:        []string{"Users"},
+	}, func(ctx context.Context, input *CreateUserRequest) (*CreateUserResponse, error) {
 		database, err := lazyDB.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
@@ -62,7 +68,13 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatab
 		return resp, nil
 	})
 
-	huma.Get(usersGroup, "", func(ctx context.Context, input *struct{}) (*ListUsersResponse, error) {
+	huma.Register(usersGroup, huma.Operation{
+		OperationID: "list-users",
+		Method:      "GET",
+		Path:        "",
+		Summary:     "List all users",
+		Tags:        []string{"Users"},
+	}, func(ctx context.Context, input *struct{}) (*ListUsersResponse, error) {
 		database, err := lazyDB.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
@@ -78,7 +90,13 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatab
 		return resp, nil
 	})
 
-	huma.Get(usersGroup, "/{user_id}", func(ctx context.Context, input *struct {
+	huma.Register(usersGroup, huma.Operation{
+		OperationID: "get-user-by-id",
+		Method:      "GET",
+		Path:        "/{user_id}",
+		Summary:     "Get a user by ID",
+		Tags:        []string{"Users"},
+	}, func(ctx context.Context, input *struct {
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 	}) (*GetUserResponse, error) {
 		database, err := lazyDB.GetDatabase()
@@ -96,7 +114,13 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatab
 		return resp, nil
 	})
 
-	huma.Get(usersGroup, "/by-username/{username}", func(ctx context.Context, input *struct {
+	huma.Register(usersGroup, huma.Operation{
+		OperationID: "get-user-by-username",
+		Method:      "GET",
+		Path:        "/by-username/{username}",
+		Summary:     "Get a user by username",
+		Tags:        []string{"Users"},
+	}, func(ctx context.Context, input *struct {
 		Username string `path:"username" example:"johndoe" doc:"Username"`
 	}) (*GetUserResponse, error) {
 		database, err := lazyDB.GetDatabase()

@@ -38,7 +38,13 @@ type ListWeeklySummariesResponse struct {
 func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatabase) {
 	analyticsGroup := huma.NewGroup(humaAPI, prefix)
 
-	huma.Get(analyticsGroup, "/daily/{user_id}", func(ctx context.Context, input *struct {
+	huma.Register(analyticsGroup, huma.Operation{
+		OperationID: "get-daily-summary",
+		Method:      "GET",
+		Path:        "/daily/{user_id}",
+		Summary:     "Get daily nutrition summary",
+		Tags:        []string{"Analytics"},
+	}, func(ctx context.Context, input *struct {
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		Date   string `query:"date" example:"2025-01-07" doc:"Date (YYYY-MM-DD), defaults to today"`
 	}) (*GetDailySummaryResponse, error) {
@@ -62,7 +68,13 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, lazyDB *db.Lazy
 		return resp, nil
 	})
 
-	huma.Get(analyticsGroup, "/daily/{user_id}/range", func(ctx context.Context, input *struct {
+	huma.Register(analyticsGroup, huma.Operation{
+		OperationID: "list-daily-summaries",
+		Method:      "GET",
+		Path:        "/daily/{user_id}/range",
+		Summary:     "List daily nutrition summaries in a range",
+		Tags:        []string{"Analytics"},
+	}, func(ctx context.Context, input *struct {
 		UserID    string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		StartDate string `query:"start_date" example:"2025-01-01" doc:"Start date (YYYY-MM-DD)"`
 		EndDate   string `query:"end_date" example:"2025-01-31" doc:"End date (YYYY-MM-DD)"`
@@ -84,7 +96,13 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, lazyDB *db.Lazy
 		return resp, nil
 	})
 
-	huma.Get(analyticsGroup, "/weekly/{user_id}", func(ctx context.Context, input *struct {
+	huma.Register(analyticsGroup, huma.Operation{
+		OperationID: "get-weekly-summary",
+		Method:      "GET",
+		Path:        "/weekly/{user_id}",
+		Summary:     "Get weekly nutrition summary",
+		Tags:        []string{"Analytics"},
+	}, func(ctx context.Context, input *struct {
 		UserID        string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		WeekStartDate string `query:"week_start_date" example:"2025-01-06" doc:"Week start date (YYYY-MM-DD), defaults to current week"`
 	}) (*GetWeeklySummaryResponse, error) {
@@ -109,7 +127,13 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, lazyDB *db.Lazy
 		return resp, nil
 	})
 
-	huma.Get(analyticsGroup, "/weekly/{user_id}/range", func(ctx context.Context, input *struct {
+	huma.Register(analyticsGroup, huma.Operation{
+		OperationID: "list-weekly-summaries",
+		Method:      "GET",
+		Path:        "/weekly/{user_id}/range",
+		Summary:     "List weekly nutrition summaries in a range",
+		Tags:        []string{"Analytics"},
+	}, func(ctx context.Context, input *struct {
 		UserID    string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		StartDate string `query:"start_date" example:"2025-01-01" doc:"Start date (YYYY-MM-DD)"`
 		EndDate   string `query:"end_date" example:"2025-01-31" doc:"End date (YYYY-MM-DD)"`

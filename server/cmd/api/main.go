@@ -47,7 +47,14 @@ func main() {
 	api := humachi.New(r, huma.DefaultConfig("Mugo API", "0.1.0"))
 
 	// Register GET /greeting/{name} handler.
-	huma.Get(api, "/greeting/{name}", func(ctx context.Context, input *struct {
+	huma.Register(api, huma.Operation{
+		OperationID: "greeting",
+		Method:      http.MethodGet,
+		Path:        "/greeting/{name}",
+		Summary:     "Greeting",
+		Description: "Returns a greeting message",
+		Tags:        []string{"General"},
+	}, func(ctx context.Context, input *struct {
 		Name string `path:"name" maxLength:"30" example:"world" doc:"Name to greet"`
 	}) (*GreetingOutput, error) {
 		resp := &GreetingOutput{}

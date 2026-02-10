@@ -16,8 +16,14 @@ import (
 func RegisterAgentEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Client) {
 	agentsGroup := huma.NewGroup(humaAPI, prefix)
 
-	// Echo agent endpoint - tests ADK server response without LLM
-	huma.Post(agentsGroup, "/echo", func(ctx context.Context, input *api.EchoRequest) (*api.EchoResponse, error) {
+	huma.Register(agentsGroup, huma.Operation{
+		OperationID: "agent-echo",
+		Method:      "POST",
+		Path:        "/echo",
+		Summary:     "Echo agent",
+		Description: "Tests ADK server response without LLM",
+		Tags:        []string{"Agents"},
+	}, func(ctx context.Context, input *api.EchoRequest) (*api.EchoResponse, error) {
 		fmt.Printf("Echo request: %s (user: %s, session: %s)\n",
 			input.Body.Message, input.Body.UserID, input.Body.SessionID)
 
@@ -39,8 +45,14 @@ func RegisterAgentEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clie
 		return resp, nil
 	})
 
-	// Weather agent endpoint - tests ADK + LLM integration
-	huma.Post(agentsGroup, "/weather", func(ctx context.Context, input *api.WeatherRequest) (*api.WeatherResponse, error) {
+	huma.Register(agentsGroup, huma.Operation{
+		OperationID: "agent-weather",
+		Method:      "POST",
+		Path:        "/weather",
+		Summary:     "Weather agent",
+		Description: "Tests ADK + LLM integration",
+		Tags:        []string{"Agents"},
+	}, func(ctx context.Context, input *api.WeatherRequest) (*api.WeatherResponse, error) {
 		fmt.Printf("Weather request for city: %s (user: %s, session: %s)\n",
 			input.Body.City, input.Body.UserID, input.Body.SessionID)
 

@@ -63,8 +63,13 @@ type ListMealsByDateRangeRequest struct {
 func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Client, lazyDB *db.LazyDatabase) {
 	mealsGroup := huma.NewGroup(humaAPI, prefix)
 
-	// POST /meals - Create a new meal using nutrition agent
-	huma.Post(mealsGroup, "", func(ctx context.Context, input *CreateMealRequest) (*CreateMealResponse, error) {
+	huma.Register(mealsGroup, huma.Operation{
+		OperationID: "create-meal",
+		Method:      "POST",
+		Path:        "",
+		Summary:     "Create a new meal",
+		Tags:        []string{"Meals"},
+	}, func(ctx context.Context, input *CreateMealRequest) (*CreateMealResponse, error) {
 		fmt.Printf("Creating meal: %s (user: %s, session: %s)\n",
 			input.Body.Description, input.Body.UserID, input.Body.SessionID)
 
@@ -114,10 +119,13 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clien
 		return resp, nil
 	})
 
-	// PUT /meals/{meal_id} - Update/correct an existing meal
-	// Note: For MVP, this continues the conversation in the same session
-	// and creates a new meal entry. Future: implement proper update logic.
-	huma.Put(mealsGroup, "/{meal_id}", func(ctx context.Context, input *UpdateMealRequest) (*UpdateMealResponse, error) {
+	huma.Register(mealsGroup, huma.Operation{
+		OperationID: "update-meal",
+		Method:      "PUT",
+		Path:        "/{meal_id}",
+		Summary:     "Update/correct an existing meal",
+		Tags:        []string{"Meals"},
+	}, func(ctx context.Context, input *UpdateMealRequest) (*UpdateMealResponse, error) {
 		database, err := lazyDB.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
@@ -182,7 +190,13 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clien
 		return resp, nil
 	})
 
-	huma.Get(mealsGroup, "/{user_id}", func(ctx context.Context, input *struct {
+	huma.Register(mealsGroup, huma.Operation{
+		OperationID: "list-meals-by-user",
+		Method:      "GET",
+		Path:        "/{user_id}",
+		Summary:     "List meals for a user",
+		Tags:        []string{"Meals"},
+	}, func(ctx context.Context, input *struct {
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		Limit  int    `query:"limit" default:"50" doc:"Maximum number of meals to return"`
 		Offset int    `query:"offset" default:"0" doc:"Number of meals to skip"`
@@ -202,7 +216,13 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clien
 		return resp, nil
 	})
 
-	huma.Get(mealsGroup, "/{user_id}/date/{date}", func(ctx context.Context, input *struct {
+	huma.Register(mealsGroup, huma.Operation{
+		OperationID: "list-meals-by-date",
+		Method:      "GET",
+		Path:        "/{user_id}/date/{date}",
+		Summary:     "List meals for a user on a specific date",
+		Tags:        []string{"Meals"},
+	}, func(ctx context.Context, input *struct {
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		Date   string `path:"date" example:"2025-01-07" doc:"Date (YYYY-MM-DD)"`
 	}) (*ListMealsResponse, error) {
@@ -221,7 +241,13 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clien
 		return resp, nil
 	})
 
-	huma.Get(mealsGroup, "/{user_id}/range", func(ctx context.Context, input *struct {
+	huma.Register(mealsGroup, huma.Operation{
+		OperationID: "list-meals-by-range",
+		Method:      "GET",
+		Path:        "/{user_id}/range",
+		Summary:     "List meals for a user in a date range",
+		Tags:        []string{"Meals"},
+	}, func(ctx context.Context, input *struct {
 		UserID    string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		StartDate string `query:"start_date" example:"2025-01-01" doc:"Start date (YYYY-MM-DD)"`
 		EndDate   string `query:"end_date" example:"2025-01-31" doc:"End date (YYYY-MM-DD)"`
@@ -241,7 +267,13 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clien
 		return resp, nil
 	})
 
-	huma.Get(mealsGroup, "/{user_id}/conversation/{conversation_id}", func(ctx context.Context, input *struct {
+	huma.Register(mealsGroup, huma.Operation{
+		OperationID: "list-meals-by-conversation",
+		Method:      "GET",
+		Path:        "/{user_id}/conversation/{conversation_id}",
+		Summary:     "List meals for a user in a conversation",
+		Tags:        []string{"Meals"},
+	}, func(ctx context.Context, input *struct {
 		UserID         string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		ConversationID string `path:"conversation_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Conversation ID"`
 	}) (*ListMealsResponse, error) {
@@ -260,7 +292,13 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clien
 		return resp, nil
 	})
 
-	huma.Get(mealsGroup, "/meal/{meal_id}", func(ctx context.Context, input *struct {
+	huma.Register(mealsGroup, huma.Operation{
+		OperationID: "get-meal-by-id",
+		Method:      "GET",
+		Path:        "/meal/{meal_id}",
+		Summary:     "Get a meal by ID",
+		Tags:        []string{"Meals"},
+	}, func(ctx context.Context, input *struct {
 		MealID string `path:"meal_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Meal ID"`
 	}) (*GetMealResponse, error) {
 		database, err := lazyDB.GetDatabase()

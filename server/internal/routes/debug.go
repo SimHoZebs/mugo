@@ -39,6 +39,7 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clie
 			Summary:     "List all session IDs for a user",
 			Method:      http.MethodGet,
 			Path:        "/sessions/{user_id}",
+			Tags:        []string{"Debug"},
 		},
 		func(ctx context.Context, input *struct {
 			UserId string `path:"user_id" example:"user_12345" doc:"User ID to list sessions for"`
@@ -65,6 +66,7 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Clie
 			Method:      http.MethodGet,
 			Path:        "/messages/{user_id}/{session_id}",
 			Summary:     "Retrieve messages from a user session",
+			Tags:        []string{"Debug"},
 			Responses: map[string]*huma.Response{
 				"400": {
 					Description: "Bad Request - Error retrieving session",
