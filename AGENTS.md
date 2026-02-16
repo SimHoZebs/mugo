@@ -1,10 +1,13 @@
 # LazyFood Go Server - Agent Guidelines
 
 ## Build & Development Commands
-- **Build**: `go build -o server ./server/`
-- **Run**: `cd server && ./server` (runs on localhost:8080)
-- **Generate Swagger docs**: `make swagger-gen` or `swag init ./server/`
-- **Install dependencies**: `go mod tidy`
+- **Run API**: `make server` (runs on localhost:8888)
+- **Run ADK**: `make adk` (runs ADK with web, api, and webui)
+- **Build**: `make build` (builds the API binary)
+- **Database**: `make db` (starts database services)
+- **Generate SQL**: `make sqlc` (generates Go code from SQL)
+- **Dependencies**: `make tidy` (installs and cleans up dependencies)
+- **API Docs**: Available at `http://localhost:8888/docs` when the server is running
 
 ## Code Style Guidelines
 - **Imports**: Group standard library, then third-party, then local imports (server/*)

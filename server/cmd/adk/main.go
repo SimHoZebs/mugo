@@ -14,9 +14,9 @@ func main() {
 	ctx := context.Background()
 	weatherAgent, err := agents.Weather()
 	echoAgent, err := agents.NewEchoAgent()
-	nutritionAgent, err := agents.MacroEstimator()
+	macroEstimator, err := agents.MacroEstimator()
 
-	agentLoader, err := services.NewMultiAgentLoader(weatherAgent, echoAgent, nutritionAgent)
+	agentLoader, err := services.NewMultiAgentLoader(weatherAgent, echoAgent, macroEstimator)
 	if err != nil {
 		log.Fatalf("Failed to create agent loader: %v", err)
 	}

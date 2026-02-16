@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/simhozebs/mugo/internal/config"
 	"github.com/simhozebs/mugo/internal/models"
@@ -29,6 +30,10 @@ func MacroEstimator() (agent.Agent, error) {
 	schema := &genai.Schema{
 		Type: genai.TypeObject,
 		Properties: map[string]*genai.Schema{
+			"name": {
+				Type:        genai.TypeString,
+				Description: "A short, descriptive name for the meal",
+			},
 			"macros": {
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
@@ -60,7 +65,7 @@ func MacroEstimator() (agent.Agent, error) {
 				Description: "The type of meal (breakfast, lunch, dinner, or snack)",
 			},
 		},
-		Required: []string{"macros", "assumptions"},
+		Required: []string{"name", "macros", "assumptions"},
 	}
 
 	// afterModel callback: strict unmarshal into NutritionPayload, assign IDs, error if schema mismatch
@@ -76,9 +81,21 @@ func MacroEstimator() (agent.Agent, error) {
 			return resp, nil
 		}
 
+		// Clean up the text in case Gemini wraps it in markdown code blocks
+		text = strings.TrimSpace(text)
+		if strings.HasPrefix(text, "```") {
+			log.Printf("Warning: Gemini wrapped response in markdown code blocks for macro_estimator")
+			lines := strings.Split(text, "\n")
+			if len(lines) > 2 {
+				// Remove the first and last lines (the ``` markers)
+				text = strings.Join(lines[1:len(lines)-1], "\n")
+			}
+		}
+		text = strings.TrimSpace(text)
+
 		var payload models.NutritionPayload
 		if err := json.Unmarshal([]byte(text), &payload); err != nil {
-			return nil, fmt.Errorf("nutrition agent: response did not match expected schema: %w", err)
+			return nil, fmt.Errorf("nutrition agent: response did not match expected schema: %w\nContent: %s", err, text)
 		}
 
 		// Assign sequential IDs if missing and default unit to 'g' if empty

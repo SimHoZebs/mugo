@@ -1,6 +1,6 @@
 include .env
 
-.PHONY: server mobile emulator
+.PHONY: server mobile emulator tidy build db sqlc adk orval
 
 mobile:
 	cd ./mobile/ && infisical run -- nr start
@@ -25,6 +25,12 @@ adk-help:
 
 sqlc:
 	cd ./server/ && go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate
+
+tidy:
+	cd ./server/ && go mod tidy
+
+build:
+	cd ./server/ && go build -o ../server-api ./cmd/api/main.go
 
 db:
 	infisical run -- docker compose up -d
