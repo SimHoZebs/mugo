@@ -14,7 +14,7 @@ import TotalMacroPanel from "@/components/TotalMacroPanel";
 import MealCard from "@/components/MealCard";
 import InputBar from "@/components/InputBar";
 import useGlobalStore from "@/lib/store";
-import { getPostMealsUrl, postMeals } from "@/lib/api/default/default";
+import { createMealLog,getCreateMealLogUrl } from "@/lib/api/logs/logs";
 
 export default function HomeScreen() {
   const meals = useGlobalStore((state) => state.meals);
@@ -37,7 +37,7 @@ export default function HomeScreen() {
       requestAnimationFrame(() =>
         scrollViewRef.current?.scrollToEnd({ animated: true }),
       );
-      const response = await postMeals(payload);
+      const response = await createMealLog(payload);
 
       if (response.status !== 200) {
         throw response.data;
@@ -57,7 +57,7 @@ export default function HomeScreen() {
       setMeals([...meals, newMeal]);
       setPendingMealId(null);
     } catch (error) {
-      console.error("Error submitting request to:", getPostMealsUrl());
+      console.error("Error submitting request to:", getCreateMealLogUrl());
       console.error("Error:", error);
       setPendingMealId(null);
     }
@@ -80,7 +80,7 @@ export default function HomeScreen() {
         </ThemedView>
       </KeyboardAwareScrollView>
 
-      <KeyboardStickyView offset={{ closed: 0, opened: 80 }}>
+      <KeyboardStickyView>
         <InputBar onSubmit={handleSubmitNutrition}>
           <InputBar.Action onPress={() => console.log("Mic pressed")}>
             <ThemedText className="text-lg">🎤</ThemedText>
