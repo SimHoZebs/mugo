@@ -22,7 +22,7 @@ type GetConversationResponse struct {
 }
 
 // RegisterConversationEndpoints registers conversation endpoints.
-func RegisterConversationEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatabase) {
+func RegisterConversationEndpoints(humaAPI huma.API, prefix string, provider db.DBProvider) {
 	conversationsGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(conversationsGroup, huma.Operation{
@@ -34,12 +34,12 @@ func RegisterConversationEndpoints(humaAPI huma.API, prefix string, lazyDB *db.L
 	}, func(ctx context.Context, input *struct {
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 	}) (*ListConversationsResponse, error) {
-		database, err := lazyDB.GetDatabase()
+		database, err := provider.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		conversations, err := database.ConversationRepository.ListByUser(ctx, input.UserID)
+		conversations, err := database.Conversations().ListByUser(ctx, input.UserID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list conversations: %w", err)
 		}
@@ -59,12 +59,12 @@ func RegisterConversationEndpoints(humaAPI huma.API, prefix string, lazyDB *db.L
 		UserID    string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		SessionID string `path:"session_id" example:"session_12345" doc:"Session ID"`
 	}) (*GetConversationResponse, error) {
-		database, err := lazyDB.GetDatabase()
+		database, err := provider.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		conversation, err := database.ConversationRepository.GetBySessionID(ctx, input.UserID, input.SessionID)
+		conversation, err := database.Conversations().GetBySessionID(ctx, input.UserID, input.SessionID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get conversation: %w", err)
 		}
@@ -83,12 +83,12 @@ func RegisterConversationEndpoints(humaAPI huma.API, prefix string, lazyDB *db.L
 	}, func(ctx context.Context, input *struct {
 		ConversationID string `path:"conversation_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Conversation ID"`
 	}) (*GetConversationResponse, error) {
-		database, err := lazyDB.GetDatabase()
+		database, err := provider.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		conversation, err := database.ConversationRepository.GetByID(ctx, input.ConversationID)
+		conversation, err := database.Conversations().GetByID(ctx, input.ConversationID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get conversation: %w", err)
 		}

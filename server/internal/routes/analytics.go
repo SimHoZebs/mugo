@@ -35,7 +35,7 @@ type ListWeeklySummariesResponse struct {
 }
 
 // RegisterAnalyticsEndpoints registers nutrition analytics endpoints.
-func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatabase) {
+func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBProvider) {
 	analyticsGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(analyticsGroup, huma.Operation{
@@ -48,7 +48,7 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, lazyDB *db.Lazy
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		Date   string `query:"date" example:"2025-01-07" doc:"Date (YYYY-MM-DD), defaults to today"`
 	}) (*GetDailySummaryResponse, error) {
-		database, err := lazyDB.GetDatabase()
+		database, err := provider.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
@@ -58,7 +58,7 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, lazyDB *db.Lazy
 			date = time.Now()
 		}
 
-		summary, err := database.NutritionRepository.GetDaily(ctx, input.UserID, date)
+		summary, err := database.Nutrition().GetDaily(ctx, input.UserID, date)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get daily summary: %w", err)
 		}
@@ -81,12 +81,12 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, lazyDB *db.Lazy
 		Limit     int    `query:"limit" default:"30" doc:"Maximum number of days to return"`
 		Offset    int    `query:"offset" default:"0" doc:"Number of days to skip"`
 	}) (*ListDailySummariesResponse, error) {
-		database, err := lazyDB.GetDatabase()
+		database, err := provider.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		summaries, err := database.NutritionRepository.ListDailyByDateRange(ctx, input.UserID, parseDate(input.StartDate), parseDate(input.EndDate))
+		summaries, err := database.Nutrition().ListDailyByDateRange(ctx, input.UserID, parseDate(input.StartDate), parseDate(input.EndDate))
 		if err != nil {
 			return nil, fmt.Errorf("failed to list daily summaries: %w", err)
 		}
@@ -106,7 +106,7 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, lazyDB *db.Lazy
 		UserID        string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		WeekStartDate string `query:"week_start_date" example:"2025-01-06" doc:"Week start date (YYYY-MM-DD), defaults to current week"`
 	}) (*GetWeeklySummaryResponse, error) {
-		database, err := lazyDB.GetDatabase()
+		database, err := provider.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
@@ -117,7 +117,7 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, lazyDB *db.Lazy
 			weekStart = now.AddDate(0, 0, -int(now.Weekday()-1))
 		}
 
-		summary, err := database.NutritionRepository.GetWeekly(ctx, input.UserID, weekStart)
+		summary, err := database.Nutrition().GetWeekly(ctx, input.UserID, weekStart)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get weekly summary: %w", err)
 		}
@@ -140,12 +140,12 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, lazyDB *db.Lazy
 		Limit     int    `query:"limit" default:"12" doc:"Maximum number of weeks to return"`
 		Offset    int    `query:"offset" default:"0" doc:"Number of weeks to skip"`
 	}) (*ListWeeklySummariesResponse, error) {
-		database, err := lazyDB.GetDatabase()
+		database, err := provider.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		summaries, err := database.NutritionRepository.ListWeeklyByDateRange(ctx, input.UserID, parseDate(input.StartDate), parseDate(input.EndDate))
+		summaries, err := database.Nutrition().ListWeeklyByDateRange(ctx, input.UserID, parseDate(input.StartDate), parseDate(input.EndDate))
 		if err != nil {
 			return nil, fmt.Errorf("failed to list weekly summaries: %w", err)
 		}

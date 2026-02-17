@@ -9,10 +9,10 @@ import (
 )
 
 type Database struct {
-	UserRepository         *repository.UserRepository
-	ConversationRepository *repository.ConversationRepository
-	MealLogRepository      *repository.MealLogRepository
-	NutritionRepository    *repository.NutritionSummaryRepository
+	UserRepository         repository.UserRepository
+	ConversationRepository repository.ConversationRepository
+	MealLogRepository      repository.MealLogRepository
+	NutritionRepository    repository.NutritionSummaryRepository
 	pool                   *Pool
 }
 
@@ -35,11 +35,27 @@ func (d *Database) Close() {
 	d.pool.Close()
 }
 
+func (d *Database) Users() repository.UserRepository {
+	return d.UserRepository
+}
+
+func (d *Database) Conversations() repository.ConversationRepository {
+	return d.ConversationRepository
+}
+
+func (d *Database) Meals() repository.MealLogRepository {
+	return d.MealLogRepository
+}
+
+func (d *Database) Nutrition() repository.NutritionSummaryRepository {
+	return d.NutritionRepository
+}
+
 type TxDatabase struct {
-	UserRepository         *repository.UserRepository
-	ConversationRepository *repository.ConversationRepository
-	MealLogRepository      *repository.MealLogRepository
-	NutritionRepository    *repository.NutritionSummaryRepository
+	UserRepository         repository.UserRepository
+	ConversationRepository repository.ConversationRepository
+	MealLogRepository      repository.MealLogRepository
+	NutritionRepository    repository.NutritionSummaryRepository
 	tx                     pgx.Tx
 }
 

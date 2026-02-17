@@ -12,15 +12,15 @@ import (
 	"github.com/simhozebs/mugo/internal/models"
 )
 
-type NutritionSummaryRepository struct {
+type nutritionSummaryRepository struct {
 	queries *dbgenerated.Queries
 }
 
-func NewNutritionSummaryRepository(queries *dbgenerated.Queries) *NutritionSummaryRepository {
-	return &NutritionSummaryRepository{queries: queries}
+func NewNutritionSummaryRepository(queries *dbgenerated.Queries) NutritionSummaryRepository {
+	return &nutritionSummaryRepository{queries: queries}
 }
 
-func (r *NutritionSummaryRepository) UpsertDaily(ctx context.Context, userID string, date time.Time, totalCalories, totalProtein, totalCarbs, totalFat float64, mealCount int) (*models.DailyNutritionSummary, error) {
+func (r *nutritionSummaryRepository) UpsertDaily(ctx context.Context, userID string, date time.Time, totalCalories, totalProtein, totalCarbs, totalFat float64, mealCount int) (*models.DailyNutritionSummary, error) {
 	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)
@@ -45,7 +45,7 @@ func (r *NutritionSummaryRepository) UpsertDaily(ctx context.Context, userID str
 	return mapToDailySummary(result), nil
 }
 
-func (r *NutritionSummaryRepository) GetDaily(ctx context.Context, userID string, date time.Time) (*models.DailyNutritionSummary, error) {
+func (r *nutritionSummaryRepository) GetDaily(ctx context.Context, userID string, date time.Time) (*models.DailyNutritionSummary, error) {
 	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)
@@ -65,7 +65,7 @@ func (r *NutritionSummaryRepository) GetDaily(ctx context.Context, userID string
 	return mapToDailySummary(result), nil
 }
 
-func (r *NutritionSummaryRepository) ListDailyByUser(ctx context.Context, userID string, limit, offset int) ([]*models.DailyNutritionSummary, error) {
+func (r *nutritionSummaryRepository) ListDailyByUser(ctx context.Context, userID string, limit, offset int) ([]*models.DailyNutritionSummary, error) {
 	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)
@@ -90,7 +90,7 @@ func (r *NutritionSummaryRepository) ListDailyByUser(ctx context.Context, userID
 	return summaries, nil
 }
 
-func (r *NutritionSummaryRepository) ListDailyByDateRange(ctx context.Context, userID string, startDate, endDate time.Time) ([]*models.DailyNutritionSummary, error) {
+func (r *nutritionSummaryRepository) ListDailyByDateRange(ctx context.Context, userID string, startDate, endDate time.Time) ([]*models.DailyNutritionSummary, error) {
 	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)
@@ -114,7 +114,7 @@ func (r *NutritionSummaryRepository) ListDailyByDateRange(ctx context.Context, u
 	return summaries, nil
 }
 
-func (r *NutritionSummaryRepository) UpsertWeekly(ctx context.Context, userID string, weekStartDate time.Time, totalCalories, totalProtein, totalCarbs, totalFat, avgDailyCalories, avgDailyProtein, avgDailyCarbs, avgDailyFat float64, mealCount int) (*models.WeeklyNutritionSummary, error) {
+func (r *nutritionSummaryRepository) UpsertWeekly(ctx context.Context, userID string, weekStartDate time.Time, totalCalories, totalProtein, totalCarbs, totalFat, avgDailyCalories, avgDailyProtein, avgDailyCarbs, avgDailyFat float64, mealCount int) (*models.WeeklyNutritionSummary, error) {
 	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)
@@ -143,7 +143,7 @@ func (r *NutritionSummaryRepository) UpsertWeekly(ctx context.Context, userID st
 	return mapToWeeklySummary(result), nil
 }
 
-func (r *NutritionSummaryRepository) GetWeekly(ctx context.Context, userID string, weekStartDate time.Time) (*models.WeeklyNutritionSummary, error) {
+func (r *nutritionSummaryRepository) GetWeekly(ctx context.Context, userID string, weekStartDate time.Time) (*models.WeeklyNutritionSummary, error) {
 	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)
@@ -163,7 +163,7 @@ func (r *NutritionSummaryRepository) GetWeekly(ctx context.Context, userID strin
 	return mapToWeeklySummary(result), nil
 }
 
-func (r *NutritionSummaryRepository) ListWeeklyByDateRange(ctx context.Context, userID string, startDate, endDate time.Time) ([]*models.WeeklyNutritionSummary, error) {
+func (r *nutritionSummaryRepository) ListWeeklyByDateRange(ctx context.Context, userID string, startDate, endDate time.Time) ([]*models.WeeklyNutritionSummary, error) {
 	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)

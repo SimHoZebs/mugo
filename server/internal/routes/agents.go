@@ -13,7 +13,7 @@ import (
 
 // RegisterAgentEndpoints registers test agent endpoints for debugging ADK integration.
 // These endpoints are for testing purposes only and don't persist to the database.
-func RegisterAgentEndpoints(humaAPI huma.API, prefix string, adkClient *adk.Client) {
+func RegisterAgentEndpoints(humaAPI huma.API, prefix string, adkClient adk.AgentClient) {
 	agentsGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(agentsGroup, huma.Operation{

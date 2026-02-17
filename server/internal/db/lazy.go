@@ -69,6 +69,6 @@ func (ld *LazyDatabase) Close() {
 
 // GetDatabase returns the underlying database connection, attempting to connect if necessary.
 // This provides direct access to all repositories and methods.
-func (ld *LazyDatabase) GetDatabase() (*Database, error) {
+func (ld *LazyDatabase) GetDatabase() (DB, error) {
 	return ld.getOrConnect()
 }

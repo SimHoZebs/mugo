@@ -53,7 +53,7 @@ type DeleteUserRequest struct {
 }
 
 // RegisterUserEndpoints registers user management endpoints.
-func RegisterUserEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatabase) {
+func RegisterUserEndpoints(humaAPI huma.API, prefix string, provider db.DBProvider) {
 	usersGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(usersGroup, huma.Operation{
@@ -63,12 +63,12 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatab
 		Summary:     "Create a new user",
 		Tags:        []string{"Users"},
 	}, func(ctx context.Context, input *CreateUserRequest) (*CreateUserResponse, error) {
-		database, err := lazyDB.GetDatabase()
+		database, err := provider.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		exists, err := database.UserRepository.Exists(ctx, input.Body.Username)
+		exists, err := database.Users().Exists(ctx, input.Body.Username)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check user existence: %w", err)
 		}
@@ -76,7 +76,7 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatab
 			return nil, huma.Error409Conflict(fmt.Sprintf("Username '%s' already exists", input.Body.Username))
 		}
 
-		user, err := database.UserRepository.Create(ctx, input.Body.Username)
+		user, err := database.Users().Create(ctx, input.Body.Username)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create user: %w", err)
 		}
@@ -93,12 +93,12 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatab
 		Summary:     "List all users",
 		Tags:        []string{"Users"},
 	}, func(ctx context.Context, input *struct{}) (*ListUsersResponse, error) {
-		database, err := lazyDB.GetDatabase()
+		database, err := provider.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		users, err := database.UserRepository.List(ctx)
+		users, err := database.Users().List(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list users: %w", err)
 		}
@@ -117,12 +117,12 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatab
 	}, func(ctx context.Context, input *struct {
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 	}) (*GetUserResponse, error) {
-		database, err := lazyDB.GetDatabase()
+		database, err := provider.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		user, err := database.UserRepository.GetByID(ctx, input.UserID)
+		user, err := database.Users().GetByID(ctx, input.UserID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user: %w", err)
 		}
@@ -141,12 +141,12 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatab
 	}, func(ctx context.Context, input *struct {
 		Username string `path:"username" example:"johndoe" doc:"Username"`
 	}) (*GetUserResponse, error) {
-		database, err := lazyDB.GetDatabase()
+		database, err := provider.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		user, err := database.UserRepository.GetByUsername(ctx, input.Username)
+		user, err := database.Users().GetByUsername(ctx, input.Username)
 		if err != nil {
 			return nil, huma.Error404NotFound(fmt.Sprintf("User '%s' not found", input.Username))
 		}
@@ -163,12 +163,12 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatab
 		Summary:     "Update a user",
 		Tags:        []string{"Users"},
 	}, func(ctx context.Context, input *UpdateUserRequest) (*UpdateUserResponse, error) {
-		database, err := lazyDB.GetDatabase()
+		database, err := provider.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		user, err := database.UserRepository.Update(ctx, input.UserID, input.Body.Username)
+		user, err := database.Users().Update(ctx, input.UserID, input.Body.Username)
 		if err != nil {
 			return nil, fmt.Errorf("failed to update user: %w", err)
 		}
@@ -185,12 +185,12 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, lazyDB *db.LazyDatab
 		Summary:     "Delete a user",
 		Tags:        []string{"Users"},
 	}, func(ctx context.Context, input *DeleteUserRequest) (*struct{}, error) {
-		database, err := lazyDB.GetDatabase()
+		database, err := provider.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		err = database.UserRepository.Delete(ctx, input.UserID)
+		err = database.Users().Delete(ctx, input.UserID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to delete user: %w", err)
 		}

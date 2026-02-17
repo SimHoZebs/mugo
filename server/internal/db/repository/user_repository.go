@@ -10,15 +10,15 @@ import (
 	"github.com/simhozebs/mugo/internal/models"
 )
 
-type UserRepository struct {
+type userRepository struct {
 	queries *dbgenerated.Queries
 }
 
-func NewUserRepository(queries *dbgenerated.Queries) *UserRepository {
-	return &UserRepository{queries: queries}
+func NewUserRepository(queries *dbgenerated.Queries) UserRepository {
+	return &userRepository{queries: queries}
 }
 
-func (r *UserRepository) Create(ctx context.Context, username string) (*models.User, error) {
+func (r *userRepository) Create(ctx context.Context, username string) (*models.User, error) {
 	arg := dbgenerated.CreateUserParams{
 		Username: username,
 	}
@@ -29,7 +29,7 @@ func (r *UserRepository) Create(ctx context.Context, username string) (*models.U
 	return mapToUser(result), nil
 }
 
-func (r *UserRepository) GetByID(ctx context.Context, id string) (*models.User, error) {
+func (r *userRepository) GetByID(ctx context.Context, id string) (*models.User, error) {
 	parsedUUID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("invalid UUID: %w", err)
@@ -45,7 +45,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id string) (*models.User, 
 	return mapToUser(result), nil
 }
 
-func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*models.User, error) {
+func (r *userRepository) GetByUsername(ctx context.Context, username string) (*models.User, error) {
 	result, err := r.queries.GetUserByUsername(ctx, username)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user by username: %w", err)
@@ -53,11 +53,11 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 	return mapToUser(result), nil
 }
 
-func (r *UserRepository) Exists(ctx context.Context, username string) (bool, error) {
+func (r *userRepository) Exists(ctx context.Context, username string) (bool, error) {
 	return r.queries.UserExists(ctx, username)
 }
 
-func (r *UserRepository) List(ctx context.Context) ([]*models.User, error) {
+func (r *userRepository) List(ctx context.Context) ([]*models.User, error) {
 	results, err := r.queries.ListUsers(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list users: %w", err)
@@ -69,7 +69,7 @@ func (r *UserRepository) List(ctx context.Context) ([]*models.User, error) {
 	return users, nil
 }
 
-func (r *UserRepository) Update(ctx context.Context, id string, username string) (*models.User, error) {
+func (r *userRepository) Update(ctx context.Context, id string, username string) (*models.User, error) {
 	parsedUUID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("invalid UUID: %w", err)
@@ -92,7 +92,7 @@ func (r *UserRepository) Update(ctx context.Context, id string, username string)
 	return mapToUser(result), nil
 }
 
-func (r *UserRepository) Delete(ctx context.Context, id string) error {
+func (r *userRepository) Delete(ctx context.Context, id string) error {
 	parsedUUID, err := uuid.Parse(id)
 	if err != nil {
 		return fmt.Errorf("invalid UUID: %w", err)

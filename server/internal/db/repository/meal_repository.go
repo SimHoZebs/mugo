@@ -12,15 +12,15 @@ import (
 	"github.com/simhozebs/mugo/internal/models"
 )
 
-type MealLogRepository struct {
+type mealLogRepository struct {
 	queries *dbgenerated.Queries
 }
 
-func NewMealLogRepository(queries *dbgenerated.Queries) *MealLogRepository {
-	return &MealLogRepository{queries: queries}
+func NewMealLogRepository(queries *dbgenerated.Queries) MealLogRepository {
+	return &mealLogRepository{queries: queries}
 }
 
-func (r *MealLogRepository) Create(ctx context.Context, userID, conversationID, foodName, mealType string, recordedAt time.Time, macros models.Macros, assumptions []models.Assumption, foodSource string, rawResponse interface{}) (*models.MealLog, error) {
+func (r *mealLogRepository) Create(ctx context.Context, userID, conversationID, foodName, mealType string, recordedAt time.Time, macros models.Macros, assumptions []models.Assumption, foodSource string, rawResponse interface{}) (*models.MealLog, error) {
 	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)
@@ -77,7 +77,7 @@ func (r *MealLogRepository) Create(ctx context.Context, userID, conversationID, 
 	return mapToMealLog(result), nil
 }
 
-func (r *MealLogRepository) GetByID(ctx context.Context, id string) (*models.MealLog, error) {
+func (r *mealLogRepository) GetByID(ctx context.Context, id string) (*models.MealLog, error) {
 	parsedUUID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("invalid UUID: %w", err)
@@ -93,7 +93,7 @@ func (r *MealLogRepository) GetByID(ctx context.Context, id string) (*models.Mea
 	return mapToMealLog(result), nil
 }
 
-func (r *MealLogRepository) ListByUser(ctx context.Context, userID string, limit, offset int) ([]*models.MealLog, error) {
+func (r *mealLogRepository) ListByUser(ctx context.Context, userID string, limit, offset int) ([]*models.MealLog, error) {
 	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)
@@ -118,7 +118,7 @@ func (r *MealLogRepository) ListByUser(ctx context.Context, userID string, limit
 	return mealLogs, nil
 }
 
-func (r *MealLogRepository) ListByUserAndDate(ctx context.Context, userID string, date time.Time) ([]*models.MealLog, error) {
+func (r *mealLogRepository) ListByUserAndDate(ctx context.Context, userID string, date time.Time) ([]*models.MealLog, error) {
 	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)
@@ -142,7 +142,7 @@ func (r *MealLogRepository) ListByUserAndDate(ctx context.Context, userID string
 	return mealLogs, nil
 }
 
-func (r *MealLogRepository) ListByUserAndDateRange(ctx context.Context, userID string, startDate, endDate time.Time) ([]*models.MealLog, error) {
+func (r *mealLogRepository) ListByUserAndDateRange(ctx context.Context, userID string, startDate, endDate time.Time) ([]*models.MealLog, error) {
 	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)
@@ -166,7 +166,7 @@ func (r *MealLogRepository) ListByUserAndDateRange(ctx context.Context, userID s
 	return mealLogs, nil
 }
 
-func (r *MealLogRepository) ListByConversation(ctx context.Context, conversationID string) ([]*models.MealLog, error) {
+func (r *mealLogRepository) ListByConversation(ctx context.Context, conversationID string) ([]*models.MealLog, error) {
 	parsedUUID, err := uuid.Parse(conversationID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid conversation UUID: %w", err)
@@ -186,7 +186,7 @@ func (r *MealLogRepository) ListByConversation(ctx context.Context, conversation
 	return mealLogs, nil
 }
 
-func (r *MealLogRepository) Delete(ctx context.Context, id string) error {
+func (r *mealLogRepository) Delete(ctx context.Context, id string) error {
 	parsedUUID, err := uuid.Parse(id)
 	if err != nil {
 		return fmt.Errorf("invalid UUID: %w", err)

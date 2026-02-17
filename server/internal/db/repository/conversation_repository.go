@@ -11,15 +11,15 @@ import (
 	"github.com/simhozebs/mugo/internal/models"
 )
 
-type ConversationRepository struct {
+type conversationRepository struct {
 	queries *dbgenerated.Queries
 }
 
-func NewConversationRepository(queries *dbgenerated.Queries) *ConversationRepository {
-	return &ConversationRepository{queries: queries}
+func NewConversationRepository(queries *dbgenerated.Queries) ConversationRepository {
+	return &conversationRepository{queries: queries}
 }
 
-func (r *ConversationRepository) Create(ctx context.Context, userID, sessionID, title string) (*models.Conversation, error) {
+func (r *conversationRepository) Create(ctx context.Context, userID, sessionID, title string) (*models.Conversation, error) {
 	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)
@@ -41,7 +41,7 @@ func (r *ConversationRepository) Create(ctx context.Context, userID, sessionID, 
 	return mapToConversation(result), nil
 }
 
-func (r *ConversationRepository) GetByID(ctx context.Context, id string) (*models.Conversation, error) {
+func (r *conversationRepository) GetByID(ctx context.Context, id string) (*models.Conversation, error) {
 	parsedUUID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("invalid UUID: %w", err)
@@ -57,7 +57,7 @@ func (r *ConversationRepository) GetByID(ctx context.Context, id string) (*model
 	return mapToConversation(result), nil
 }
 
-func (r *ConversationRepository) GetBySessionID(ctx context.Context, userID, sessionID string) (*models.Conversation, error) {
+func (r *conversationRepository) GetBySessionID(ctx context.Context, userID, sessionID string) (*models.Conversation, error) {
 	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)
@@ -77,7 +77,7 @@ func (r *ConversationRepository) GetBySessionID(ctx context.Context, userID, ses
 	return mapToConversation(result), nil
 }
 
-func (r *ConversationRepository) ListByUser(ctx context.Context, userID string) ([]*models.Conversation, error) {
+func (r *conversationRepository) ListByUser(ctx context.Context, userID string) ([]*models.Conversation, error) {
 	parsedUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)
@@ -97,7 +97,7 @@ func (r *ConversationRepository) ListByUser(ctx context.Context, userID string) 
 	return conversations, nil
 }
 
-func (r *ConversationRepository) UpdateTitle(ctx context.Context, id, title string) (*models.Conversation, error) {
+func (r *conversationRepository) UpdateTitle(ctx context.Context, id, title string) (*models.Conversation, error) {
 	parsedUUID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("invalid UUID: %w", err)
@@ -118,7 +118,7 @@ func (r *ConversationRepository) UpdateTitle(ctx context.Context, id, title stri
 	return mapToConversation(result), nil
 }
 
-func (r *ConversationRepository) Delete(ctx context.Context, id string) error {
+func (r *conversationRepository) Delete(ctx context.Context, id string) error {
 	parsedUUID, err := uuid.Parse(id)
 	if err != nil {
 		return fmt.Errorf("invalid UUID: %w", err)
