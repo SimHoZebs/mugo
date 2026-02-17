@@ -1,32 +1,8 @@
 import { View } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { NutritionPayload } from "@/lib/api/conversationAPI.schemas";
+import { MacroDisplay } from "@/components/MacroDisplay";
 import { Meal } from "@/lib/types";
-
-interface MacroItemProps {
-  label: string;
-  value: number;
-  unit: string;
-  dotColor: string;
-}
-
-function MacroItem(props: MacroItemProps) {
-  return (
-    <View className="items-center flex-1">
-      <View className="flex-row items-center gap-1.5">
-        <View className={`w-2 h-2 rounded-full ${props.dotColor}`} />
-        <ThemedText className="text-xs text-stone-500 dark:text-stone-400">
-          {props.label}
-        </ThemedText>
-      </View>
-      <ThemedText type="defaultSemiBold">
-        {Math.round(props.value)}
-        {props.unit}
-      </ThemedText>
-    </View>
-  );
-}
 
 interface TotalMarcoPanelProps {
   meals: Meal[];
@@ -59,31 +35,36 @@ export default function TotalMacroPanel(props: TotalMarcoPanelProps) {
       </ThemedText>
 
       <View className="flex-row justify-evenly">
-        <MacroItem
+        <MacroDisplay
+          variant="column"
           label="Calories"
           value={totalCalories}
           unit=""
-          dotColor="bg-amber-500"
+          colorClass="bg-amber-500"
         />
-        <MacroItem
+        <MacroDisplay
+          variant="column"
           label="Protein"
           value={totalProtein}
           unit="g"
-          dotColor="bg-emerald-500"
+          colorClass="bg-emerald-500"
         />
-        <MacroItem
+        <MacroDisplay
+          variant="column"
           label="Carbs"
           value={totalCarbs}
           unit="g"
-          dotColor="bg-blue-500"
+          colorClass="bg-blue-500"
         />
-        <MacroItem
+        <MacroDisplay
+          variant="column"
           label="Fat"
           value={totalFat}
           unit="g"
-          dotColor="bg-violet-500"
+          colorClass="bg-violet-500"
         />
       </View>
     </ThemedView>
   );
 }
+

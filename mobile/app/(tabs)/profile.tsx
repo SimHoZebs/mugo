@@ -27,14 +27,12 @@ export default function ProfileScreen() {
 
   const [editingField, setEditingField] = useState<string | null>(null);
 
-  if (!userProfile) {
-    return <LoginForm onLogin={login} />;
-  }
+  const weightUnit = userProfile?.unitSystem === "metric" ? "kg" : "lbs";
+  const heightUnit = userProfile?.unitSystem === "metric" ? "cm" : "ft";
 
-  const weightUnit = userProfile.unitSystem === "metric" ? "kg" : "lbs";
-  const heightUnit = userProfile.unitSystem === "metric" ? "cm" : "ft";
-
-  return (
+  return !userProfile ? (
+    <LoginForm onLogin={login} />
+  ) : (
     <ThemedView className="h-full w-full pt-8">
       <View className="px-4 mb-6 flex-row justify-between items-end">
         <View>

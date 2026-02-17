@@ -24,17 +24,13 @@ export default function SettingsScreen() {
     updateUserProfile({ unitSystem: unit });
   };
 
-  if (!userProfile) {
-    return (
-      <ThemedView className="h-full w-full justify-center items-center px-4">
-        <ThemedText className="text-stone-500 text-center">
-          Please sign in on the Profile tab to access settings.
-        </ThemedText>
-      </ThemedView>
-    );
-  }
-
-  return (
+  return !userProfile ? (
+    <ThemedView className="h-full w-full justify-center items-center px-4">
+      <ThemedText className="text-stone-500 text-center">
+        Please sign in on the Profile tab to access settings.
+      </ThemedText>
+    </ThemedView>
+  ) : (
     <ThemedView className="h-full w-full pt-8">
       <View className="px-4 mb-6">
         <ThemedText type="title">Settings</ThemedText>
