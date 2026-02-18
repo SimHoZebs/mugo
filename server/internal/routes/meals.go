@@ -85,9 +85,9 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, macroRunner adk.Agen
 			return nil, fmt.Errorf("failed to parse nutrition response: %w", err)
 		}
 
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		var meals []*models.MealLog
@@ -122,9 +122,9 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, macroRunner adk.Agen
 		Summary:     "Update/correct an existing meal",
 		Tags:        []string{mealLogTags},
 	}, func(ctx context.Context, input *UpdateMealRequest) (*UpdateMealResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		var updatedMeal *models.MealLog
@@ -191,9 +191,9 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, macroRunner adk.Agen
 		Limit  int    `query:"limit" default:"50" doc:"Maximum number of meals to return"`
 		Offset int    `query:"offset" default:"0" doc:"Number of meals to skip"`
 	}) (*ListMealsResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		meals, err := database.Meals().ListByUser(ctx, input.UserID, input.Limit, input.Offset)
@@ -216,9 +216,9 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, macroRunner adk.Agen
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		Date   string `path:"date" example:"2025-01-07" doc:"Date (YYYY-MM-DD)"`
 	}) (*ListMealsResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		date, err := parseDate(input.Date)
@@ -247,9 +247,9 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, macroRunner adk.Agen
 		StartDate string `query:"start_date" example:"2025-01-01" doc:"Start date (YYYY-MM-DD)"`
 		EndDate   string `query:"end_date" example:"2025-01-31" doc:"End date (YYYY-MM-DD)"`
 	}) (*ListMealsResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		start, err := parseDate(input.StartDate)
@@ -282,9 +282,9 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, macroRunner adk.Agen
 		UserID         string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		ConversationID string `path:"conversation_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Conversation ID"`
 	}) (*ListMealsResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		meals, err := database.Meals().ListByConversation(ctx, input.ConversationID)
@@ -306,9 +306,9 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, macroRunner adk.Agen
 	}, func(ctx context.Context, input *struct {
 		MealID string `path:"meal_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Meal ID"`
 	}) (*GetMealResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		meal, err := database.Meals().GetByID(ctx, input.MealID)

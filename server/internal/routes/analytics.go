@@ -34,7 +34,6 @@ type ListWeeklySummariesResponse struct {
 	}
 }
 
-// RegisterAnalyticsEndpoints registers nutrition analytics endpoints.
 func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBProvider) {
 	analyticsGroup := huma.NewGroup(humaAPI, prefix)
 
@@ -48,9 +47,9 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		Date   string `query:"date" example:"2025-01-07" doc:"Date (YYYY-MM-DD), defaults to today"`
 	}) (*GetDailySummaryResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		date, err := parseDate(input.Date)
@@ -84,9 +83,9 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 		Limit     int    `query:"limit" default:"30" doc:"Maximum number of days to return"`
 		Offset    int    `query:"offset" default:"0" doc:"Number of days to skip"`
 	}) (*ListDailySummariesResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		start, err := parseDate(input.StartDate)
@@ -119,9 +118,9 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 		UserID        string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		WeekStartDate string `query:"week_start_date" example:"2025-01-06" doc:"Week start date (YYYY-MM-DD), defaults to current week"`
 	}) (*GetWeeklySummaryResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		weekStart, err := parseDate(input.WeekStartDate)
@@ -156,9 +155,9 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 		Limit     int    `query:"limit" default:"12" doc:"Maximum number of weeks to return"`
 		Offset    int    `query:"offset" default:"0" doc:"Number of weeks to skip"`
 	}) (*ListWeeklySummariesResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		start, err := parseDate(input.StartDate)

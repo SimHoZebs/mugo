@@ -50,7 +50,6 @@ type DeleteUserRequest struct {
 	UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 }
 
-// RegisterUserEndpoints registers user management endpoints.
 func RegisterUserEndpoints(humaAPI huma.API, prefix string, provider db.DBProvider) {
 	usersGroup := huma.NewGroup(humaAPI, prefix)
 
@@ -61,9 +60,9 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, provider db.DBProvid
 		Summary:     "Create a new user",
 		Tags:        []string{"Users"},
 	}, func(ctx context.Context, input *CreateUserRequest) (*CreateUserResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		exists, err := database.Users().Exists(ctx, input.Body.Username)
@@ -91,9 +90,9 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, provider db.DBProvid
 		Summary:     "List all users",
 		Tags:        []string{"Users"},
 	}, func(ctx context.Context, input *struct{}) (*ListUsersResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		users, err := database.Users().List(ctx)
@@ -115,9 +114,9 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, provider db.DBProvid
 	}, func(ctx context.Context, input *struct {
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 	}) (*GetUserResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		user, err := database.Users().GetByID(ctx, input.UserID)
@@ -139,9 +138,9 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, provider db.DBProvid
 	}, func(ctx context.Context, input *struct {
 		Username string `path:"username" example:"johndoe" doc:"Username"`
 	}) (*GetUserResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		user, err := database.Users().GetByUsername(ctx, input.Username)
@@ -161,9 +160,9 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, provider db.DBProvid
 		Summary:     "Update a user",
 		Tags:        []string{"Users"},
 	}, func(ctx context.Context, input *UpdateUserRequest) (*UpdateUserResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		user, err := database.Users().Update(ctx, input.UserID, input.Body.Username)
@@ -183,9 +182,9 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, provider db.DBProvid
 		Summary:     "Delete a user",
 		Tags:        []string{"Users"},
 	}, func(ctx context.Context, input *DeleteUserRequest) (*struct{}, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		err = database.Users().Delete(ctx, input.UserID)

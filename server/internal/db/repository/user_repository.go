@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	dbgenerated "github.com/simhozebs/mugo/internal/db/dbgenerated"
+	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"github.com/simhozebs/mugo/internal/models"
 )
 
@@ -27,13 +26,9 @@ func (r *userRepository) Create(ctx context.Context, username string) (*models.U
 }
 
 func (r *userRepository) GetByID(ctx context.Context, id string) (*models.User, error) {
-	parsedUUID, err := uuid.Parse(id)
+	pgUUID, err := pgutil.ParseUUID(id)
 	if err != nil {
-		return nil, fmt.Errorf("invalid UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	result, err := r.queries.GetUserByID(ctx, pgUUID)
 	if err != nil {
@@ -67,13 +62,9 @@ func (r *userRepository) List(ctx context.Context) ([]*models.User, error) {
 }
 
 func (r *userRepository) Update(ctx context.Context, id string, username string) (*models.User, error) {
-	parsedUUID, err := uuid.Parse(id)
+	pgUUID, err := pgutil.ParseUUID(id)
 	if err != nil {
-		return nil, fmt.Errorf("invalid UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 
 	arg := dbgenerated.UpdateUserParams{
@@ -90,13 +81,9 @@ func (r *userRepository) Update(ctx context.Context, id string, username string)
 }
 
 func (r *userRepository) Delete(ctx context.Context, id string) error {
-	parsedUUID, err := uuid.Parse(id)
+	pgUUID, err := pgutil.ParseUUID(id)
 	if err != nil {
-		return fmt.Errorf("invalid UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return err
 	}
 
 	err = r.queries.DeleteUser(ctx, pgUUID)

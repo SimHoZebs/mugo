@@ -21,7 +21,6 @@ type GetConversationResponse struct {
 	}
 }
 
-// RegisterConversationEndpoints registers conversation endpoints.
 func RegisterConversationEndpoints(humaAPI huma.API, prefix string, provider db.DBProvider) {
 	conversationsGroup := huma.NewGroup(humaAPI, prefix)
 
@@ -34,9 +33,9 @@ func RegisterConversationEndpoints(humaAPI huma.API, prefix string, provider db.
 	}, func(ctx context.Context, input *struct {
 		UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 	}) (*ListConversationsResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		conversations, err := database.Conversations().ListByUser(ctx, input.UserID)
@@ -59,9 +58,9 @@ func RegisterConversationEndpoints(humaAPI huma.API, prefix string, provider db.
 		UserID    string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 		SessionID string `path:"session_id" example:"session_12345" doc:"Session ID"`
 	}) (*GetConversationResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		conversation, err := database.Conversations().GetBySessionID(ctx, input.UserID, input.SessionID)
@@ -83,9 +82,9 @@ func RegisterConversationEndpoints(humaAPI huma.API, prefix string, provider db.
 	}, func(ctx context.Context, input *struct {
 		ConversationID string `path:"conversation_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Conversation ID"`
 	}) (*GetConversationResponse, error) {
-		database, err := provider.GetDatabase()
+		database, err := GetDB(provider)
 		if err != nil {
-			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
+			return nil, err
 		}
 
 		conversation, err := database.Conversations().GetByID(ctx, input.ConversationID)

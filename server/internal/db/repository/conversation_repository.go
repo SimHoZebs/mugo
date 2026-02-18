@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	dbgenerated "github.com/simhozebs/mugo/internal/db/dbgenerated"
+	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"github.com/simhozebs/mugo/internal/models"
 )
 
@@ -20,19 +19,14 @@ func NewConversationRepository(queries *dbgenerated.Queries) ConversationReposit
 }
 
 func (r *conversationRepository) Create(ctx context.Context, userID, sessionID, title string) (*models.Conversation, error) {
-	parsedUUID, err := uuid.Parse(userID)
+	pgUUID, err := pgutil.ParseUUID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user UUID: %w", err)
+		return nil, err
 	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
-	}
-	titleText := pgtype.Text{String: title, Valid: title != ""}
 	arg := dbgenerated.CreateConversationParams{
 		UserID:    pgUUID,
 		SessionID: sessionID,
-		Title:     titleText,
+		Title:     pgutil.Text(title),
 	}
 	result, err := r.queries.CreateConversation(ctx, arg)
 	if err != nil {
@@ -42,13 +36,9 @@ func (r *conversationRepository) Create(ctx context.Context, userID, sessionID, 
 }
 
 func (r *conversationRepository) GetByID(ctx context.Context, id string) (*models.Conversation, error) {
-	parsedUUID, err := uuid.Parse(id)
+	pgUUID, err := pgutil.ParseUUID(id)
 	if err != nil {
-		return nil, fmt.Errorf("invalid UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	result, err := r.queries.GetConversation(ctx, pgUUID)
 	if err != nil {
@@ -58,13 +48,9 @@ func (r *conversationRepository) GetByID(ctx context.Context, id string) (*model
 }
 
 func (r *conversationRepository) GetBySessionID(ctx context.Context, userID, sessionID string) (*models.Conversation, error) {
-	parsedUUID, err := uuid.Parse(userID)
+	pgUUID, err := pgutil.ParseUUID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	arg := dbgenerated.GetConversationBySessionIDParams{
 		UserID:    pgUUID,
@@ -78,13 +64,9 @@ func (r *conversationRepository) GetBySessionID(ctx context.Context, userID, ses
 }
 
 func (r *conversationRepository) ListByUser(ctx context.Context, userID string) ([]*models.Conversation, error) {
-	parsedUUID, err := uuid.Parse(userID)
+	pgUUID, err := pgutil.ParseUUID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	results, err := r.queries.ListConversationsByUser(ctx, pgUUID)
 	if err != nil {
@@ -98,18 +80,13 @@ func (r *conversationRepository) ListByUser(ctx context.Context, userID string) 
 }
 
 func (r *conversationRepository) UpdateTitle(ctx context.Context, id, title string) (*models.Conversation, error) {
-	parsedUUID, err := uuid.Parse(id)
+	pgUUID, err := pgutil.ParseUUID(id)
 	if err != nil {
-		return nil, fmt.Errorf("invalid UUID: %w", err)
+		return nil, err
 	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
-	}
-	titleText := pgtype.Text{String: title, Valid: true}
 	arg := dbgenerated.UpdateConversationTitleParams{
 		ID:    pgUUID,
-		Title: titleText,
+		Title: pgutil.Text(title),
 	}
 	result, err := r.queries.UpdateConversationTitle(ctx, arg)
 	if err != nil {
@@ -119,13 +96,9 @@ func (r *conversationRepository) UpdateTitle(ctx context.Context, id, title stri
 }
 
 func (r *conversationRepository) Delete(ctx context.Context, id string) error {
-	parsedUUID, err := uuid.Parse(id)
+	pgUUID, err := pgutil.ParseUUID(id)
 	if err != nil {
-		return fmt.Errorf("invalid UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return err
 	}
 	return r.queries.DeleteConversation(ctx, pgUUID)
 }
@@ -135,15 +108,8 @@ func mapToConversation(c dbgenerated.Conversation) *models.Conversation {
 		ID:        c.ID.String(),
 		UserID:    c.UserID.String(),
 		SessionID: c.SessionID,
-		Title:     mapTextToPtr(c.Title),
+		Title:     pgutil.FromText(c.Title),
 		CreatedAt: c.CreatedAt.Time.Format(time.RFC3339),
 		UpdatedAt: c.UpdatedAt.Time.Format(time.RFC3339),
 	}
-}
-
-func mapTextToPtr(t pgtype.Text) *string {
-	if !t.Valid {
-		return nil
-	}
-	return &t.String
 }

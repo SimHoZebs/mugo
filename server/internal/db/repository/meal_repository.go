@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	dbgenerated "github.com/simhozebs/mugo/internal/db/dbgenerated"
+	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"github.com/simhozebs/mugo/internal/models"
 )
 
@@ -21,25 +20,14 @@ func NewMealLogRepository(queries *dbgenerated.Queries) MealLogRepository {
 }
 
 func (r *mealLogRepository) Create(ctx context.Context, userID, conversationID, foodName, mealType string, recordedAt time.Time, macros models.Macros, assumptions []models.Assumption, foodSource string, rawResponse interface{}) (*models.MealLog, error) {
-	parsedUUID, err := uuid.Parse(userID)
+	pgUUID, err := pgutil.ParseUUID(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user UUID: %w", err)
 	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
-	}
 
-	var convUUID pgtype.UUID
-	if conversationID != "" {
-		parsedConvUUID, err := uuid.Parse(conversationID)
-		if err != nil {
-			return nil, fmt.Errorf("invalid conversation UUID: %w", err)
-		}
-		convUUID = pgtype.UUID{
-			Bytes: [16]byte(parsedConvUUID),
-			Valid: true,
-		}
+	convUUID, err := pgutil.ParseUUIDPtr(conversationID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid conversation UUID: %w", err)
 	}
 
 	macrosJSON, err := json.Marshal(macros)
@@ -64,7 +52,7 @@ func (r *mealLogRepository) Create(ctx context.Context, userID, conversationID, 
 		ConversationID: convUUID,
 		FoodName:       foodName,
 		MealType:       mealType,
-		RecordedAt:     pgtype.Timestamptz{Time: recordedAt, Valid: true},
+		RecordedAt:     pgutil.Timestamp(recordedAt),
 		Macros:         macrosJSON,
 		Assumptions:    assumptionsJSON,
 		FoodSource:     foodSource,
@@ -78,13 +66,9 @@ func (r *mealLogRepository) Create(ctx context.Context, userID, conversationID, 
 }
 
 func (r *mealLogRepository) GetByID(ctx context.Context, id string) (*models.MealLog, error) {
-	parsedUUID, err := uuid.Parse(id)
+	pgUUID, err := pgutil.ParseUUID(id)
 	if err != nil {
-		return nil, fmt.Errorf("invalid UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	result, err := r.queries.GetMealLog(ctx, pgUUID)
 	if err != nil {
@@ -94,13 +78,9 @@ func (r *mealLogRepository) GetByID(ctx context.Context, id string) (*models.Mea
 }
 
 func (r *mealLogRepository) ListByUser(ctx context.Context, userID string, limit, offset int) ([]*models.MealLog, error) {
-	parsedUUID, err := uuid.Parse(userID)
+	pgUUID, err := pgutil.ParseUUID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	arg := dbgenerated.ListMealLogsByUserParams{
 		UserID: pgUUID,
@@ -119,17 +99,13 @@ func (r *mealLogRepository) ListByUser(ctx context.Context, userID string, limit
 }
 
 func (r *mealLogRepository) ListByUserAndDate(ctx context.Context, userID string, date time.Time) ([]*models.MealLog, error) {
-	parsedUUID, err := uuid.Parse(userID)
+	pgUUID, err := pgutil.ParseUUID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	arg := dbgenerated.ListMealLogsByUserAndDateParams{
 		UserID:     pgUUID,
-		RecordedAt: pgtype.Timestamptz{Time: date, Valid: true},
+		RecordedAt: pgutil.Timestamp(date),
 	}
 	results, err := r.queries.ListMealLogsByUserAndDate(ctx, arg)
 	if err != nil {
@@ -143,17 +119,13 @@ func (r *mealLogRepository) ListByUserAndDate(ctx context.Context, userID string
 }
 
 func (r *mealLogRepository) ListByUserAndDateRange(ctx context.Context, userID string, startDate, endDate time.Time) ([]*models.MealLog, error) {
-	parsedUUID, err := uuid.Parse(userID)
+	pgUUID, err := pgutil.ParseUUID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	arg := dbgenerated.ListMealLogsByUserAndDateRangeParams{
 		UserID:     pgUUID,
-		RecordedAt: pgtype.Timestamptz{Time: startDate, Valid: true},
+		RecordedAt: pgutil.Timestamp(startDate),
 	}
 	results, err := r.queries.ListMealLogsByUserAndDateRange(ctx, arg)
 	if err != nil {
@@ -167,13 +139,9 @@ func (r *mealLogRepository) ListByUserAndDateRange(ctx context.Context, userID s
 }
 
 func (r *mealLogRepository) ListByConversation(ctx context.Context, conversationID string) ([]*models.MealLog, error) {
-	parsedUUID, err := uuid.Parse(conversationID)
+	pgUUID, err := pgutil.ParseUUID(conversationID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid conversation UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	results, err := r.queries.ListMealLogsByConversation(ctx, pgUUID)
 	if err != nil {
@@ -187,13 +155,9 @@ func (r *mealLogRepository) ListByConversation(ctx context.Context, conversation
 }
 
 func (r *mealLogRepository) Update(ctx context.Context, id string, foodName, mealType string, macros models.Macros, assumptions []models.Assumption, rawResponse interface{}) (*models.MealLog, error) {
-	parsedUUID, err := uuid.Parse(id)
+	pgUUID, err := pgutil.ParseUUID(id)
 	if err != nil {
-		return nil, fmt.Errorf("invalid UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 
 	macrosJSON, err := json.Marshal(macros)
@@ -229,13 +193,9 @@ func (r *mealLogRepository) Update(ctx context.Context, id string, foodName, mea
 }
 
 func (r *mealLogRepository) Delete(ctx context.Context, id string) error {
-	parsedUUID, err := uuid.Parse(id)
+	pgUUID, err := pgutil.ParseUUID(id)
 	if err != nil {
-		return fmt.Errorf("invalid UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return err
 	}
 	return r.queries.DeleteMealLog(ctx, pgUUID)
 }
@@ -251,15 +211,15 @@ func mapToMealLog(m dbgenerated.MealLog) *models.MealLog {
 		json.Unmarshal(m.Assumptions, &assumptions)
 	}
 
+	var rawResponse interface{}
+	if m.RawResponse != nil {
+		json.Unmarshal(m.RawResponse, &rawResponse)
+	}
+
 	var conversationID *string
 	if m.ConversationID.Valid {
 		s := m.ConversationID.String()
 		conversationID = &s
-	}
-
-	var rawResponse interface{}
-	if m.RawResponse != nil {
-		json.Unmarshal(m.RawResponse, &rawResponse)
 	}
 
 	return &models.MealLog{

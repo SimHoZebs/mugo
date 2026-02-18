@@ -6,9 +6,9 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	dbgenerated "github.com/simhozebs/mugo/internal/db/dbgenerated"
+	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"github.com/simhozebs/mugo/internal/models"
 )
 
@@ -21,17 +21,13 @@ func NewNutritionSummaryRepository(queries *dbgenerated.Queries) NutritionSummar
 }
 
 func (r *nutritionSummaryRepository) UpsertDaily(ctx context.Context, userID string, date time.Time, totalCalories, totalProtein, totalCarbs, totalFat float64, mealCount int) (*models.DailyNutritionSummary, error) {
-	parsedUUID, err := uuid.Parse(userID)
+	pgUUID, err := pgutil.ParseUUID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	arg := dbgenerated.UpsertDailyNutritionSummaryParams{
 		UserID:        pgUUID,
-		Date:          pgtype.Date{Time: date, Valid: true},
+		Date:          pgutil.Date(date),
 		TotalCalories: pgtype.Numeric{Int: big.NewInt(int64(totalCalories)), Valid: true},
 		TotalProtein:  pgtype.Numeric{Int: big.NewInt(int64(totalProtein)), Valid: true},
 		TotalCarbs:    pgtype.Numeric{Int: big.NewInt(int64(totalCarbs)), Valid: true},
@@ -46,17 +42,13 @@ func (r *nutritionSummaryRepository) UpsertDaily(ctx context.Context, userID str
 }
 
 func (r *nutritionSummaryRepository) GetDaily(ctx context.Context, userID string, date time.Time) (*models.DailyNutritionSummary, error) {
-	parsedUUID, err := uuid.Parse(userID)
+	pgUUID, err := pgutil.ParseUUID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	arg := dbgenerated.GetDailyNutritionSummaryParams{
 		UserID: pgUUID,
-		Date:   pgtype.Date{Time: date, Valid: true},
+		Date:   pgutil.Date(date),
 	}
 	result, err := r.queries.GetDailyNutritionSummary(ctx, arg)
 	if err != nil {
@@ -66,13 +58,9 @@ func (r *nutritionSummaryRepository) GetDaily(ctx context.Context, userID string
 }
 
 func (r *nutritionSummaryRepository) ListDailyByUser(ctx context.Context, userID string, limit, offset int) ([]*models.DailyNutritionSummary, error) {
-	parsedUUID, err := uuid.Parse(userID)
+	pgUUID, err := pgutil.ParseUUID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	arg := dbgenerated.ListDailyNutritionSummariesByUserParams{
 		UserID: pgUUID,
@@ -91,17 +79,13 @@ func (r *nutritionSummaryRepository) ListDailyByUser(ctx context.Context, userID
 }
 
 func (r *nutritionSummaryRepository) ListDailyByDateRange(ctx context.Context, userID string, startDate, endDate time.Time) ([]*models.DailyNutritionSummary, error) {
-	parsedUUID, err := uuid.Parse(userID)
+	pgUUID, err := pgutil.ParseUUID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	arg := dbgenerated.ListDailyNutritionSummariesByUserAndDateRangeParams{
 		UserID: pgUUID,
-		Date:   pgtype.Date{Time: startDate, Valid: true},
+		Date:   pgutil.Date(startDate),
 	}
 	results, err := r.queries.ListDailyNutritionSummariesByUserAndDateRange(ctx, arg)
 	if err != nil {
@@ -115,17 +99,13 @@ func (r *nutritionSummaryRepository) ListDailyByDateRange(ctx context.Context, u
 }
 
 func (r *nutritionSummaryRepository) UpsertWeekly(ctx context.Context, userID string, weekStartDate time.Time, totalCalories, totalProtein, totalCarbs, totalFat, avgDailyCalories, avgDailyProtein, avgDailyCarbs, avgDailyFat float64, mealCount int) (*models.WeeklyNutritionSummary, error) {
-	parsedUUID, err := uuid.Parse(userID)
+	pgUUID, err := pgutil.ParseUUID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	arg := dbgenerated.UpsertWeeklyNutritionSummaryParams{
 		UserID:           pgUUID,
-		WeekStartDate:    pgtype.Date{Time: weekStartDate, Valid: true},
+		WeekStartDate:    pgutil.Date(weekStartDate),
 		TotalCalories:    pgtype.Numeric{Int: big.NewInt(int64(totalCalories)), Valid: true},
 		TotalProtein:     pgtype.Numeric{Int: big.NewInt(int64(totalProtein)), Valid: true},
 		TotalCarbs:       pgtype.Numeric{Int: big.NewInt(int64(totalCarbs)), Valid: true},
@@ -144,17 +124,13 @@ func (r *nutritionSummaryRepository) UpsertWeekly(ctx context.Context, userID st
 }
 
 func (r *nutritionSummaryRepository) GetWeekly(ctx context.Context, userID string, weekStartDate time.Time) (*models.WeeklyNutritionSummary, error) {
-	parsedUUID, err := uuid.Parse(userID)
+	pgUUID, err := pgutil.ParseUUID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	arg := dbgenerated.GetWeeklyNutritionSummaryParams{
 		UserID:        pgUUID,
-		WeekStartDate: pgtype.Date{Time: weekStartDate, Valid: true},
+		WeekStartDate: pgutil.Date(weekStartDate),
 	}
 	result, err := r.queries.GetWeeklyNutritionSummary(ctx, arg)
 	if err != nil {
@@ -164,17 +140,13 @@ func (r *nutritionSummaryRepository) GetWeekly(ctx context.Context, userID strin
 }
 
 func (r *nutritionSummaryRepository) ListWeeklyByDateRange(ctx context.Context, userID string, startDate, endDate time.Time) ([]*models.WeeklyNutritionSummary, error) {
-	parsedUUID, err := uuid.Parse(userID)
+	pgUUID, err := pgutil.ParseUUID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user UUID: %w", err)
-	}
-	pgUUID := pgtype.UUID{
-		Bytes: [16]byte(parsedUUID),
-		Valid: true,
+		return nil, err
 	}
 	arg := dbgenerated.ListWeeklyNutritionSummariesByUserAndDateRangeParams{
 		UserID:        pgUUID,
-		WeekStartDate: pgtype.Date{Time: startDate, Valid: true},
+		WeekStartDate: pgutil.Date(startDate),
 	}
 	results, err := r.queries.ListWeeklyNutritionSummariesByUserAndDateRange(ctx, arg)
 	if err != nil {

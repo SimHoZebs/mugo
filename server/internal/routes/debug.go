@@ -44,16 +44,20 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, registry *adk.Runne
 			UserId string `path:"user_id" example:"user_12345" doc:"User ID to list sessions for"`
 		}) (response *debugListSessionsResponse, err error) {
 			resp := &debugListSessionsResponse{}
-			if database, err := provider.GetDatabase(); err == nil {
-				conversations, err := database.Conversations().ListByUser(ctx, input.UserId)
-				if err == nil {
-					for _, c := range conversations {
-						resp.Body.SessionIds = append(resp.Body.SessionIds, c.SessionID)
-					}
-					return resp, nil
-				}
+			database, err := GetDB(provider)
+			if err != nil {
+				resp.Body.SessionIds = []string{fmt.Sprintf("Database unavailable: %v", err)}
+				return resp, nil
 			}
-			resp.Body.SessionIds = []string{fmt.Sprintf("Could not retrieve sessions for user: %s", input.UserId)}
+
+			conversations, err := database.Conversations().ListByUser(ctx, input.UserId)
+			if err != nil {
+				resp.Body.SessionIds = []string{fmt.Sprintf("Could not retrieve sessions for user: %s", input.UserId)}
+				return resp, nil
+			}
+			for _, c := range conversations {
+				resp.Body.SessionIds = append(resp.Body.SessionIds, c.SessionID)
+			}
 			return resp, nil
 		},
 	)
