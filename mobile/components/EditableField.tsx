@@ -7,7 +7,8 @@ type EditableFieldProps = TextInputProps & {
   onRemove?: () => void;
 };
 
-export function EditableField({ isEditing, onRemove, ...rest }: EditableFieldProps) {
+export function EditableField(props: EditableFieldProps) {
+  const { isEditing, onRemove, ...textInputProps } = props;
   return (
     <View className="relative">
       <TextInput
@@ -17,7 +18,7 @@ export function EditableField({ isEditing, onRemove, ...rest }: EditableFieldPro
             : "bg-stone-200 dark:bg-stone-800"
         }`}
         placeholderTextColor="#9CA3AF"
-        {...rest}
+        {...textInputProps}
       />
       {isEditing && (
         <View className="absolute right-3 top-3">
@@ -32,3 +33,4 @@ export function EditableField({ isEditing, onRemove, ...rest }: EditableFieldPro
     </View>
   );
 }
+

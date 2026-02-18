@@ -15,35 +15,27 @@ type DietaryPreferenceListProps = {
   onAdd: () => void;
 };
 
-export function DietaryPreferenceList({
-  preferences,
-  editingId,
-  onEditStart,
-  onEditEnd,
-  onUpdate,
-  onRemove,
-  onAdd,
-}: DietaryPreferenceListProps) {
+export function DietaryPreferenceList(props: DietaryPreferenceListProps) {
   return (
     <ThemedView>
       <ThemedText className="text-sm font-semibold mb-2">
         Dietary Preferences
       </ThemedText>
       <ThemedView className="gap-2">
-        {preferences.map((pref) => (
+        {props.preferences.map((pref) => (
           <EditableField
             key={pref.id}
-            isEditing={editingId === pref.id}
+            isEditing={props.editingId === pref.id}
             value={pref.text}
-            onChangeText={(text) => onUpdate(pref.id, text)}
-            onFocus={() => onEditStart(pref.id)}
-            onBlur={onEditEnd}
+            onChangeText={(text) => props.onUpdate(pref.id, text)}
+            onFocus={() => props.onEditStart(pref.id)}
+            onBlur={props.onEditEnd}
             placeholder="Add a preference..."
-            onRemove={() => onRemove(pref.id)}
+            onRemove={() => props.onRemove(pref.id)}
           />
         ))}
         <Pressable
-          onPress={onAdd}
+          onPress={props.onAdd}
           className="w-full p-4 bg-stone-200 dark:bg-stone-800 rounded-xl items-center justify-center border-2 border-dashed border-stone-400 dark:border-stone-600"
         >
           <ThemedText className="text-stone-500 dark:text-stone-400 font-semibold">
