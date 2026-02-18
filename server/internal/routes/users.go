@@ -11,8 +11,7 @@ import (
 
 type CreateUserRequest struct {
 	Body struct {
-		Username string                 `json:"username" example:"johndoe" doc:"Unique username"`
-		Metadata map[string]interface{} `json:"metadata,omitempty" doc:"Optional user metadata"`
+		Username string `json:"username" example:"johndoe" doc:"Unique username"`
 	}
 }
 
@@ -37,8 +36,7 @@ type ListUsersResponse struct {
 type UpdateUserRequest struct {
 	UserID string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
 	Body   struct {
-		Username string                 `json:"username" example:"johndoe" doc:"Unique username"`
-		Metadata map[string]interface{} `json:"metadata,omitempty" doc:"Optional user metadata"`
+		Username string `json:"username" example:"johndoe" doc:"Unique username"`
 	}
 }
 

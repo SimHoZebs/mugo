@@ -1,6 +1,8 @@
 package mocks
 
 import (
+	"context"
+
 	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/db/repository"
 	"github.com/stretchr/testify/mock"
@@ -29,6 +31,11 @@ func (m *DBMock) Meals() repository.MealLogRepository {
 func (m *DBMock) Nutrition() repository.NutritionSummaryRepository {
 	args := m.Called()
 	return args.Get(0).(repository.NutritionSummaryRepository)
+}
+
+func (m *DBMock) WithTx(ctx context.Context, fn func(ctx context.Context, txDB *db.TxDatabase) error) error {
+	args := m.Called(ctx, fn)
+	return args.Error(0)
 }
 
 // DBProviderMock is a mock implementation of the DBProvider interface.

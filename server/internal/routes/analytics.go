@@ -53,7 +53,10 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		date := parseDate(input.Date)
+		date, err := parseDate(input.Date)
+		if err != nil && input.Date != "" {
+			return nil, huma.Error400BadRequest("Invalid date format. Expected YYYY-MM-DD", err)
+		}
 		if input.Date == "" {
 			date = time.Now()
 		}
@@ -86,7 +89,17 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		summaries, err := database.Nutrition().ListDailyByDateRange(ctx, input.UserID, parseDate(input.StartDate), parseDate(input.EndDate))
+		start, err := parseDate(input.StartDate)
+		if err != nil {
+			return nil, huma.Error400BadRequest("Invalid start_date format. Expected YYYY-MM-DD", err)
+		}
+
+		end, err := parseDate(input.EndDate)
+		if err != nil {
+			return nil, huma.Error400BadRequest("Invalid end_date format. Expected YYYY-MM-DD", err)
+		}
+
+		summaries, err := database.Nutrition().ListDailyByDateRange(ctx, input.UserID, start, end)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list daily summaries: %w", err)
 		}
@@ -111,7 +124,10 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		weekStart := parseDate(input.WeekStartDate)
+		weekStart, err := parseDate(input.WeekStartDate)
+		if err != nil && input.WeekStartDate != "" {
+			return nil, huma.Error400BadRequest("Invalid week_start_date format. Expected YYYY-MM-DD", err)
+		}
 		if input.WeekStartDate == "" {
 			now := time.Now()
 			weekStart = now.AddDate(0, 0, -int(now.Weekday()-1))
@@ -145,7 +161,17 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		summaries, err := database.Nutrition().ListWeeklyByDateRange(ctx, input.UserID, parseDate(input.StartDate), parseDate(input.EndDate))
+		start, err := parseDate(input.StartDate)
+		if err != nil {
+			return nil, huma.Error400BadRequest("Invalid start_date format. Expected YYYY-MM-DD", err)
+		}
+
+		end, err := parseDate(input.EndDate)
+		if err != nil {
+			return nil, huma.Error400BadRequest("Invalid end_date format. Expected YYYY-MM-DD", err)
+		}
+
+		summaries, err := database.Nutrition().ListWeeklyByDateRange(ctx, input.UserID, start, end)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list weekly summaries: %w", err)
 		}

@@ -17,7 +17,7 @@ SELECT EXISTS(SELECT 1 FROM users WHERE username = $1) AS exists;
 
 -- name: UpdateUser :one
 UPDATE users
-SET username = $2, metadata = $3, updated_at = CURRENT_TIMESTAMP
+SET username = $2, updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
 RETURNING *;
 

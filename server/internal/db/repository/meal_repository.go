@@ -186,6 +186,48 @@ func (r *mealLogRepository) ListByConversation(ctx context.Context, conversation
 	return mealLogs, nil
 }
 
+func (r *mealLogRepository) Update(ctx context.Context, id string, foodName, mealType string, macros models.Macros, assumptions []models.Assumption, rawResponse interface{}) (*models.MealLog, error) {
+	parsedUUID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID: %w", err)
+	}
+	pgUUID := pgtype.UUID{
+		Bytes: [16]byte(parsedUUID),
+		Valid: true,
+	}
+
+	macrosJSON, err := json.Marshal(macros)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal macros: %w", err)
+	}
+	assumptionsJSON, err := json.Marshal(assumptions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal assumptions: %w", err)
+	}
+
+	var rawResponseJSON []byte
+	if rawResponse != nil {
+		rawResponseJSON, err = json.Marshal(rawResponse)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal raw response: %w", err)
+		}
+	}
+
+	arg := dbgenerated.UpdateMealLogParams{
+		ID:          pgUUID,
+		FoodName:    foodName,
+		MealType:    mealType,
+		Macros:      macrosJSON,
+		Assumptions: assumptionsJSON,
+		RawResponse: rawResponseJSON,
+	}
+	result, err := r.queries.UpdateMealLog(ctx, arg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update meal log: %w", err)
+	}
+	return mapToMealLog(result), nil
+}
+
 func (r *mealLogRepository) Delete(ctx context.Context, id string) error {
 	parsedUUID, err := uuid.Parse(id)
 	if err != nil {

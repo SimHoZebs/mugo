@@ -33,6 +33,7 @@ type MealLogRepository interface {
 	ListByUserAndDate(ctx context.Context, userID string, date time.Time) ([]*models.MealLog, error)
 	ListByUserAndDateRange(ctx context.Context, userID string, startDate, endDate time.Time) ([]*models.MealLog, error)
 	ListByConversation(ctx context.Context, conversationID string) ([]*models.MealLog, error)
+	Update(ctx context.Context, id string, foodName, mealType string, macros models.Macros, assumptions []models.Assumption, rawResponse interface{}) (*models.MealLog, error)
 	Delete(ctx context.Context, id string) error
 }
 

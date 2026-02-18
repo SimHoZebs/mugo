@@ -133,58 +133,60 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient adk.AgentC
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		// Get existing meal to retrieve session_id
-		meal, err := database.Meals().GetByID(ctx, input.MealID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get meal: %w", err)
-		}
+		var updatedMeal *models.MealLog
+		txErr := database.WithTx(ctx, func(ctx context.Context, txDB *db.TxDatabase) error {
+			// Get existing meal to retrieve session_id
+			meal, err := txDB.MealLogRepository.GetByID(ctx, input.MealID)
+			if err != nil {
+				return fmt.Errorf("failed to get meal: %w", err)
+			}
 
-		sessionID := ""
-		if meal.ConversationID != nil {
-			sessionID = *meal.ConversationID
-		}
+			sessionID := ""
+			if meal.ConversationID != nil {
+				sessionID = *meal.ConversationID
+			}
 
-		fmt.Printf("Updating meal %s with correction: %s (session: %s)\n",
-			input.MealID, input.Body.Correction, sessionID)
+			fmt.Printf("Updating meal %s with correction: %s (session: %s)\n",
+				input.MealID, input.Body.Correction, sessionID)
 
-		// Call nutrition agent with correction in same session
-		result, err := adkClient.RunWithAutoSession(ctx, adkmodels.RunAgentRequest{
-			AppName:   "macro_estimator",
-			UserId:    meal.UserID,
-			SessionId: sessionID,
-			NewMessage: genai.Content{
-				Role:  string(genai.RoleUser),
-				Parts: []*genai.Part{{Text: input.Body.Correction}},
-			},
+			// Call nutrition agent with correction in same session
+			result, err := adkClient.RunWithAutoSession(ctx, adkmodels.RunAgentRequest{
+				AppName:   "macro_estimator",
+				UserId:    meal.UserID,
+				SessionId: sessionID,
+				NewMessage: genai.Content{
+					Role:  string(genai.RoleUser),
+					Parts: []*genai.Part{{Text: input.Body.Correction}},
+				},
+			})
+			if err != nil {
+				return fmt.Errorf("nutrition agent processing failed: %w", err)
+			}
+
+			// Parse updated nutrition payload
+			var payload models.NutritionPayload
+			if err := json.Unmarshal([]byte(result.FinalText), &payload); err != nil {
+				return fmt.Errorf("failed to parse nutrition response: %w", err)
+			}
+
+			// Update the existing meal with corrected data
+			newMeal, err := txDB.MealLogRepository.Update(ctx,
+				input.MealID,
+				payload.Name,
+				string(payload.MealType),
+				payload.Macros,
+				payload.Assumptions,
+				payload,
+			)
+			if err != nil {
+				return fmt.Errorf("failed to update meal: %w", err)
+			}
+			updatedMeal = newMeal
+			return nil
 		})
-		if err != nil {
-			return nil, fmt.Errorf("nutrition agent processing failed: %w", err)
-		}
 
-		// Parse updated nutrition payload
-		var payload models.NutritionPayload
-		if err := json.Unmarshal([]byte(result.FinalText), &payload); err != nil {
-			return nil, fmt.Errorf("failed to parse nutrition response: %w", err)
-		}
-
-		// Delete old meal and create new one with corrected data
-		if err := database.Meals().Delete(ctx, input.MealID); err != nil {
-			return nil, fmt.Errorf("failed to delete old meal: %w", err)
-		}
-
-		updatedMeal, err := database.Meals().Create(ctx,
-			meal.UserID,
-			sessionID,
-			payload.Name,
-			string(payload.MealType),
-			time.Now(),
-			payload.Macros,
-			payload.Assumptions,
-			"ai_estimated",
-			payload,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create updated meal: %w", err)
+		if txErr != nil {
+			return nil, txErr
 		}
 
 		resp := &UpdateMealResponse{}
@@ -233,7 +235,12 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient adk.AgentC
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		meals, err := database.Meals().ListByUserAndDate(ctx, input.UserID, parseDate(input.Date))
+		date, err := parseDate(input.Date)
+		if err != nil {
+			return nil, huma.Error400BadRequest("Invalid date format. Expected YYYY-MM-DD", err)
+		}
+
+		meals, err := database.Meals().ListByUserAndDate(ctx, input.UserID, date)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list meals by date: %w", err)
 		}
@@ -259,7 +266,17 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient adk.AgentC
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		meals, err := database.Meals().ListByUserAndDateRange(ctx, input.UserID, parseDate(input.StartDate), parseDate(input.EndDate))
+		start, err := parseDate(input.StartDate)
+		if err != nil {
+			return nil, huma.Error400BadRequest("Invalid start_date format. Expected YYYY-MM-DD", err)
+		}
+
+		end, err := parseDate(input.EndDate)
+		if err != nil {
+			return nil, huma.Error400BadRequest("Invalid end_date format. Expected YYYY-MM-DD", err)
+		}
+
+		meals, err := database.Meals().ListByUserAndDateRange(ctx, input.UserID, start, end)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list meals by date range: %w", err)
 		}
@@ -317,9 +334,4 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient adk.AgentC
 		resp.Body.Meal = meal
 		return resp, nil
 	})
-}
-
-func parseDate(s string) time.Time {
-	t, _ := time.Parse("2006-01-02", s)
-	return t
 }

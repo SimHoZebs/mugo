@@ -19,10 +19,7 @@ func NewUserRepository(queries *dbgenerated.Queries) UserRepository {
 }
 
 func (r *userRepository) Create(ctx context.Context, username string) (*models.User, error) {
-	arg := dbgenerated.CreateUserParams{
-		Username: username,
-	}
-	result, err := r.queries.CreateUser(ctx, arg)
+	result, err := r.queries.CreateUser(ctx, username)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}

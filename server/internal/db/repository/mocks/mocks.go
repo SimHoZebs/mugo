@@ -166,6 +166,14 @@ func (m *MealLogRepositoryMock) ListByConversation(ctx context.Context, conversa
 	return args.Get(0).([]*models.MealLog), args.Error(1)
 }
 
+func (m *MealLogRepositoryMock) Update(ctx context.Context, id string, foodName, mealType string, macros models.Macros, assumptions []models.Assumption, rawResponse interface{}) (*models.MealLog, error) {
+	args := m.Called(ctx, id, foodName, mealType, macros, assumptions, rawResponse)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.MealLog), args.Error(1)
+}
+
 func (m *MealLogRepositoryMock) Delete(ctx context.Context, id string) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)

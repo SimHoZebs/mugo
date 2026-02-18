@@ -36,3 +36,13 @@ WHERE user_id = $1 AND recorded_at::date = $2;
 
 -- name: DeleteMealLog :exec
 DELETE FROM meal_logs WHERE id = $1;
+
+-- name: UpdateMealLog :one
+UPDATE meal_logs
+SET food_name = $2,
+    meal_type = $3,
+    macros = $4,
+    assumptions = $5,
+    raw_response = $6
+WHERE id = $1
+RETURNING *;

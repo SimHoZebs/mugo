@@ -1,6 +1,10 @@
 package db
 
-import "github.com/simhozebs/mugo/internal/db/repository"
+import (
+	"context"
+
+	"github.com/simhozebs/mugo/internal/db/repository"
+)
 
 // DB interface defines the accessors for all repositories.
 type DB interface {
@@ -8,6 +12,7 @@ type DB interface {
 	Conversations() repository.ConversationRepository
 	Meals() repository.MealLogRepository
 	Nutrition() repository.NutritionSummaryRepository
+	WithTx(ctx context.Context, fn func(ctx context.Context, txDB *TxDatabase) error) error
 }
 
 // DBProvider interface defines how to obtain a DB connection.

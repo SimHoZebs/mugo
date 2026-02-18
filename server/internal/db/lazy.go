@@ -72,3 +72,12 @@ func (ld *LazyDatabase) Close() {
 func (ld *LazyDatabase) GetDatabase() (DB, error) {
 	return ld.getOrConnect()
 }
+
+// WithTx executes the given function in a transaction.
+func (ld *LazyDatabase) WithTx(ctx context.Context, fn func(ctx context.Context, txDB *TxDatabase) error) error {
+	db, err := ld.getOrConnect()
+	if err != nil {
+		return err
+	}
+	return db.WithTx(ctx, fn)
+}
