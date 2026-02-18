@@ -8,7 +8,7 @@ import {
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import InputBar from "@/components/InputBar";
-import { MacroRow } from "@/components/MacroRow";
+import { MacroDisplay } from "@/components/MacroDisplay";
 import { AssumptionCard } from "@/components/AssumptionCard";
 import useGlobalStore from "@/lib/store";
 
@@ -68,25 +68,29 @@ export default function MealDetailScreen() {
           </ThemedText>
 
           <View className="bg-white dark:bg-stone-900 rounded-xl p-4 border border-stone-200 dark:border-stone-700">
-            <MacroRow
+            <MacroDisplay
+              variant="row"
               label="Calories"
               value={meal.nutrition.macros.calories}
               unit="kcal"
               colorClass="bg-amber-500"
             />
-            <MacroRow
+            <MacroDisplay
+              variant="row"
               label="Protein"
               value={meal.nutrition.macros.protein}
               unit="g"
               colorClass="bg-emerald-500"
             />
-            <MacroRow
+            <MacroDisplay
+              variant="row"
               label="Carbs"
               value={meal.nutrition.macros.carbs}
               unit="g"
               colorClass="bg-blue-500"
             />
-            <MacroRow
+            <MacroDisplay
+              variant="row"
               label="Fat"
               value={meal.nutrition.macros.fat}
               unit="g"

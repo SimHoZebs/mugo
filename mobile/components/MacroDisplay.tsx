@@ -10,33 +10,32 @@ interface MacroDisplayProps {
 }
 
 export function MacroDisplay(props: MacroDisplayProps) {
-  const dot = (
-    <View
-      className={`rounded-full ${props.colorClass} ${props.variant !== "column" ? "w-3 h-3" : "w-2 h-2"}`}
-    />
-  );
+  const isColumn = props.variant === "column";
 
-  return props.variant === "column" ? (
-    <View className="items-center flex-1">
-      <View className="flex-row items-center gap-1.5">
-        {dot}
-        <ThemedText className="text-xs text-stone-500 dark:text-stone-400">
+  return (
+    <View
+      className={
+        isColumn
+          ? "items-center flex-1"
+          : "flex-row items-center justify-between py-3 border-b border-stone-200 dark:border-stone-700"
+      }
+    >
+      <View className={`flex-row items-center ${isColumn ? "gap-1.5" : "gap-3"}`}>
+        <View
+          className={`rounded-full ${props.colorClass} ${isColumn ? "w-2 h-2" : "w-3 h-3"}`}
+        />
+        <ThemedText
+          className={
+            isColumn ? "text-xs text-stone-500 dark:text-stone-400" : "text-base"
+          }
+        >
           {props.label}
         </ThemedText>
       </View>
       <ThemedText type="defaultSemiBold">
-        {Math.round(props.value)}
-        {props.unit}
-      </ThemedText>
-    </View>
-  ) : (
-    <View className="flex-row items-center justify-between py-3 border-b border-stone-200 dark:border-stone-700">
-      <View className="flex-row items-center gap-3">
-        {dot}
-        <ThemedText className="text-base">{props.label}</ThemedText>
-      </View>
-      <ThemedText type="defaultSemiBold">
-        {Math.round(props.value)} {props.unit}
+        {isColumn
+          ? `${Math.round(props.value)}${props.unit}`
+          : `${Math.round(props.value)} ${props.unit}`}
       </ThemedText>
     </View>
   );

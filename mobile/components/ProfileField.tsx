@@ -11,21 +11,25 @@ type ProfileFieldProps = TextInputProps & {
 };
 
 export function ProfileField(props: ProfileFieldProps) {
-  const { label, isEditing, suffix, multiline, ...textInputProps } = props;
   return (
     <ThemedView>
-      <ThemedText className="text-sm font-semibold mb-2">{label}</ThemedText>
+      <ThemedText className="text-sm font-semibold mb-2">{props.label}</ThemedText>
       <EditableField
-        isEditing={isEditing}
-        multiline={multiline}
-        numberOfLines={multiline ? 4 : 1}
-        textAlignVertical={multiline ? "top" : "center"}
-        style={multiline ? { minHeight: 100 } : undefined}
-        {...textInputProps}
+        isEditing={props.isEditing}
+        value={props.value}
+        onChangeText={props.onChangeText}
+        onFocus={props.onFocus}
+        onBlur={props.onBlur}
+        placeholder={props.placeholder}
+        keyboardType={props.keyboardType}
+        multiline={props.multiline}
+        numberOfLines={props.multiline ? 4 : 1}
+        textAlignVertical={props.multiline ? "top" : "center"}
+        style={props.multiline ? { minHeight: 100 } : undefined}
       />
-      {suffix && (
+      {props.suffix && (
         <ThemedText className="text-sm text-stone-500 dark:text-stone-400 mt-1">
-          {suffix}
+          {props.suffix}
         </ThemedText>
       )}
     </ThemedView>
