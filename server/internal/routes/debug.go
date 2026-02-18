@@ -8,6 +8,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/simhozebs/mugo/internal/adk"
 	"github.com/simhozebs/mugo/internal/db"
+	"google.golang.org/adk/session"
 )
 
 type DebugGetMessagesRequest struct {
@@ -27,9 +28,7 @@ type debugListSessionsResponse struct {
 	}
 }
 
-// RegisterDebugEndpoints registers debug endpoints.
-// Note: These endpoints now proxy to the ADK server for session information.
-func RegisterDebugEndpoints(humaAPI huma.API, prefix string, adkClient adk.AgentClient, provider db.DBProvider) {
+func RegisterDebugEndpoints(humaAPI huma.API, prefix string, registry *adk.RunnerRegistry, provider db.DBProvider) {
 	debugGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(
@@ -74,21 +73,26 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, adkClient adk.Agent
 			},
 		},
 		func(ctx context.Context, input *DebugGetMessagesRequest) (response *debugGetMessagesResponse, err error) {
-			// Use macro_estimator agent for debug message retrieval
-			// Note: This could be made configurable via query param in the future
-			appName := "macro_estimator"
+			sessionService := registry.GetSessionService()
+			if sessionService == nil {
+				return nil, huma.Error500InternalServerError("Session service not available")
+			}
 
-			session, err := adkClient.GetSession(ctx, appName, input.UserId, input.SessionId)
+			sess, err := sessionService.Get(ctx, &session.GetRequest{
+				AppName:   "macro_estimator",
+				UserID:    input.UserId,
+				SessionID: input.SessionId,
+			})
 			if err != nil {
 				return nil, huma.Error400BadRequest(fmt.Sprintf("Error retrieving session: %v", err))
 			}
 
-			if session == nil {
+			if sess == nil || sess.Session == nil {
 				return nil, huma.Error400BadRequest(fmt.Sprintf("Session not found: %s", input.SessionId))
 			}
 
 			var messages []string
-			for _, ev := range session.Events {
+			for ev := range sess.Session.Events().All() {
 				if ev.Content == nil {
 					continue
 				}

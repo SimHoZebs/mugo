@@ -14,12 +14,11 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
 	"github.com/simhozebs/mugo/internal/adk"
-	"github.com/simhozebs/mugo/internal/config"
+	"github.com/simhozebs/mugo/internal/agents"
 	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/routes"
 )
 
-// GreetingOutput represents the greeting operation response.
 type GreetingOutput struct {
 	Body struct {
 		Message string `json:"message" example:"Hello, world!" doc:"Greeting message"`
@@ -30,14 +29,45 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Handle shutdown signals
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	// Initialize ADK client
-	adkServerURL := config.GetADKServerURL()
-	adkClient := adk.NewClient(adkServerURL)
-	log.Printf("ADK client initialized with URL: %s", adkServerURL)
+	sessionService, err := adk.CreateSessionService()
+	if err != nil {
+		log.Fatalf("Failed to create session service: %v", err)
+	}
+
+	macroAgent, err := agents.MacroEstimator()
+	if err != nil {
+		log.Fatalf("Failed to create macro estimator agent: %v", err)
+	}
+
+	echoAgent, err := agents.NewEchoAgent()
+	if err != nil {
+		log.Fatalf("Failed to create echo agent: %v", err)
+	}
+
+	weatherAgent, err := agents.Weather()
+	if err != nil {
+		log.Fatalf("Failed to create weather agent: %v", err)
+	}
+
+	macroRunner, err := adk.NewAgentRunner("macro_estimator", macroAgent, sessionService)
+	if err != nil {
+		log.Fatalf("Failed to create macro runner: %v", err)
+	}
+
+	echoRunner, err := adk.NewAgentRunner("echo_agent", echoAgent, sessionService)
+	if err != nil {
+		log.Fatalf("Failed to create echo runner: %v", err)
+	}
+
+	weatherRunner, err := adk.NewAgentRunner("hello_time_agent", weatherAgent, sessionService)
+	if err != nil {
+		log.Fatalf("Failed to create weather runner: %v", err)
+	}
+
+	runnerRegistry := adk.NewRunnerRegistry(macroRunner, echoRunner, weatherRunner)
 
 	lazyDB := db.NewLazyDatabase(ctx)
 	defer lazyDB.Close()
@@ -46,7 +76,6 @@ func main() {
 	r := chi.NewMux()
 	api := humachi.New(r, huma.DefaultConfig("Mugo API", "0.1.0"))
 
-	// Register GET /greeting/{name} handler.
 	huma.Register(api, huma.Operation{
 		OperationID: "greeting",
 		Method:      http.MethodGet,
@@ -62,13 +91,10 @@ func main() {
 		return resp, nil
 	})
 
-	// Register agent endpoints (test endpoints only, no database)
-	routes.RegisterAgentEndpoints(api, "/agents", adkClient)
-	routes.RegisterDebugEndpoints(api, "/debug", adkClient, lazyDB)
-
-	// Register user and meal endpoints (always registered, will connect on first use)
+	routes.RegisterAgentEndpoints(api, "/agents", runnerRegistry)
+	routes.RegisterDebugEndpoints(api, "/debug", runnerRegistry, lazyDB)
 	routes.RegisterUserEndpoints(api, "/users", lazyDB)
-	routes.RegisterMealEndpoints(api, "/meals", adkClient, lazyDB)
+	routes.RegisterMealEndpoints(api, "/meals", macroRunner, lazyDB)
 	routes.RegisterAnalyticsEndpoints(api, "/analytics", lazyDB)
 	routes.RegisterConversationEndpoints(api, "/conversations", lazyDB)
 
@@ -77,27 +103,23 @@ func main() {
 		port = "8888"
 	}
 
-	// Create HTTP server with explicit configuration for graceful shutdown
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: r,
 	}
 
-	// Start server in a goroutine so it doesn't block
 	serverErrors := make(chan error, 1)
 	go func() {
 		log.Printf("Server starting on http://localhost:%s", port)
 		serverErrors <- srv.ListenAndServe()
 	}()
 
-	// Block until we receive a signal or server error
 	select {
 	case err := <-serverErrors:
 		log.Fatalf("Server failed to start: %v", err)
 	case sig := <-sigChan:
 		log.Printf("Received signal %v, starting graceful shutdown...", sig)
 
-		// Give outstanding requests 5 seconds to complete
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer shutdownCancel()
 

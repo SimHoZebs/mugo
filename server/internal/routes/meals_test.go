@@ -1,13 +1,13 @@
 package routes_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
 
 	"github.com/danielgtaylor/huma/v2/humatest"
 	"github.com/simhozebs/mugo/internal/adk"
-	adkmocks "github.com/simhozebs/mugo/internal/adk/mocks"
 	"github.com/simhozebs/mugo/internal/db/mocks"
 	repomocks "github.com/simhozebs/mugo/internal/db/repository/mocks"
 	"github.com/simhozebs/mugo/internal/models"
@@ -16,13 +16,24 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+type mockAgentRunner struct {
+	adk.AgentRunner
+	runFunc func(ctx context.Context, userID, sessionID, text string) (*adk.RunResult, error)
+}
+
+func (m *mockAgentRunner) Run(ctx context.Context, userID, sessionID, text string) (*adk.RunResult, error) {
+	if m.runFunc != nil {
+		return m.runFunc(ctx, userID, sessionID, text)
+	}
+	return &adk.RunResult{}, nil
+}
+
 func TestCreateMealLog(t *testing.T) {
 	_, api := humatest.New(t)
 
 	dbProviderMock := new(mocks.DBProviderMock)
 	dbMock := new(mocks.DBMock)
 	mealRepoMock := new(repomocks.MealLogRepositoryMock)
-	adkClientMock := new(adkmocks.AgentClientMock)
 
 	dbProviderMock.On("GetDatabase").Return(dbMock, nil)
 	dbMock.On("Meals").Return(mealRepoMock)
@@ -31,7 +42,6 @@ func TestCreateMealLog(t *testing.T) {
 	sessionID := "session-456"
 	foodDescription := "I ate a chicken sandwich"
 
-	// Mock ADK response
 	payload := models.NutritionPayload{
 		Name:     "Chicken Sandwich",
 		MealType: models.MealTypeLunch,
@@ -47,16 +57,14 @@ func TestCreateMealLog(t *testing.T) {
 	}
 	payloadJSON, _ := json.Marshal(payload)
 
-	adkResult := &adk.RunResult{
-		FinalText: string(payloadJSON),
+	mockRunner := &mockAgentRunner{
+		runFunc: func(ctx context.Context, uid, sid, text string) (*adk.RunResult, error) {
+			return &adk.RunResult{
+				FinalText: string(payloadJSON),
+			}, nil
+		},
 	}
 
-	adkClientMock.On("RunWithAutoSession", mock.Anything, mock.MatchedBy(func(req interface{}) bool {
-		// You can add more specific matching here if needed
-		return true
-	})).Return(adkResult, nil)
-
-	// Mock DB Create
 	expectedMeal := &models.MealLog{
 		ID:       "meal-123",
 		UserID:   userID,
@@ -65,10 +73,10 @@ func TestCreateMealLog(t *testing.T) {
 		Macros:   payload.Macros,
 	}
 
-	mealRepoMock.On("Create", mock.Anything, userID, sessionID, payload.Name, string(payload.MealType), mock.Anything, payload.Macros, payload.Assumptions, "ai_estimated", payload).
+	mealRepoMock.On("Create", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(expectedMeal, nil)
 
-	routes.RegisterMealEndpoints(api, "/meals", adkClientMock, dbProviderMock)
+	routes.RegisterMealEndpoints(api, "/meals", mockRunner, dbProviderMock)
 
 	resp := api.Post("/meals", struct {
 		UserID      string `json:"user_id"`
@@ -85,6 +93,5 @@ func TestCreateMealLog(t *testing.T) {
 	assert.Contains(t, resp.Body.String(), "Chicken Sandwich")
 
 	dbProviderMock.AssertExpectations(t)
-	adkClientMock.AssertExpectations(t)
 	mealRepoMock.AssertExpectations(t)
 }

@@ -10,8 +10,6 @@ import (
 	"github.com/simhozebs/mugo/internal/adk"
 	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/models"
-	adkmodels "google.golang.org/adk/server/restapi/models"
-	"google.golang.org/genai"
 )
 
 type CreateMealRequest struct {
@@ -61,8 +59,7 @@ type ListMealsByDateRangeRequest struct {
 
 const mealLogTags = "Logs"
 
-// RegisterMealEndpoints registers meal log endpoints.
-func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient adk.AgentClient, provider db.DBProvider) {
+func RegisterMealEndpoints(humaAPI huma.API, prefix string, macroRunner adk.AgentRunner, provider db.DBProvider) {
 	mealsGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(mealsGroup, huma.Operation{
@@ -75,27 +72,16 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient adk.AgentC
 		fmt.Printf("Creating meal: %s (user: %s, session: %s)\n",
 			input.Body.Description, input.Body.UserID, input.Body.SessionID)
 
-		// Call nutrition agent via ADK
-		result, err := adkClient.RunWithAutoSession(ctx, adkmodels.RunAgentRequest{
-			AppName:   "macro_estimator",
-			UserId:    input.Body.UserID,
-			SessionId: input.Body.SessionID,
-			NewMessage: genai.Content{
-				Role:  string(genai.RoleUser),
-				Parts: []*genai.Part{{Text: input.Body.Description}},
-			},
-		})
+		result, err := macroRunner.Run(ctx, input.Body.UserID, input.Body.SessionID, input.Body.Description)
 		if err != nil {
 			return nil, fmt.Errorf("nutrition agent processing failed: %w", err)
 		}
 
-		// Parse nutrition payload
 		var payload models.NutritionPayload
 		if err := json.Unmarshal([]byte(result.FinalText), &payload); err != nil {
 			return nil, fmt.Errorf("failed to parse nutrition response: %w", err)
 		}
 
-		// Persist to database
 		database, err := provider.GetDatabase()
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
@@ -135,7 +121,6 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient adk.AgentC
 
 		var updatedMeal *models.MealLog
 		txErr := database.WithTx(ctx, func(ctx context.Context, txDB *db.TxDatabase) error {
-			// Get existing meal to retrieve session_id
 			meal, err := txDB.MealLogRepository.GetByID(ctx, input.MealID)
 			if err != nil {
 				return fmt.Errorf("failed to get meal: %w", err)
@@ -149,27 +134,16 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, adkClient adk.AgentC
 			fmt.Printf("Updating meal %s with correction: %s (session: %s)\n",
 				input.MealID, input.Body.Correction, sessionID)
 
-			// Call nutrition agent with correction in same session
-			result, err := adkClient.RunWithAutoSession(ctx, adkmodels.RunAgentRequest{
-				AppName:   "macro_estimator",
-				UserId:    meal.UserID,
-				SessionId: sessionID,
-				NewMessage: genai.Content{
-					Role:  string(genai.RoleUser),
-					Parts: []*genai.Part{{Text: input.Body.Correction}},
-				},
-			})
+			result, err := macroRunner.Run(ctx, meal.UserID, sessionID, input.Body.Correction)
 			if err != nil {
 				return fmt.Errorf("nutrition agent processing failed: %w", err)
 			}
 
-			// Parse updated nutrition payload
 			var payload models.NutritionPayload
 			if err := json.Unmarshal([]byte(result.FinalText), &payload); err != nil {
 				return fmt.Errorf("failed to parse nutrition response: %w", err)
 			}
 
-			// Update the existing meal with corrected data
 			newMeal, err := txDB.MealLogRepository.Update(ctx,
 				input.MealID,
 				payload.Name,

@@ -17,18 +17,18 @@ type TestResponse struct {
 	Value string `json:"value" example:"test response" doc:"Response from the test tool"`
 }
 
-func yeet(ctx tool.Context, args TestArgs) TestResponse {
+func yeet(ctx tool.Context, args TestArgs) (TestResponse, error) {
 
 	content, err := os.ReadFile("./tools/test.md")
 	if err != nil {
 		return TestResponse{
 			Value: fmt.Sprintf("Error reading file: %v", err),
-		}
+		}, nil
 	}
 
 	return TestResponse{
 		Value: string(content),
-	}
+	}, nil
 }
 
 func TestTool(ctx context.Context) (tool.Tool, error) {

@@ -21,6 +21,16 @@ func GetADKServerURL() string {
 	return url
 }
 
+// GetADKSessionDatabaseURL returns the database URL for ADK session storage.
+// Defaults to DATABASE_URL if not set separately.
+func GetADKSessionDatabaseURL() string {
+	url := os.Getenv("ADK_SESSION_DB_URL")
+	if url == "" {
+		return GetDatabaseURL()
+	}
+	return url
+}
+
 // GetDatabaseURL returns the database URL from environment variable.
 func GetDatabaseURL() string {
 	return os.Getenv("DATABASE_URL")
