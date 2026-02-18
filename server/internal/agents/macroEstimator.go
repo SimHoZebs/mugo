@@ -17,7 +17,8 @@ import (
 	"google.golang.org/genai"
 )
 
-// MacroEstimator creates the nutrition estimation agent.
+// MacroEstimator creates the nutrition estimation agent for a single meal.
+// It is intended to be used as a sub-agent under MealOrchestrator.
 func MacroEstimator() (agent.Agent, error) {
 	ctx := context.Background()
 	model, err := gemini.NewModel(ctx,
@@ -27,7 +28,7 @@ func MacroEstimator() (agent.Agent, error) {
 		log.Fatalf("Failed to create model: %v", err)
 	}
 
-	mealItemSchema := &genai.Schema{
+	schema := &genai.Schema{
 		Type: genai.TypeObject,
 		Properties: map[string]*genai.Schema{
 			"name": {
@@ -36,7 +37,7 @@ func MacroEstimator() (agent.Agent, error) {
 			},
 			"date": {
 				Type:        genai.TypeString,
-				Description: "Date of the meal in YYYY-MM-DD format, resolved from context (e.g. 'today', 'yesterday')",
+				Description: "Date of the meal in YYYY-MM-DD format",
 			},
 			"macros": {
 				Type: genai.TypeObject,
@@ -72,18 +73,6 @@ func MacroEstimator() (agent.Agent, error) {
 		Required: []string{"name", "date", "macros", "assumptions"},
 	}
 
-	schema := &genai.Schema{
-		Type: genai.TypeObject,
-		Properties: map[string]*genai.Schema{
-			"meals": {
-				Type:        genai.TypeArray,
-				Description: "One or more meals parsed from the user's message",
-				Items:       mealItemSchema,
-			},
-		},
-		Required: []string{"meals"},
-	}
-
 	// afterModel callback: strict unmarshal into NutritionPayload, assign IDs, error if schema mismatch
 	onAfterModelAssignIDs := llmagent.AfterModelCallback(func(ctx agent.CallbackContext, resp *adkmodel.LLMResponse, respErr error) (*adkmodel.LLMResponse, error) {
 		if respErr != nil {
@@ -109,24 +98,22 @@ func MacroEstimator() (agent.Agent, error) {
 		}
 		text = strings.TrimSpace(text)
 
-		var batch models.MealsBatchPayload
-		if err := json.Unmarshal([]byte(text), &batch); err != nil {
+		var payload models.NutritionPayload
+		if err := json.Unmarshal([]byte(text), &payload); err != nil {
 			return nil, fmt.Errorf("nutrition agent: response did not match expected schema: %w\nContent: %s", err, text)
 		}
 
 		// Assign sequential IDs if missing and default unit to 'g' if empty
-		for mi := range batch.Meals {
-			for i := range batch.Meals[mi].Assumptions {
-				if batch.Meals[mi].Assumptions[i].ID == "" {
-					batch.Meals[mi].Assumptions[i].ID = fmt.Sprintf("A%d", i+1)
-				}
-				if batch.Meals[mi].Assumptions[i].Unit == "" {
-					batch.Meals[mi].Assumptions[i].Unit = "g"
-				}
+		for i := range payload.Assumptions {
+			if payload.Assumptions[i].ID == "" {
+				payload.Assumptions[i].ID = fmt.Sprintf("A%d", i+1)
+			}
+			if payload.Assumptions[i].Unit == "" {
+				payload.Assumptions[i].Unit = "g"
 			}
 		}
 
-		newBytes, err := json.Marshal(batch)
+		newBytes, err := json.Marshal(payload)
 		if err != nil {
 			return nil, fmt.Errorf("nutrition agent: failed to marshal normalized payload: %w", err)
 		}
@@ -137,19 +124,18 @@ func MacroEstimator() (agent.Agent, error) {
 	return llmagent.New(llmagent.Config{
 		Name:        "macro_estimator",
 		Model:       model,
-		Description: "Estimates nutritional value (macros) and lists assumptions based on food description.",
-		Instruction: `You are a nutritional estimation assistant.
-Your goal is to parse ALL meals mentioned by the user and estimate macronutrients for each one.
-The user's message will begin with today's date in YYYY-MM-DD format. Use it to resolve relative date references like "today" or "yesterday".
-For EACH meal you identify, you MUST provide:
-1. A short, descriptive name for the meal (e.g., "Grilled Chicken Caesar Salad", "Homemade Beef Tacos")
-2. The date of the meal in YYYY-MM-DD format (resolved from context clues like "today", "yesterday", etc.)
+		Description: "Estimates nutritional macros and assumptions for a single described meal. Returns structured JSON for one meal.",
+		Instruction: `You are a nutritional estimation assistant for a single meal.
+You will receive a meal description that includes the meal's date in YYYY-MM-DD format.
+You MUST provide:
+1. A short, descriptive name for the meal (e.g., "Grilled Chicken Caesar Salad")
+2. The date of the meal in YYYY-MM-DD format (as provided in the input)
 3. The estimated macronutrients (calories, protein, carbs, fat)
 4. A list of assumptions you made to reach these estimates
-5. The meal type (breakfast, lunch, dinner, or snack) - use conversation context if available, otherwise infer from the food name
-If the user mentions multiple meals in one message, include ALL of them as separate entries in the "meals" array.
+5. The meal type (breakfast, lunch, dinner, or snack)
 `,
 		OutputSchema:        schema,
 		AfterModelCallbacks: []llmagent.AfterModelCallback{onAfterModelAssignIDs},
+		OutputKey:           "meal_result",
 	})
 }
