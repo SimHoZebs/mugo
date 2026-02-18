@@ -17,7 +17,8 @@ import (
 	"google.golang.org/genai"
 )
 
-// MacroEstimator creates the nutrition estimation agent.
+// MacroEstimator creates the nutrition estimation agent for a single meal.
+// It is intended to be used as a sub-agent under MealOrchestrator.
 func MacroEstimator() (agent.Agent, error) {
 	ctx := context.Background()
 	model, err := gemini.NewModel(ctx,
@@ -33,6 +34,10 @@ func MacroEstimator() (agent.Agent, error) {
 			"name": {
 				Type:        genai.TypeString,
 				Description: "A short, descriptive name for the meal",
+			},
+			"date": {
+				Type:        genai.TypeString,
+				Description: "Date of the meal in YYYY-MM-DD format",
 			},
 			"macros": {
 				Type: genai.TypeObject,
@@ -65,7 +70,7 @@ func MacroEstimator() (agent.Agent, error) {
 				Description: "The type of meal (breakfast, lunch, dinner, or snack)",
 			},
 		},
-		Required: []string{"name", "macros", "assumptions"},
+		Required: []string{"name", "date", "macros", "assumptions"},
 	}
 
 	// afterModel callback: strict unmarshal into NutritionPayload, assign IDs, error if schema mismatch
@@ -119,16 +124,18 @@ func MacroEstimator() (agent.Agent, error) {
 	return llmagent.New(llmagent.Config{
 		Name:        "macro_estimator",
 		Model:       model,
-		Description: "Estimates nutritional value (macros) and lists assumptions based on food description.",
-		Instruction: `You are a nutritional estimation assistant.
-Your goal is to estimate the macronutrients for the food described by the user.
+		Description: "Estimates nutritional macros and assumptions for a single described meal. Returns structured JSON for one meal.",
+		Instruction: `You are a nutritional estimation assistant for a single meal.
+You will receive a meal description that includes the meal's date in YYYY-MM-DD format.
 You MUST provide:
-1. A short, descriptive name for the meal (e.g., "Grilled Chicken Caesar Salad", "Homemade Beef Tacos")
-2. The estimated macronutrients (calories, protein, carbs, fat)
-3. A list of assumptions you made to reach these estimates
-4. The meal type (breakfast, lunch, dinner, or snack) - use conversation context if available, otherwise infer from the food name
+1. A short, descriptive name for the meal (e.g., "Grilled Chicken Caesar Salad")
+2. The date of the meal in YYYY-MM-DD format (as provided in the input)
+3. The estimated macronutrients (calories, protein, carbs, fat)
+4. A list of assumptions you made to reach these estimates
+5. The meal type (breakfast, lunch, dinner, or snack)
 `,
 		OutputSchema:        schema,
 		AfterModelCallbacks: []llmagent.AfterModelCallback{onAfterModelAssignIDs},
+		OutputKey:           "meal_result",
 	})
 }

@@ -10,12 +10,18 @@ const (
 	MealTypeUnknown   MealType = "unknown"
 )
 
-// NutritionPayload is the structured response from the nutrition agent.
+// NutritionPayload is the structured response from the nutrition agent for a single meal.
 type NutritionPayload struct {
 	Name        string       `json:"name" doc:"Name of the food item" example:"Chicken Sandwich"`
 	MealType    MealType     `json:"meal_type" doc:"Type of meal" example:"lunch"`
+	Date        string       `json:"date,omitempty" doc:"Date of the meal in YYYY-MM-DD format" example:"2025-01-07"`
 	Macros      Macros       `json:"macros" doc:"Macronutrient breakdown"`
 	Assumptions []Assumption `json:"assumptions" doc:"List of assumptions made during analysis"`
+}
+
+// MealsBatchPayload wraps one or more meal entries returned by the nutrition agent.
+type MealsBatchPayload struct {
+	Meals []NutritionPayload `json:"meals" doc:"List of parsed meal entries"`
 }
 
 // Assumption represents an assumption made during nutritional analysis.

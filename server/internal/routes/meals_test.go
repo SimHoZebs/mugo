@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2/humatest"
 	"github.com/simhozebs/mugo/internal/adk"
@@ -45,6 +46,7 @@ func TestCreateMealLog(t *testing.T) {
 	payload := models.NutritionPayload{
 		Name:     "Chicken Sandwich",
 		MealType: models.MealTypeLunch,
+		Date:     time.Now().Format("2006-01-02"),
 		Macros: models.Macros{
 			Calories: 450,
 			Protein:  35,
@@ -55,7 +57,8 @@ func TestCreateMealLog(t *testing.T) {
 			{Category: "portion", Field: "weight", AssumedValue: 150, Unit: "g"},
 		},
 	}
-	payloadJSON, _ := json.Marshal(payload)
+	batch := models.MealsBatchPayload{Meals: []models.NutritionPayload{payload}}
+	payloadJSON, _ := json.Marshal(batch)
 
 	mockRunner := &mockAgentRunner{
 		runFunc: func(ctx context.Context, uid, sid, text string) (*adk.RunResult, error) {

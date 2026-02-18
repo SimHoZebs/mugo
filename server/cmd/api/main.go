@@ -42,6 +42,11 @@ func main() {
 		log.Fatalf("Failed to create macro estimator agent: %v", err)
 	}
 
+	orchestratorAgent, err := agents.MealOrchestrator(macroAgent)
+	if err != nil {
+		log.Fatalf("Failed to create meal orchestrator agent: %v", err)
+	}
+
 	echoAgent, err := agents.NewEchoAgent()
 	if err != nil {
 		log.Fatalf("Failed to create echo agent: %v", err)
@@ -57,6 +62,11 @@ func main() {
 		log.Fatalf("Failed to create macro runner: %v", err)
 	}
 
+	orchestratorRunner, err := adk.NewAgentRunner("meal_orchestrator", orchestratorAgent, sessionService)
+	if err != nil {
+		log.Fatalf("Failed to create orchestrator runner: %v", err)
+	}
+
 	echoRunner, err := adk.NewAgentRunner("echo_agent", echoAgent, sessionService)
 	if err != nil {
 		log.Fatalf("Failed to create echo runner: %v", err)
@@ -67,7 +77,7 @@ func main() {
 		log.Fatalf("Failed to create weather runner: %v", err)
 	}
 
-	runnerRegistry := adk.NewRunnerRegistry(macroRunner, echoRunner, weatherRunner)
+	runnerRegistry := adk.NewRunnerRegistry(macroRunner, orchestratorRunner, echoRunner, weatherRunner)
 
 	lazyDB := db.NewLazyDatabase(ctx)
 	defer lazyDB.Close()
@@ -94,7 +104,7 @@ func main() {
 	routes.RegisterAgentEndpoints(api, "/agents", runnerRegistry)
 	routes.RegisterDebugEndpoints(api, "/debug", runnerRegistry, lazyDB)
 	routes.RegisterUserEndpoints(api, "/users", lazyDB)
-	routes.RegisterMealEndpoints(api, "/meals", macroRunner, lazyDB)
+	routes.RegisterMealEndpoints(api, "/meals", orchestratorRunner, lazyDB)
 	routes.RegisterAnalyticsEndpoints(api, "/analytics", lazyDB)
 	routes.RegisterConversationEndpoints(api, "/conversations", lazyDB)
 
