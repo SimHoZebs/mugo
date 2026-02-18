@@ -8,7 +8,7 @@ import {
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import InputBar from "@/components/InputBar";
-import { MacroRow } from "@/components/MacroRow";
+import { MacroDisplay } from "@/components/MacroDisplay";
 import { AssumptionCard } from "@/components/AssumptionCard";
 import useGlobalStore from "@/lib/store";
 
@@ -21,18 +21,8 @@ export default function MealDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const meal = useGlobalStore((state) => state.meals.find((m) => m.id === id));
 
-  if (!meal) {
-    return (
-      <ThemedView className="flex-1 items-center justify-center">
-        <ThemedText>Meal not found</ThemedText>
-      </ThemedView>
-    );
-  }
-
-  const assumptions = meal.nutrition.assumptions;
-
   const handleSubmitCorrection = async (text: string) => {
-    if (isSubmitting) return;
+    if (isSubmitting || !meal) return;
 
     setIsSubmitting(true);
     try {
@@ -58,7 +48,11 @@ export default function MealDetailScreen() {
     }
   };
 
-  return (
+  return !meal ? (
+    <ThemedView className="flex-1 items-center justify-center">
+      <ThemedText>Meal not found</ThemedText>
+    </ThemedView>
+  ) : (
     <ThemedView className="flex-1 px-3">
       <KeyboardAwareScrollView className="flex-1 px-4">
         <View className="pt-4 pb-6">
@@ -74,25 +68,29 @@ export default function MealDetailScreen() {
           </ThemedText>
 
           <View className="bg-white dark:bg-stone-900 rounded-xl p-4 border border-stone-200 dark:border-stone-700">
-            <MacroRow
+            <MacroDisplay
+              variant="row"
               label="Calories"
               value={meal.nutrition.macros.calories}
               unit="kcal"
               colorClass="bg-amber-500"
             />
-            <MacroRow
+            <MacroDisplay
+              variant="row"
               label="Protein"
               value={meal.nutrition.macros.protein}
               unit="g"
               colorClass="bg-emerald-500"
             />
-            <MacroRow
+            <MacroDisplay
+              variant="row"
               label="Carbs"
               value={meal.nutrition.macros.carbs}
               unit="g"
               colorClass="bg-blue-500"
             />
-            <MacroRow
+            <MacroDisplay
+              variant="row"
               label="Fat"
               value={meal.nutrition.macros.fat}
               unit="g"
@@ -102,7 +100,7 @@ export default function MealDetailScreen() {
         </View>
 
         {/* Assumptions Section */}
-        {assumptions.length > 0 && (
+        {meal.nutrition.assumptions.length > 0 && (
           <View className="mb-6">
             <ThemedText type="subtitle" className="mb-3">
               AI Assumptions
@@ -110,7 +108,7 @@ export default function MealDetailScreen() {
             <ThemedText className="text-sm text-stone-500 dark:text-stone-400 mb-3">
               The following values were estimated by AI based on your input:
             </ThemedText>
-            {assumptions.map((assumption, index) => (
+            {meal.nutrition.assumptions.map((assumption, index) => (
               <AssumptionCard
                 key={assumption.id || index}
                 assumption={assumption}

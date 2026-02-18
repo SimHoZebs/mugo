@@ -17,14 +17,6 @@ export function ThemedText({
   className,
   ...rest
 }: ThemedTextProps & { className?: string }) {
-  if (loading) {
-    return (
-      <View
-        className={`rounded bg-stone-200 dark:bg-stone-700 ${className ?? ""}`}
-      />
-    );
-  }
-
   const color = useThemeColor({ light: lightColor, dark: darkColor }, "text");
 
   const typeClasses = {
@@ -35,7 +27,11 @@ export function ThemedText({
     link: "text-base leading-[30px] text-cyan-700",
   };
 
-  return (
+  return loading ? (
+    <View
+      className={`rounded bg-stone-200 dark:bg-stone-700 ${className ?? ""}`}
+    />
+  ) : (
     <Text
       className={[typeClasses[type], `${color}`, className].join(" ")}
       {...rest}
