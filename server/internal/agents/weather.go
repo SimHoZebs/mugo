@@ -2,31 +2,22 @@ package agents
 
 import (
 	"context"
-	"log"
-	"os"
 
-	"github.com/simhozebs/mugo/internal/config"
 	"github.com/simhozebs/mugo/internal/tools"
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
-	"google.golang.org/adk/model/gemini"
 	"google.golang.org/adk/tool"
-	"google.golang.org/genai"
 )
 
-// Weather creates the weather agent.
 func Weather() (agent.Agent, error) {
-	ctx := context.Background()
-	model, err := gemini.NewModel(ctx,
-		config.ModelName,
-		&genai.ClientConfig{APIKey: os.Getenv("GOOGLE_API_KEY")})
+	model, err := NewGeminiModel()
 	if err != nil {
-		log.Fatalf("Failed to create model: %v", err)
+		return nil, err
 	}
 
-	testTool, error := tools.TestTool(ctx)
-	if error != nil {
-		log.Fatalf("Failed to create test tool: %v", error)
+	testTool, err := tools.TestTool(context.Background())
+	if err != nil {
+		return nil, err
 	}
 
 	return llmagent.New(llmagent.Config{

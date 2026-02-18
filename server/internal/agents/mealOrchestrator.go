@@ -1,35 +1,22 @@
 package agents
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"log"
-	"os"
 	"strings"
 
-	"github.com/simhozebs/mugo/internal/config"
 	"github.com/simhozebs/mugo/internal/models"
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
 	adkmodel "google.golang.org/adk/model"
-	"google.golang.org/adk/model/gemini"
-	"google.golang.org/genai"
 )
 
-// MealOrchestrator creates an orchestrator agent that splits a user's meal input
-// into individual meals and delegates each one to the macro_estimator sub-agent.
 func MealOrchestrator(macroEstimator agent.Agent) (agent.Agent, error) {
-	ctx := context.Background()
-	model, err := gemini.NewModel(ctx,
-		config.ModelName,
-		&genai.ClientConfig{APIKey: os.Getenv("GOOGLE_API_KEY")})
+	model, err := NewGeminiModel()
 	if err != nil {
-		log.Fatalf("Failed to create model: %v", err)
+		return nil, err
 	}
 
-	// afterModel callback: parse and normalize the combined MealsBatchPayload returned
-	// by the orchestrator after all sub-agent calls are complete.
 	onAfterModelNormalize := llmagent.AfterModelCallback(func(ctx agent.CallbackContext, resp *adkmodel.LLMResponse, respErr error) (*adkmodel.LLMResponse, error) {
 		if respErr != nil {
 			return nil, respErr
@@ -42,19 +29,8 @@ func MealOrchestrator(macroEstimator agent.Agent) (agent.Agent, error) {
 			return resp, nil
 		}
 
-		// Clean up markdown code fences if present
-		text = strings.TrimSpace(text)
-		if strings.HasPrefix(text, "```") {
-			log.Printf("Warning: Gemini wrapped orchestrator response in markdown code blocks")
-			lines := strings.Split(text, "\n")
-			if len(lines) > 2 {
-				text = strings.Join(lines[1:len(lines)-1], "\n")
-			}
-		}
-		text = strings.TrimSpace(text)
+		text = StripMarkdownFences(text, "meal_orchestrator")
 
-		// Only validate if the response looks like JSON (orchestrator may emit
-		// intermediate prose during sub-agent delegation turns).
 		if !strings.HasPrefix(text, "{") {
 			return resp, nil
 		}

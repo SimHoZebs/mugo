@@ -1,31 +1,20 @@
 package agents
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"log"
-	"os"
-	"strings"
 
-	"github.com/simhozebs/mugo/internal/config"
 	"github.com/simhozebs/mugo/internal/models"
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
 	adkmodel "google.golang.org/adk/model"
-	"google.golang.org/adk/model/gemini"
 	"google.golang.org/genai"
 )
 
-// MacroEstimator creates the nutrition estimation agent for a single meal.
-// It is intended to be used as a sub-agent under MealOrchestrator.
 func MacroEstimator() (agent.Agent, error) {
-	ctx := context.Background()
-	model, err := gemini.NewModel(ctx,
-		config.ModelName,
-		&genai.ClientConfig{APIKey: os.Getenv("GOOGLE_API_KEY")})
+	model, err := NewGeminiModel()
 	if err != nil {
-		log.Fatalf("Failed to create model: %v", err)
+		return nil, err
 	}
 
 	schema := &genai.Schema{
@@ -73,7 +62,6 @@ func MacroEstimator() (agent.Agent, error) {
 		Required: []string{"name", "date", "macros", "assumptions"},
 	}
 
-	// afterModel callback: strict unmarshal into NutritionPayload, assign IDs, error if schema mismatch
 	onAfterModelAssignIDs := llmagent.AfterModelCallback(func(ctx agent.CallbackContext, resp *adkmodel.LLMResponse, respErr error) (*adkmodel.LLMResponse, error) {
 		if respErr != nil {
 			return nil, respErr
@@ -86,24 +74,13 @@ func MacroEstimator() (agent.Agent, error) {
 			return resp, nil
 		}
 
-		// Clean up the text in case Gemini wraps it in markdown code blocks
-		text = strings.TrimSpace(text)
-		if strings.HasPrefix(text, "```") {
-			log.Printf("Warning: Gemini wrapped response in markdown code blocks for macro_estimator")
-			lines := strings.Split(text, "\n")
-			if len(lines) > 2 {
-				// Remove the first and last lines (the ``` markers)
-				text = strings.Join(lines[1:len(lines)-1], "\n")
-			}
-		}
-		text = strings.TrimSpace(text)
+		text = StripMarkdownFences(text, "macro_estimator")
 
 		var payload models.NutritionPayload
 		if err := json.Unmarshal([]byte(text), &payload); err != nil {
 			return nil, fmt.Errorf("nutrition agent: response did not match expected schema: %w\nContent: %s", err, text)
 		}
 
-		// Assign sequential IDs if missing and default unit to 'g' if empty
 		for i := range payload.Assumptions {
 			if payload.Assumptions[i].ID == "" {
 				payload.Assumptions[i].ID = fmt.Sprintf("A%d", i+1)
