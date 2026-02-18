@@ -22,7 +22,7 @@ type CreateMealRequest struct {
 
 type CreateMealResponse struct {
 	Body struct {
-		Meal *models.MealLog `json:"meal"`
+		Meals []*models.MealLog `json:"meals"`
 	}
 }
 
@@ -72,13 +72,16 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, macroRunner adk.Agen
 		fmt.Printf("Creating meal: %s (user: %s, session: %s)\n",
 			input.Body.Description, input.Body.UserID, input.Body.SessionID)
 
-		result, err := macroRunner.Run(ctx, input.Body.UserID, input.Body.SessionID, input.Body.Description)
+		today := time.Now().Format("2006-01-02")
+		message := fmt.Sprintf("Today's date is %s. %s", today, input.Body.Description)
+
+		result, err := macroRunner.Run(ctx, input.Body.UserID, input.Body.SessionID, message)
 		if err != nil {
 			return nil, fmt.Errorf("nutrition agent processing failed: %w", err)
 		}
 
-		var payload models.NutritionPayload
-		if err := json.Unmarshal([]byte(result.FinalText), &payload); err != nil {
+		var batch models.MealsBatchPayload
+		if err := json.Unmarshal([]byte(result.FinalText), &batch); err != nil {
 			return nil, fmt.Errorf("failed to parse nutrition response: %w", err)
 		}
 
@@ -87,23 +90,28 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, macroRunner adk.Agen
 			return nil, huma.Error503ServiceUnavailable("Database temporarily unavailable", err)
 		}
 
-		meal, err := database.Meals().Create(ctx,
-			input.Body.UserID,
-			input.Body.SessionID,
-			payload.Name,
-			string(payload.MealType),
-			time.Now(),
-			payload.Macros,
-			payload.Assumptions,
-			"ai_estimated",
-			payload,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create meal: %w", err)
+		var meals []*models.MealLog
+		for _, payload := range batch.Meals {
+			mealDate := parseMealDate(payload.Date)
+			meal, err := database.Meals().Create(ctx,
+				input.Body.UserID,
+				input.Body.SessionID,
+				payload.Name,
+				string(payload.MealType),
+				mealDate,
+				payload.Macros,
+				payload.Assumptions,
+				"ai_estimated",
+				payload,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create meal: %w", err)
+			}
+			meals = append(meals, meal)
 		}
 
 		resp := &CreateMealResponse{}
-		resp.Body.Meal = meal
+		resp.Body.Meals = meals
 		return resp, nil
 	})
 
@@ -139,10 +147,14 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, macroRunner adk.Agen
 				return fmt.Errorf("nutrition agent processing failed: %w", err)
 			}
 
-			var payload models.NutritionPayload
-			if err := json.Unmarshal([]byte(result.FinalText), &payload); err != nil {
+			var batch models.MealsBatchPayload
+			if err := json.Unmarshal([]byte(result.FinalText), &batch); err != nil {
 				return fmt.Errorf("failed to parse nutrition response: %w", err)
 			}
+			if len(batch.Meals) == 0 {
+				return fmt.Errorf("nutrition agent returned no meals")
+			}
+			payload := batch.Meals[0]
 
 			newMeal, err := txDB.MealLogRepository.Update(ctx,
 				input.MealID,

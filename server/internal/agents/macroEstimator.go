@@ -27,12 +27,16 @@ func MacroEstimator() (agent.Agent, error) {
 		log.Fatalf("Failed to create model: %v", err)
 	}
 
-	schema := &genai.Schema{
+	mealItemSchema := &genai.Schema{
 		Type: genai.TypeObject,
 		Properties: map[string]*genai.Schema{
 			"name": {
 				Type:        genai.TypeString,
 				Description: "A short, descriptive name for the meal",
+			},
+			"date": {
+				Type:        genai.TypeString,
+				Description: "Date of the meal in YYYY-MM-DD format, resolved from context (e.g. 'today', 'yesterday')",
 			},
 			"macros": {
 				Type: genai.TypeObject,
@@ -65,7 +69,19 @@ func MacroEstimator() (agent.Agent, error) {
 				Description: "The type of meal (breakfast, lunch, dinner, or snack)",
 			},
 		},
-		Required: []string{"name", "macros", "assumptions"},
+		Required: []string{"name", "date", "macros", "assumptions"},
+	}
+
+	schema := &genai.Schema{
+		Type: genai.TypeObject,
+		Properties: map[string]*genai.Schema{
+			"meals": {
+				Type:        genai.TypeArray,
+				Description: "One or more meals parsed from the user's message",
+				Items:       mealItemSchema,
+			},
+		},
+		Required: []string{"meals"},
 	}
 
 	// afterModel callback: strict unmarshal into NutritionPayload, assign IDs, error if schema mismatch
@@ -93,22 +109,24 @@ func MacroEstimator() (agent.Agent, error) {
 		}
 		text = strings.TrimSpace(text)
 
-		var payload models.NutritionPayload
-		if err := json.Unmarshal([]byte(text), &payload); err != nil {
+		var batch models.MealsBatchPayload
+		if err := json.Unmarshal([]byte(text), &batch); err != nil {
 			return nil, fmt.Errorf("nutrition agent: response did not match expected schema: %w\nContent: %s", err, text)
 		}
 
 		// Assign sequential IDs if missing and default unit to 'g' if empty
-		for i := range payload.Assumptions {
-			if payload.Assumptions[i].ID == "" {
-				payload.Assumptions[i].ID = fmt.Sprintf("A%d", i+1)
-			}
-			if payload.Assumptions[i].Unit == "" {
-				payload.Assumptions[i].Unit = "g"
+		for mi := range batch.Meals {
+			for i := range batch.Meals[mi].Assumptions {
+				if batch.Meals[mi].Assumptions[i].ID == "" {
+					batch.Meals[mi].Assumptions[i].ID = fmt.Sprintf("A%d", i+1)
+				}
+				if batch.Meals[mi].Assumptions[i].Unit == "" {
+					batch.Meals[mi].Assumptions[i].Unit = "g"
+				}
 			}
 		}
 
-		newBytes, err := json.Marshal(payload)
+		newBytes, err := json.Marshal(batch)
 		if err != nil {
 			return nil, fmt.Errorf("nutrition agent: failed to marshal normalized payload: %w", err)
 		}
@@ -121,12 +139,15 @@ func MacroEstimator() (agent.Agent, error) {
 		Model:       model,
 		Description: "Estimates nutritional value (macros) and lists assumptions based on food description.",
 		Instruction: `You are a nutritional estimation assistant.
-Your goal is to estimate the macronutrients for the food described by the user.
-You MUST provide:
+Your goal is to parse ALL meals mentioned by the user and estimate macronutrients for each one.
+The user's message will begin with today's date in YYYY-MM-DD format. Use it to resolve relative date references like "today" or "yesterday".
+For EACH meal you identify, you MUST provide:
 1. A short, descriptive name for the meal (e.g., "Grilled Chicken Caesar Salad", "Homemade Beef Tacos")
-2. The estimated macronutrients (calories, protein, carbs, fat)
-3. A list of assumptions you made to reach these estimates
-4. The meal type (breakfast, lunch, dinner, or snack) - use conversation context if available, otherwise infer from the food name
+2. The date of the meal in YYYY-MM-DD format (resolved from context clues like "today", "yesterday", etc.)
+3. The estimated macronutrients (calories, protein, carbs, fat)
+4. A list of assumptions you made to reach these estimates
+5. The meal type (breakfast, lunch, dinner, or snack) - use conversation context if available, otherwise infer from the food name
+If the user mentions multiple meals in one message, include ALL of them as separate entries in the "meals" array.
 `,
 		OutputSchema:        schema,
 		AfterModelCallbacks: []llmagent.AfterModelCallback{onAfterModelAssignIDs},
