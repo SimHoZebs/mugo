@@ -6,10 +6,8 @@ import "react-native-get-random-values";
 import { v7 as uuid7 } from "uuid";
 
 import { useRef, useState } from "react";
-import { ScrollView } from "react-native";
+import { ScrollView, View, Text } from "react-native";
 
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import TotalMacroPanel from "@/components/TotalMacroPanel";
 import MealCard from "@/components/MealCard";
 import InputBar from "@/components/InputBar";
@@ -64,33 +62,33 @@ export default function HomeScreen() {
   };
 
   return (
-    <ThemedView className="h-full w-full gap-4 pt-8">
-      <ThemedText className="px-4" type="title">
+    <View className="h-full w-full gap-4 pt-8 bg-stone-50 dark:bg-stone-950">
+      <Text className="px-4 text-2xl font-bold leading-8 text-stone-950 dark:text-stone-50">
         Tuesday
-      </ThemedText>
+      </Text>
 
       <TotalMacroPanel meals={meals} />
 
       <KeyboardAwareScrollView ref={scrollViewRef}>
-        <ThemedView className="gap-4 px-4">
+        <View className="gap-4 px-4 bg-stone-50 dark:bg-stone-950">
           {meals.map((meal) => (
             <MealCard key={meal.id} meal={meal} />
           ))}
           {pendingMealId && <MealCard key={pendingMealId} loading />}
-        </ThemedView>
+        </View>
       </KeyboardAwareScrollView>
 
       <KeyboardStickyView>
         <InputBar onSubmit={handleSubmitNutrition}>
           <InputBar.Action onPress={() => console.log("Mic pressed")}>
-            <ThemedText className="text-lg">🎤</ThemedText>
+            <Text className="text-lg">🎤</Text>
           </InputBar.Action>
           <InputBar.Input placeholder="Describe your meals..." />
           <InputBar.Action onPress={() => console.log("Camera pressed")}>
-            <ThemedText className="text-lg">📷</ThemedText>
+            <Text className="text-lg">📷</Text>
           </InputBar.Action>
         </InputBar>
       </KeyboardStickyView>
-    </ThemedView>
+    </View>
   );
 }

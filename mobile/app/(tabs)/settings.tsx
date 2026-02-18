@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
-import { View, Pressable, ScrollView } from "react-native";
+import { View, Pressable, ScrollView, Text } from "react-native";
 
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import useGlobalStore from "@/lib/store";
 import { UnitSystem } from "@/lib/types";
 
@@ -25,23 +23,23 @@ export default function SettingsScreen() {
   };
 
   return !userProfile ? (
-    <ThemedView className="h-full w-full justify-center items-center px-4">
-      <ThemedText className="text-stone-500 text-center">
+    <View className="h-full w-full justify-center items-center px-4 bg-stone-50 dark:bg-stone-950">
+      <Text className="text-stone-500 text-center">
         Please sign in on the Profile tab to access settings.
-      </ThemedText>
-    </ThemedView>
+      </Text>
+    </View>
   ) : (
-    <ThemedView className="h-full w-full pt-8">
+    <View className="h-full w-full pt-8 bg-stone-50 dark:bg-stone-950">
       <View className="px-4 mb-6">
-        <ThemedText type="title">Settings</ThemedText>
+        <Text className="text-2xl font-bold leading-8 text-stone-950 dark:text-stone-50">Settings</Text>
       </View>
 
       <ScrollView className="flex-1 px-4">
-        <ThemedView className="gap-6">
-          <ThemedView>
-            <ThemedText className="text-sm font-semibold mb-2">
+        <View className="gap-6 bg-stone-50 dark:bg-stone-950">
+          <View className="bg-stone-50 dark:bg-stone-950">
+            <Text className="text-sm font-semibold mb-2 text-stone-950 dark:text-stone-50">
               Unit System
-            </ThemedText>
+            </Text>
             <View className="flex-row gap-2">
               {(["metric", "imperial"] as UnitSystem[]).map((system) => (
                 <Pressable
@@ -53,7 +51,7 @@ export default function SettingsScreen() {
                       : "bg-stone-200 dark:bg-stone-800"
                   }`}
                 >
-                  <ThemedText
+                  <Text
                     className={`text-center font-semibold ${
                       selectedUnit === system
                         ? "text-white"
@@ -61,18 +59,18 @@ export default function SettingsScreen() {
                     }`}
                   >
                     {system.charAt(0).toUpperCase() + system.slice(1)}
-                  </ThemedText>
+                  </Text>
                 </Pressable>
               ))}
             </View>
-            <ThemedText className="text-sm text-stone-500 dark:text-stone-400 mt-2">
+            <Text className="text-sm text-stone-500 dark:text-stone-400 mt-2">
               {selectedUnit === "metric"
                 ? "Weight in kg, Height in cm"
                 : "Weight in lbs, Height in ft"}
-            </ThemedText>
-          </ThemedView>
-        </ThemedView>
+            </Text>
+          </View>
+        </View>
       </ScrollView>
-    </ThemedView>
+    </View>
   );
 }

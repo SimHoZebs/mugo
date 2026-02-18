@@ -1,7 +1,5 @@
 import { useState, createContext, useContext, ReactNode } from "react";
-import { View, Pressable, TextInput } from "react-native";
-import { ThemedView } from "./themed-view";
-import { ThemedText } from "./themed-text";
+import { View, Pressable, TextInput, Text } from "react-native";
 
 // Context for InputBar state
 interface InputBarContextValue {
@@ -42,9 +40,9 @@ function InputBar({
     <InputBarContext.Provider
       value={{ text, setText, onSubmit, isLoading, disabled }}
     >
-      <ThemedView className="p-4 border-t border-stone-200 dark:border-stone-800">
+      <View className="p-4 border-t border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950">
         <View className="flex-row items-center gap-3">{children}</View>
-      </ThemedView>
+      </View>
     </InputBarContext.Provider>
   );
 }
@@ -85,9 +83,9 @@ function Input({ placeholder = "Describe your meals..." }: InputProps) {
           canSubmit ? "bg-emerald-500" : "bg-stone-300"
         }`}
       >
-        <ThemedText className="text-white text-sm font-bold">
+        <Text className="text-white text-sm font-bold">
           {isLoading ? "•••" : "↑"}
-        </ThemedText>
+        </Text>
       </Pressable>
     </View>
   );

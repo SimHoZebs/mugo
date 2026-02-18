@@ -3,3 +3,21 @@
 @import "tailwindcss/utilities.css";
 
 @import "nativewind/theme";
+
+@layer theme {
+  @theme {
+    --font-sans: system-ui;
+    --font-mono: ui-monospace;
+    --font-serif: ui-serif;
+    --font-rounded: ui-rounded;
+  }
+}
+
+@media android {
+  :root {
+    --font-sans: sans-serif;
+    --font-mono: monospace;
+    --font-serif: serif;
+    --font-rounded: normal;
+  }
+}

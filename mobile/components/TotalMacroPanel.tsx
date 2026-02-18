@@ -1,6 +1,4 @@
-import { View } from "react-native";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
+import { View, Text } from "react-native";
 import { MacroDisplay } from "@/components/MacroDisplay";
 import { Meal } from "@/lib/types";
 
@@ -29,10 +27,10 @@ export default function TotalMacroPanel(props: TotalMarcoPanelProps) {
   );
 
   return (
-    <ThemedView className="p-4 w-full border-b border-stone-200 dark:border-stone-700 rounded-lg">
-      <ThemedText className="text-xs text-stone-500 dark:text-stone-400 mb-3">
+    <View className="p-4 w-full border-b border-stone-200 dark:border-stone-700 rounded-lg bg-stone-50 dark:bg-stone-950">
+      <Text className="text-xs text-stone-500 dark:text-stone-400 mb-3">
         Today&apos;s Total
-      </ThemedText>
+      </Text>
 
       <View className="flex-row justify-evenly">
         <MacroDisplay
@@ -64,7 +62,7 @@ export default function TotalMacroPanel(props: TotalMarcoPanelProps) {
           colorClass="bg-violet-500"
         />
       </View>
-    </ThemedView>
+    </View>
   );
 }
 

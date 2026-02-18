@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { View } from "react-native";
+import { View, Text } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import {
   KeyboardAwareScrollView,
   KeyboardStickyView,
 } from "react-native-keyboard-controller";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import InputBar from "@/components/InputBar";
 import { MacroDisplay } from "@/components/MacroDisplay";
 import { AssumptionCard } from "@/components/AssumptionCard";
@@ -49,23 +47,23 @@ export default function MealDetailScreen() {
   };
 
   return !meal ? (
-    <ThemedView className="flex-1 items-center justify-center">
-      <ThemedText>Meal not found</ThemedText>
-    </ThemedView>
+    <View className="flex-1 items-center justify-center bg-stone-50 dark:bg-stone-950">
+      <Text className="text-stone-950 dark:text-stone-50">Meal not found</Text>
+    </View>
   ) : (
-    <ThemedView className="flex-1 px-3">
+    <View className="flex-1 px-3 bg-stone-50 dark:bg-stone-950">
       <KeyboardAwareScrollView className="flex-1 px-4">
         <View className="pt-4 pb-6">
-          <ThemedText type="title">
+          <Text className="text-2xl font-bold leading-8 text-stone-950 dark:text-stone-50">
             {meal.nutrition.name || "Meal Details"}
-          </ThemedText>
+          </Text>
         </View>
 
         {/* Macros Section */}
         <View className="mb-6">
-          <ThemedText type="subtitle" className="mb-3">
+          <Text className="mb-3 text-xl font-bold text-stone-950 dark:text-stone-50">
             Nutrition Facts
-          </ThemedText>
+          </Text>
 
           <View className="bg-white dark:bg-stone-900 rounded-xl p-4 border border-stone-200 dark:border-stone-700">
             <MacroDisplay
@@ -102,12 +100,12 @@ export default function MealDetailScreen() {
         {/* Assumptions Section */}
         {meal.nutrition.assumptions.length > 0 && (
           <View className="mb-6">
-            <ThemedText type="subtitle" className="mb-3">
+            <Text className="mb-3 text-xl font-bold text-stone-950 dark:text-stone-50">
               AI Assumptions
-            </ThemedText>
-            <ThemedText className="text-sm text-stone-500 dark:text-stone-400 mb-3">
+            </Text>
+            <Text className="text-sm text-stone-500 dark:text-stone-400 mb-3">
               The following values were estimated by AI based on your input:
-            </ThemedText>
+            </Text>
             {meal.nutrition.assumptions.map((assumption, index) => (
               <AssumptionCard
                 key={assumption.id || index}
@@ -123,6 +121,6 @@ export default function MealDetailScreen() {
           <InputBar.Input placeholder="Correct this meal..." />
         </InputBar>
       </KeyboardStickyView>
-    </ThemedView>
+    </View>
   );
 }

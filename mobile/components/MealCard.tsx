@@ -1,7 +1,5 @@
-import { Pressable, View } from "react-native";
+import { Pressable, View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { ThemedText } from "./themed-text";
-import { ThemedView } from "./themed-view";
 import { Meal } from "@/lib/types";
 
 interface MealCardProps {
@@ -36,17 +34,14 @@ function MacroPill({
 
   return (
     <View className={containerClassName}>
-      <ThemedText
-        loading={isLoading}
-        className={
-          isLoading
-            ? "h-6 w-full rounded-full"
-            : "text-xs font-medium text-white"
-        }
-      >
-        {Math.round(value)}
-        {unit}
-      </ThemedText>
+      {isLoading ? (
+        <View className="h-6 w-full rounded-full bg-stone-200 dark:bg-stone-700" />
+      ) : (
+        <Text className="text-xs font-medium text-white">
+          {Math.round(value)}
+          {unit}
+        </Text>
+      )}
     </View>
   );
 }
@@ -55,6 +50,7 @@ export default function MealCard({ meal, loading }: MealCardProps) {
   const router = useRouter();
 
   const handlePress = () => {
+    if (!meal) return;
     router.push({
       pathname: "/meal-detail",
       params: { id: meal.id },
@@ -64,8 +60,8 @@ export default function MealCard({ meal, loading }: MealCardProps) {
   const isLoading = Boolean(loading);
   const isReady = Boolean(meal && !loading);
   const isVisible = isLoading || isReady;
-  const macros = isReady ? meal.nutrition.macros : null;
-  const assumptions = isReady ? meal.nutrition.assumptions : null;
+  const macros = meal?.nutrition.macros ?? null;
+  const assumptions = meal?.nutrition.assumptions ?? null;
   const hasAssumptions = Boolean(assumptions && assumptions.length > 0);
 
   return (
@@ -74,29 +70,29 @@ export default function MealCard({ meal, loading }: MealCardProps) {
       disabled={!isReady}
       className={isVisible ? undefined : "hidden"}
     >
-      <ThemedView className="p-4 border border-stone-300 dark:border-stone-700 rounded-xl">
+      <View className="p-4 border border-stone-300 dark:border-stone-700 rounded-xl bg-stone-50 dark:bg-stone-950">
         <View
           className={`flex-row justify-between items-start ${
             isLoading ? "mb-3" : "mb-1"
           }`}
         >
-          {isLoading && !isReady ? (
-            <ThemedText loading className="h-5 w-2/3" />
+          {!isReady ? (
+            <View className="h-5 w-2/3 rounded bg-stone-200 dark:bg-stone-700" />
           ) : (
-            <ThemedText type="defaultSemiBold" className="flex-1">
-              {meal.nutrition.name}
-            </ThemedText>
+            <Text className="flex-1 text-base leading-6 font-semibold text-stone-950 dark:text-stone-50">
+              {meal?.nutrition.name}
+            </Text>
           )}
-          {isLoading && !isReady && !hasAssumptions ? (
-            <ThemedText loading className="h-4 w-16" />
-          ) : (
+          {!isReady && !hasAssumptions ? (
+            <View className="h-4 w-16 rounded bg-stone-200 dark:bg-stone-700" />
+          ) : hasAssumptions ? (
             <View className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/50 rounded">
-              <ThemedText className="text-xs text-amber-700 dark:text-amber-300">
-                {assumptions.length} assumption
-                {assumptions.length > 1 ? "s" : ""}
-              </ThemedText>
+              <Text className="text-xs text-amber-700 dark:text-amber-300">
+                {assumptions?.length} assumption
+                {assumptions && assumptions.length > 1 ? "s" : ""}
+              </Text>
             </View>
-          )}
+          ) : null}
         </View>
 
         {(isLoading || macros) && (
@@ -159,7 +155,7 @@ export default function MealCard({ meal, loading }: MealCardProps) {
             )}
           </View>
         )}
-      </ThemedView>
+      </View>
     </Pressable>
   );
 }

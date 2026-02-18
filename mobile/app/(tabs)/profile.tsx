@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { View, ScrollView, Pressable } from "react-native";
+import { View, ScrollView, Pressable, Text } from "react-native";
 
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { LoginForm } from "@/components/LoginForm";
 import { ProfileField } from "@/components/ProfileField";
@@ -33,29 +31,29 @@ export default function ProfileScreen() {
   return !userProfile ? (
     <LoginForm onLogin={login} />
   ) : (
-    <ThemedView className="h-full w-full pt-8">
+    <View className="h-full w-full pt-8 bg-stone-50 dark:bg-stone-950">
       <View className="px-4 mb-6 flex-row justify-between items-end">
         <View>
-          <ThemedText type="title">Profile</ThemedText>
-          <ThemedText className="text-stone-500">
+          <Text className="text-2xl font-bold leading-8 text-stone-950 dark:text-stone-50">Profile</Text>
+          <Text className="text-stone-500 text-stone-950 dark:text-stone-50">
             @{userProfile.username}
-          </ThemedText>
+          </Text>
         </View>
         <Pressable
           onPress={logout}
           className="bg-stone-200 dark:bg-stone-800 p-2 rounded-lg"
         >
-          <ThemedText className="text-red-500 font-semibold">Logout</ThemedText>
+          <Text className="text-red-500 font-semibold">Logout</Text>
         </Pressable>
       </View>
 
       <ScrollView className="flex-1 px-4">
-        <ThemedView className="gap-6 pb-12">
-          <ThemedView className="items-center py-4">
+        <View className="gap-6 pb-12 bg-stone-50 dark:bg-stone-950">
+          <View className="items-center py-4 bg-stone-50 dark:bg-stone-950">
             <View className="w-24 h-24 bg-stone-300 dark:bg-stone-700 rounded-full items-center justify-center">
               <IconSymbol size={48} name="person.fill" color="#9CA3AF" />
             </View>
-          </ThemedView>
+          </View>
 
           <ProfileField
             label="Name"
@@ -81,8 +79,8 @@ export default function ProfileScreen() {
             onAdd={() => addDietaryPreference({ id: uuid7(), text: "" })}
           />
 
-          <ThemedView className="flex-row gap-4">
-            <ThemedView className="flex-1">
+          <View className="flex-row gap-4 bg-stone-50 dark:bg-stone-950">
+            <View className="flex-1 bg-stone-50 dark:bg-stone-950">
               <ProfileField
                 label="Weight"
                 value={userProfile.weight === 0 ? "" : String(userProfile.weight)}
@@ -97,9 +95,9 @@ export default function ProfileScreen() {
                 onBlur={() => setEditingField(null)}
                 suffix={weightUnit}
               />
-            </ThemedView>
+            </View>
 
-            <ThemedView className="flex-1">
+            <View className="flex-1 bg-stone-50 dark:bg-stone-950">
               <ProfileField
                 label="Height"
                 value={userProfile.height === 0 ? "" : String(userProfile.height)}
@@ -114,10 +112,10 @@ export default function ProfileScreen() {
                 onBlur={() => setEditingField(null)}
                 suffix={heightUnit}
               />
-            </ThemedView>
-          </ThemedView>
-        </ThemedView>
+            </View>
+          </View>
+        </View>
       </ScrollView>
-    </ThemedView>
+    </View>
   );
 }

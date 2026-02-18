@@ -1,6 +1,5 @@
 import React from "react";
-import { View } from "react-native";
-import { ThemedText } from "@/components/themed-text";
+import { View, Text } from "react-native";
 
 interface ProgressRingProps {
   label: string;
@@ -107,23 +106,22 @@ export function ProgressRing({
 
         {/* Center content */}
         <View className="absolute inset-0 flex flex-col items-center justify-center">
-          <ThemedText
-            darkColor="text-stone-950"
+          <Text
             className={
-              size === "lg" ? "text-lg font-medium" : "text-sm font-medium"
+              size === "lg" ? "text-lg font-medium text-stone-950" : "text-sm font-medium text-stone-950"
             }
           >
             {Math.round(current)}
-          </ThemedText>
-          <ThemedText className="text-xs text-stone-950 dark:text-stone-950">
+          </Text>
+          <Text className="text-xs text-stone-950">
             /{goal}
             {unit}
-          </ThemedText>
+          </Text>
         </View>
       </View>
-      <ThemedText className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+      <Text className="text-xs text-slate-600 dark:text-slate-400 mt-1">
         {label}
-      </ThemedText>
+      </Text>
     </View>
   );
 }
