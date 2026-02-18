@@ -107,6 +107,7 @@ func main() {
 	routes.RegisterMealEndpoints(api, "/meals", orchestratorRunner, lazyDB)
 	routes.RegisterAnalyticsEndpoints(api, "/analytics", lazyDB)
 	routes.RegisterConversationEndpoints(api, "/conversations", lazyDB)
+	routes.RegisterTranscriptionEndpoints(api, "/transcription")
 
 	port := os.Getenv("PORT")
 	if port == "" {

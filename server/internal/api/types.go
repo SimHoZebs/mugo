@@ -50,3 +50,19 @@ type WeatherResponse struct {
 		Forecast string `json:"forecast" example:"Sunny with a high of 75°F" doc:"Weather forecast for the specified city"`
 	}
 }
+
+// TranscriptionRequest is the request body for the transcription endpoint.
+type TranscriptionRequest struct {
+	Body struct {
+		AudioBase64 string `json:"audio_base64" doc:"Base64-encoded audio data to transcribe"`
+		FileName    string `json:"file_name,omitempty" example:"recording.wav" doc:"Optional original audio filename"`
+		Language    string `json:"language,omitempty" example:"en" doc:"Optional language hint for transcription"`
+	}
+}
+
+// TranscriptionResponse is the response body for the transcription endpoint.
+type TranscriptionResponse struct {
+	Body struct {
+		Text string `json:"text" example:"I ate grilled chicken and rice." doc:"Transcribed text output"`
+	}
+}
