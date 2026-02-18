@@ -21,6 +21,16 @@ func GetADKServerURL() string {
 	return url
 }
 
+// GetTranscriptionServerURL returns whisper transcription server URL from environment variable.
+// Defaults to "http://localhost:9000" if not set.
+func GetTranscriptionServerURL() string {
+	url := os.Getenv("TRANSCRIPTION_SERVER_URL")
+	if url == "" {
+		return "http://localhost:9000"
+	}
+	return url
+}
+
 // GetADKSessionDatabaseURL returns the database URL for ADK session storage.
 // Defaults to DATABASE_URL if not set separately.
 func GetADKSessionDatabaseURL() string {

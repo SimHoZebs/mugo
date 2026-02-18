@@ -15,6 +15,14 @@ services:
       interval: 3s
       timeout: 5s
       retries: 5
+  whisper:
+    container_name: whisper
+    image: onerahmet/openai-whisper-asr-webservice:latest
+    environment:
+      ASR_ENGINE: faster_whisper
+      ASR_MODEL: distil-whisper/distil-large-v3
+    ports:
+      - "${WHISPER_PORT:-9000}:9000"
 
 volumes:
   postgres_data:
