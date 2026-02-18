@@ -119,29 +119,36 @@ func (r *RunnerRegistry) GetSessionService() session.Service {
 	return nil
 }
 
-func CreateSessionService() (session.Service, error) {
+func CreateSessionService() session.Service {
 	dbURL := config.GetADKSessionDatabaseURL()
 	if dbURL == "" {
-		log.Println("No database URL configured, using in-memory session service (sessions will be lost on restart)")
-		return session.InMemoryService(), nil
+		log.Println("No database URL configured for session storage")
+		log.Println("Warning: Agent calls will fail until database is available")
+		return NewLazySessionService(nil, fmt.Errorf("no database URL configured"))
 	}
 
 	log.Println("Initializing database-backed session service for persistent sessions")
 
 	db, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %w", err)
+		log.Printf("Failed to connect to session database: %v", err)
+		log.Println("Warning: Agent calls will fail until database is available")
+		return NewLazySessionService(nil, err)
 	}
 
 	svc, err := database.NewSessionService(db.Dialector)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create session service: %w", err)
+		log.Printf("Failed to create session service: %v", err)
+		log.Println("Warning: Agent calls will fail until database is available")
+		return NewLazySessionService(nil, err)
 	}
 
 	if err := database.AutoMigrate(svc); err != nil {
-		return nil, fmt.Errorf("failed to migrate session tables: %w", err)
+		log.Printf("Failed to migrate session tables: %v", err)
+		log.Println("Warning: Agent calls will fail until database is available")
+		return NewLazySessionService(nil, err)
 	}
 
 	log.Println("ADK session tables migrated successfully")
-	return svc, nil
+	return svc
 }
