@@ -38,7 +38,6 @@
 - Use NativeWind (Tailwind) `className` exclusively. Never use `StyleSheet.create()` for visual styles.
 - Do **NOT** hardcode color hex values inline (e.g., `color="#10B981"`). Use Tailwind token classes.
 - Always include dark mode variants: every `bg-*`, `text-*`, `border-*` must have a `dark:` pair.
-- Reference `mobile/lib/theme.ts` for semantic token names before choosing raw Tailwind classes.
 
 ### Component Rules
 - Compose screens from primitives in `mobile/components/ui/`. Do not re-implement Text, Button, Card inline.

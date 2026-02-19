@@ -1,5 +1,4 @@
 import { View, Pressable, PressableProps, ViewProps } from "react-native";
-import { theme } from "@/lib/theme";
 import { Text } from "@/components/ui/Text";
 
 interface Props extends ViewProps {
@@ -21,7 +20,7 @@ export function SectionHeader({ title, actionLabel, onAction, className, ...prop
       <Text variant="h2">{title}</Text>
       {actionLabel && onAction && (
         <Pressable onPress={onAction} className="active:opacity-70">
-          <Text className={`text-sm font-medium ${theme.color.primaryText}`}>
+          <Text className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
             {actionLabel}
           </Text>
         </Pressable>
