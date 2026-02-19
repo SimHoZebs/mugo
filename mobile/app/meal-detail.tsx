@@ -11,7 +11,7 @@ import { AssumptionCard } from "@/components/AssumptionCard";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ScreenLayout } from "@/components/ui/ScreenLayout";
-import { Text as UIText } from "@/components/ui/Text";
+import { Text } from "@/components/ui/Text";
 import useGlobalStore from "@/lib/store";
 
 // Temporary: Direct fetch until we regenerate API client with orval
@@ -52,15 +52,15 @@ export default function MealDetailScreen() {
 
   return !meal ? (
     <ScreenLayout className="items-center justify-center">
-      <UIText variant="body">Meal not found</UIText>
+      <Text variant="body">Meal not found</Text>
     </ScreenLayout>
   ) : (
     <View className="flex-1 bg-stone-50 dark:bg-stone-950">
       <KeyboardAwareScrollView className="flex-1 px-4">
         <View className="pt-4 pb-6">
-          <UIText variant="h1">
+          <Text variant="h1">
             {meal.nutrition.name || "Meal Details"}
-          </UIText>
+          </Text>
         </View>
 
         {/* Macros Section */}
@@ -102,9 +102,9 @@ export default function MealDetailScreen() {
         {meal.nutrition.assumptions.length > 0 && (
           <View className="mb-6">
             <SectionHeader title="AI Assumptions" />
-            <UIText variant="caption" className="mb-3">
+            <Text variant="caption" className="mb-3">
               The following values were estimated by AI based on your input:
-            </UIText>
+            </Text>
             {meal.nutrition.assumptions.map((assumption, index) => (
               <AssumptionCard
                 key={assumption.id || index}
