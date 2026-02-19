@@ -1,6 +1,8 @@
-import { Pressable, View, Text } from "react-native";
+import { Pressable, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Meal } from "@/lib/types";
+import { Text } from "@/components/ui/Text";
+import { Badge } from "@/components/ui/Badge";
 
 interface MealCardProps {
   meal?: Meal;
@@ -37,7 +39,7 @@ function MacroPill({
       {isLoading ? (
         <View className="h-6 w-full rounded-full bg-stone-200 dark:bg-stone-700" />
       ) : (
-        <Text className="text-xs font-medium text-white">
+        <Text variant="micro" className="font-medium text-white">
           {Math.round(value)}
           {unit}
         </Text>
@@ -79,19 +81,17 @@ export default function MealCard({ meal, loading }: MealCardProps) {
           {!isReady ? (
             <View className="h-5 w-2/3 rounded bg-stone-200 dark:bg-stone-700" />
           ) : (
-            <Text className="flex-1 text-base leading-6 font-semibold text-stone-950 dark:text-stone-50">
+            <Text variant="h3" className="flex-1">
               {meal?.nutrition.name}
             </Text>
           )}
           {!isReady && !hasAssumptions ? (
             <View className="h-4 w-16 rounded bg-stone-200 dark:bg-stone-700" />
           ) : hasAssumptions ? (
-            <View className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/50 rounded">
-              <Text className="text-xs text-amber-700 dark:text-amber-300">
-                {assumptions?.length} assumption
-                {assumptions && assumptions.length > 1 ? "s" : ""}
-              </Text>
-            </View>
+            <Badge
+              variant="warning"
+              label={`${assumptions?.length} assumption${assumptions && assumptions.length > 1 ? "s" : ""}`}
+            />
           ) : null}
         </View>
 

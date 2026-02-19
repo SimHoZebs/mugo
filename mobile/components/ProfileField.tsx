@@ -1,6 +1,7 @@
-import { TextInputProps, View, Text } from "react-native";
+import { TextInputProps, View } from "react-native";
 
 import { EditableField } from "@/components/EditableField";
+import { Text } from "@/components/ui/Text";
 
 type ProfileFieldProps = TextInputProps & {
   label: string;
@@ -11,7 +12,7 @@ type ProfileFieldProps = TextInputProps & {
 export function ProfileField(props: ProfileFieldProps) {
   return (
     <View className="bg-stone-50 dark:bg-stone-950">
-      <Text className="text-sm font-semibold mb-2 text-stone-950 dark:text-stone-50">{props.label}</Text>
+      <Text variant="caption" className="font-semibold mb-2">{props.label}</Text>
       <EditableField
         isEditing={props.isEditing}
         value={props.value}
@@ -26,7 +27,7 @@ export function ProfileField(props: ProfileFieldProps) {
         style={props.multiline ? { minHeight: 100 } : undefined}
       />
       {props.suffix && (
-        <Text className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+        <Text variant="caption" className="mt-1">
           {props.suffix}
         </Text>
       )}
