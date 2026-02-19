@@ -25,6 +25,86 @@
 
 ---
 
+## Mobile Frontend Guidelines (React Native / Expo)
+
+### Build & Development Commands
+- **Start dev server**: `cd mobile && npx expo start`
+- **Run on iOS**: press `i` in the Expo dev server, or `npx expo run:ios`
+- **Run on Android**: press `a` in the Expo dev server, or `npx expo run:android`
+- **Lint**: `cd mobile && npx eslint .`
+- **Tests**: `cd mobile && npx jest`
+
+### Styling Rules
+- Use NativeWind (Tailwind) `className` exclusively. Never use `StyleSheet.create()` for visual styles.
+- Do **NOT** hardcode color hex values inline (e.g., `color="#10B981"`). Use Tailwind token classes.
+- Always include dark mode variants: every `bg-*`, `text-*`, `border-*` must have a `dark:` pair.
+- Reference `mobile/lib/theme.ts` for semantic token names before choosing raw Tailwind classes.
+
+### Component Rules
+- Compose screens from primitives in `mobile/components/ui/`. Do not re-implement Text, Button, Card inline.
+- New domain-specific components go in `mobile/components/`. New primitive base elements go in `mobile/components/ui/`.
+- Loading states use skeleton shimmer (`stone-200 dark:stone-700` placeholder views), not spinners.
+
+### Layout Rules
+- Horizontal screen padding: `px-4`
+- Section spacing: `mb-6`
+- Card internal padding: `p-4`
+- Use `rounded-xl` for cards, `rounded-2xl` for inputs/buttons, `rounded-full` for pills/icons.
+- Use `<ScreenLayout>` from `mobile/components/ui/ScreenLayout.tsx` as the root wrapper for each screen.
+
+### Typography Hierarchy
+- Page title: `text-2xl font-bold leading-8`
+- Section title: `text-xl font-bold`
+- Card title: `text-base font-semibold leading-6`
+- Body: `text-base leading-6`
+- Label/caption: `text-sm`
+- Metadata/pill: `text-xs`
+
+Use the `<Text>` primitive from `mobile/components/ui/Text.tsx` with the matching `variant` prop instead of repeating these classes inline.
+
+### Color Semantics
+- Primary action / success: `emerald-500`
+- Warning / assumptions: `amber-*`
+- Calories: `amber-500` | Protein: `emerald-500` | Carbs: `blue-500` | Fat: `rose-500`
+- Page background: `stone-50 dark:stone-950`
+- Card background: `white dark:stone-900`
+- Subtle fill (inputs, sub-cards): `stone-100/200 dark:stone-800`
+
+### UX Patterns
+- Pressable feedback: `active:opacity-70` or specific `active:bg-*` variant
+- Disabled state: muted fill (`stone-300 dark:stone-800`) + muted text (`stone-500`)
+- Inline confirmation uses a checkmark icon (emerald), not a text label
+- Badges/pills use the `<Badge>` primitive from `mobile/components/ui/Badge.tsx`
+
+### Primitive UI Component Library (`mobile/components/ui/`)
+
+| Component | Purpose |
+|---|---|
+| `Text.tsx` | Typed variants: `h1`, `h2`, `h3`, `body`, `caption`, `micro` — pre-wired with theme tokens |
+| `Card.tsx` | Standard rounded + bordered + padded surface |
+| `Button.tsx` | Variants: `primary`, `ghost`, `destructive` with disabled states |
+| `Badge.tsx` | Inline label (replaces ad-hoc amber/stone badge patterns) |
+| `Divider.tsx` | Consistent `h-px` separator |
+| `ScreenLayout.tsx` | Page wrapper with standard `bg + px-4` + safe area insets |
+| `SectionHeader.tsx` | Labeled section with optional trailing action |
+
+### Screen Layout Reference
+```
+## Screen: Home Tab
+┌─────────────────────────┐
+│ [ScreenLayout px-4]     │
+│  SectionHeader "Today"  │
+│  ─────────────────────  │
+│  TotalMacroPanel        │
+│  ─────────────────────  │
+│  MealCard               │
+│  MealCard (loading)     │
+│ [InputBar sticky]       │
+└─────────────────────────┘
+```
+
+---
+
 ## Notion Pages Relevant to Mugo (LazyFood / ai-nutrition-tracker)
 Below are Notion pages and databases I found that appear directly related to this project. Each entry is the page title followed by the Notion URL.
 
