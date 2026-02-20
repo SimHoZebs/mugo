@@ -28,11 +28,11 @@
 ## Mobile Frontend Guidelines (React Native / Expo)
 
 ### Build & Development Commands
-- **Start dev server**: `cd mobile && npx expo start`
-- **Run on iOS**: press `i` in the Expo dev server, or `npx expo run:ios`
-- **Run on Android**: press `a` in the Expo dev server, or `npx expo run:android`
-- **Lint**: `cd mobile && npx eslint .`
-- **Tests**: `cd mobile && npx jest`
+- **Start dev server**: `make mobile` (starts Expo dev server via infisical)
+- **Start Android emulator**: `make emulator`
+- **Regenerate API client**: `make orval`
+- **Lint**: `cd mobile && npm run lint`
+- **Tests**: `cd mobile && npm test`
 
 ### Styling Rules
 - Use NativeWind (Tailwind) `className` exclusively. Never use `StyleSheet.create()` for visual styles.

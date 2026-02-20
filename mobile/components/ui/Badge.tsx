@@ -7,30 +7,35 @@ interface Props extends ViewProps {
   variant?: BadgeVariant;
 }
 
+// Only variant-specific color classes
 const variantClasses: Record<BadgeVariant, { container: string; text: string }> = {
   default: {
-    container: "px-2 py-0.5 bg-stone-100 dark:bg-stone-800 rounded",
-    text: "text-xs text-stone-600 dark:text-stone-400",
+    container: "bg-stone-100 dark:bg-stone-800",
+    text: "text-stone-600 dark:text-stone-400",
   },
   warning: {
-    container: "px-2 py-0.5 bg-amber-100 dark:bg-amber-900 rounded",
-    text: "text-xs text-amber-700 dark:text-amber-300",
+    container: "bg-amber-100 dark:bg-amber-900",
+    text: "text-amber-700 dark:text-amber-300",
   },
   success: {
-    container: "px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900 rounded",
-    text: "text-xs text-emerald-700 dark:text-emerald-300",
+    container: "bg-emerald-100 dark:bg-emerald-900",
+    text: "text-emerald-700 dark:text-emerald-300",
   },
 };
+
+// Shared layout classes applied directly on the elements
+const sharedContainer = "px-2 py-0.5 rounded";
+const sharedText = "text-xs";
 
 export function Badge({ label, variant = "default", className, ...props }: Props) {
   const classes = variantClasses[variant];
 
   return (
     <View
-      className={className ? `${classes.container} ${className}` : classes.container}
+      className={`${sharedContainer} ${classes.container}${className ? ` ${className}` : ""}`}
       {...props}
     >
-      <Text className={classes.text}>{label}</Text>
+      <Text className={`${sharedText} ${classes.text}`}>{label}</Text>
     </View>
   );
 }
