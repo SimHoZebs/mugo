@@ -10,11 +10,6 @@
     --font-mono: ui-monospace;
     --font-serif: ui-serif;
     --font-rounded: ui-rounded;
-
-    /* Semantic spacing scale */
-    --spacing-screen-x: 1rem; /* horizontal page padding */
-    --spacing-card: 1rem; /* card internal padding */
-    --spacing-section: 1.5rem; /* between page sections */
   }
 }
 
