@@ -1,4 +1,5 @@
-import { View, Text } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/ui/Text";
 
 interface MacroDisplayProps {
   label: string;
@@ -23,15 +24,11 @@ export function MacroDisplay(props: MacroDisplayProps) {
         <View
           className={`rounded-full ${props.colorClass} ${isColumn ? "w-2 h-2" : "w-3 h-3"}`}
         />
-        <Text
-          className={
-            isColumn ? "text-xs text-stone-500 dark:text-stone-400" : "text-base text-stone-950 dark:text-stone-50"
-          }
-        >
+        <Text variant={isColumn ? "micro" : "body"}>
           {props.label}
         </Text>
       </View>
-      <Text className="text-base leading-6 font-semibold text-stone-950 dark:text-stone-50">
+      <Text variant="h3">
         {isColumn
           ? `${Math.round(props.value)}${props.unit}`
           : `${Math.round(props.value)} ${props.unit}`}

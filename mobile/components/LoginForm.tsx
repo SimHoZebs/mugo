@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { View, TextInput, Pressable, Text } from "react-native";
+import { View, TextInput } from "react-native";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Text } from "@/components/ui/Text";
+import { Button } from "@/components/ui/Button";
 
 type LoginFormProps = {
   onLogin: (username: string) => void;
@@ -18,17 +20,17 @@ export function LoginForm({ onLogin }: LoginFormProps) {
         <View className="w-20 h-20 bg-emerald-500 rounded-3xl items-center justify-center mb-6">
           <IconSymbol size={40} name="person.fill" color="white" />
         </View>
-        <Text className="text-center mb-2 text-2xl font-bold leading-8 text-stone-950 dark:text-stone-50">
+        <Text variant="h1" className="text-center mb-2">
           Welcome to Mugo
         </Text>
-        <Text className="text-stone-500 dark:text-stone-400 text-center">
+        <Text variant="caption" className="text-center">
           Enter your username to get started
         </Text>
       </View>
 
       <View className="gap-4">
         <View>
-          <Text className="text-sm font-semibold mb-2 ml-1 text-stone-950 dark:text-stone-50">
+          <Text variant="caption" className="font-semibold mb-2 ml-1">
             Username
           </Text>
           <TextInput
@@ -43,22 +45,12 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           />
         </View>
 
-        <Pressable
+        <Button
+          variant="primary"
+          label="Continue"
+          disabled={!canSubmit}
           onPress={() => canSubmit && onLogin(usernameInput.trim())}
-          className={`w-full p-5 rounded-2xl items-center justify-center ${
-            canSubmit
-              ? "bg-emerald-500"
-              : "bg-stone-300 dark:bg-stone-800"
-          }`}
-        >
-          <Text
-            className={`font-bold text-lg ${
-              canSubmit ? "text-white" : "text-stone-500"
-            }`}
-          >
-            Continue
-          </Text>
-        </Pressable>
+        />
       </View>
     </View>
   );

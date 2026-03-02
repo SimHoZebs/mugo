@@ -6,11 +6,12 @@ import "react-native-get-random-values";
 import { v7 as uuid7 } from "uuid";
 
 import { useRef, useState } from "react";
-import { ScrollView, View, Text } from "react-native";
+import { ScrollView, View } from "react-native";
 
 import TotalMacroPanel from "@/components/TotalMacroPanel";
 import MealCard from "@/components/MealCard";
 import InputBar from "@/components/InputBar";
+import { Text } from "@/components/ui/Text";
 import useGlobalStore from "@/lib/store";
 import { createMealLog,getCreateMealLogUrl } from "@/lib/api/logs/logs";
 
@@ -63,7 +64,7 @@ export default function HomeScreen() {
 
   return (
     <View className="h-full w-full gap-4 pt-8 bg-stone-50 dark:bg-stone-950">
-      <Text className="px-4 text-2xl font-bold leading-8 text-stone-950 dark:text-stone-50">
+      <Text variant="h1" className="px-4">
         Tuesday
       </Text>
 

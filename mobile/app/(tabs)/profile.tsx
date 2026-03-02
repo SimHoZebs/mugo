@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { View, ScrollView, Pressable, Text } from "react-native";
+import { View, ScrollView, Pressable } from "react-native";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { LoginForm } from "@/components/LoginForm";
 import { ProfileField } from "@/components/ProfileField";
 import { DietaryPreferenceList } from "@/components/DietaryPreferenceList";
+import { Text } from "@/components/ui/Text";
 import useGlobalStore from "@/lib/store";
 import { v7 as uuid7 } from "uuid";
 
@@ -34,8 +35,8 @@ export default function ProfileScreen() {
     <View className="h-full w-full pt-8 bg-stone-50 dark:bg-stone-950">
       <View className="px-4 mb-6 flex-row justify-between items-end">
         <View>
-          <Text className="text-2xl font-bold leading-8 text-stone-950 dark:text-stone-50">Profile</Text>
-          <Text className="text-stone-500 text-stone-950 dark:text-stone-50">
+          <Text variant="h1">Profile</Text>
+          <Text variant="caption">
             @{userProfile.username}
           </Text>
         </View>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text } from "react-native";
+import { View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import {
   KeyboardAwareScrollView,
@@ -8,6 +8,10 @@ import {
 import InputBar from "@/components/InputBar";
 import { MacroDisplay } from "@/components/MacroDisplay";
 import { AssumptionCard } from "@/components/AssumptionCard";
+import { Card } from "@/components/ui/Card";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { ScreenLayout } from "@/components/ui/ScreenLayout";
+import { Text } from "@/components/ui/Text";
 import useGlobalStore from "@/lib/store";
 
 // Temporary: Direct fetch until we regenerate API client with orval
@@ -47,25 +51,22 @@ export default function MealDetailScreen() {
   };
 
   return !meal ? (
-    <View className="flex-1 items-center justify-center bg-stone-50 dark:bg-stone-950">
-      <Text className="text-stone-950 dark:text-stone-50">Meal not found</Text>
-    </View>
+    <ScreenLayout className="items-center justify-center">
+      <Text variant="body">Meal not found</Text>
+    </ScreenLayout>
   ) : (
-    <View className="flex-1 px-3 bg-stone-50 dark:bg-stone-950">
+    <View className="flex-1 bg-stone-50 dark:bg-stone-950">
       <KeyboardAwareScrollView className="flex-1 px-4">
         <View className="pt-4 pb-6">
-          <Text className="text-2xl font-bold leading-8 text-stone-950 dark:text-stone-50">
+          <Text variant="h1">
             {meal.nutrition.name || "Meal Details"}
           </Text>
         </View>
 
         {/* Macros Section */}
         <View className="mb-6">
-          <Text className="mb-3 text-xl font-bold text-stone-950 dark:text-stone-50">
-            Nutrition Facts
-          </Text>
-
-          <View className="bg-white dark:bg-stone-900 rounded-xl p-4 border border-stone-200 dark:border-stone-700">
+          <SectionHeader title="Nutrition Facts" />
+          <Card>
             <MacroDisplay
               variant="row"
               label="Calories"
@@ -94,16 +95,14 @@ export default function MealDetailScreen() {
               unit="g"
               colorClass="bg-violet-500"
             />
-          </View>
+          </Card>
         </View>
 
         {/* Assumptions Section */}
         {meal.nutrition.assumptions.length > 0 && (
           <View className="mb-6">
-            <Text className="mb-3 text-xl font-bold text-stone-950 dark:text-stone-50">
-              AI Assumptions
-            </Text>
-            <Text className="text-sm text-stone-500 dark:text-stone-400 mb-3">
+            <SectionHeader title="AI Assumptions" />
+            <Text variant="caption" className="mb-3">
               The following values were estimated by AI based on your input:
             </Text>
             {meal.nutrition.assumptions.map((assumption, index) => (

@@ -1,6 +1,7 @@
-import { Pressable, View, Text } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { EditableField } from "@/components/EditableField";
+import { Text } from "@/components/ui/Text";
 import { DietaryPreference } from "@/lib/types";
 
 type DietaryPreferenceListProps = {
@@ -16,7 +17,7 @@ type DietaryPreferenceListProps = {
 export function DietaryPreferenceList(props: DietaryPreferenceListProps) {
   return (
     <View className="bg-stone-50 dark:bg-stone-950">
-      <Text className="text-sm font-semibold mb-2 text-stone-950 dark:text-stone-50">
+      <Text variant="caption" className="font-semibold mb-2">
         Dietary Preferences
       </Text>
       <View className="gap-2 bg-stone-50 dark:bg-stone-950">
@@ -36,7 +37,7 @@ export function DietaryPreferenceList(props: DietaryPreferenceListProps) {
           onPress={props.onAdd}
           className="w-full p-4 bg-stone-200 dark:bg-stone-800 rounded-xl items-center justify-center border-2 border-dashed border-stone-400 dark:border-stone-600"
         >
-          <Text className="text-stone-500 dark:text-stone-400 font-semibold">
+          <Text variant="caption" className="font-semibold">
             + Add Preference
           </Text>
         </Pressable>

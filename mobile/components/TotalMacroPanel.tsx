@@ -1,6 +1,7 @@
-import { View, Text } from "react-native";
+import { View } from "react-native";
 import { MacroDisplay } from "@/components/MacroDisplay";
 import { Meal } from "@/lib/types";
+import { Text } from "@/components/ui/Text";
 
 interface TotalMarcoPanelProps {
   meals: Meal[];
@@ -28,7 +29,7 @@ export default function TotalMacroPanel(props: TotalMarcoPanelProps) {
 
   return (
     <View className="p-4 w-full border-b border-stone-200 dark:border-stone-700 rounded-lg bg-stone-50 dark:bg-stone-950">
-      <Text className="text-xs text-stone-500 dark:text-stone-400 mb-3">
+      <Text variant="micro" className="mb-3">
         Today&apos;s Total
       </Text>
 
