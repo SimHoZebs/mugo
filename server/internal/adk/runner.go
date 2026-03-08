@@ -120,7 +120,7 @@ func (r *RunnerRegistry) GetSessionService() session.Service {
 }
 
 func CreateSessionService() session.Service {
-	dbURL := config.GetADKSessionDatabaseURL()
+	dbURL := config.GetDatabaseURL()
 	if dbURL == "" {
 		log.Println("No database URL configured for session storage")
 		log.Println("Warning: Agent calls will fail until database is available")

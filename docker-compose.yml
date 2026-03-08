@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: nutrition_user
       POSTGRES_PASSWORD: nutrition_pass
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     ports:
       - "${DB_PORT}:5432"
     healthcheck:

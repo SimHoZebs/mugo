@@ -11,6 +11,26 @@ import (
 	"google.golang.org/genai"
 )
 
+func NormalizeNutritionResponse(text string) (*models.NutritionPayload, error) {
+	text = StripMarkdownFences(text, "macro_estimator")
+
+	var payload models.NutritionPayload
+	if err := json.Unmarshal([]byte(text), &payload); err != nil {
+		return nil, fmt.Errorf("nutrition agent: response did not match expected schema: %w\nContent: %s", err, text)
+	}
+
+	for i := range payload.Assumptions {
+		if payload.Assumptions[i].ID == "" {
+			payload.Assumptions[i].ID = fmt.Sprintf("A%d", i+1)
+		}
+		if payload.Assumptions[i].Unit == "" {
+			payload.Assumptions[i].Unit = "g"
+		}
+	}
+
+	return &payload, nil
+}
+
 func MacroEstimator() (agent.Agent, error) {
 	model, err := NewGeminiModel()
 	if err != nil {
@@ -74,20 +94,9 @@ func MacroEstimator() (agent.Agent, error) {
 			return resp, nil
 		}
 
-		text = StripMarkdownFences(text, "macro_estimator")
-
-		var payload models.NutritionPayload
-		if err := json.Unmarshal([]byte(text), &payload); err != nil {
-			return nil, fmt.Errorf("nutrition agent: response did not match expected schema: %w\nContent: %s", err, text)
-		}
-
-		for i := range payload.Assumptions {
-			if payload.Assumptions[i].ID == "" {
-				payload.Assumptions[i].ID = fmt.Sprintf("A%d", i+1)
-			}
-			if payload.Assumptions[i].Unit == "" {
-				payload.Assumptions[i].Unit = "g"
-			}
+		payload, err := NormalizeNutritionResponse(text)
+		if err != nil {
+			return nil, err
 		}
 
 		newBytes, err := json.Marshal(payload)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2/humatest"
 	"github.com/simhozebs/mugo/internal/adk"
+	adkmocks "github.com/simhozebs/mugo/internal/adk/mocks"
 	"github.com/simhozebs/mugo/internal/db/mocks"
 	repomocks "github.com/simhozebs/mugo/internal/db/repository/mocks"
 	"github.com/simhozebs/mugo/internal/models"
@@ -16,18 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-type mockAgentRunner struct {
-	adk.AgentRunner
-	runFunc func(ctx context.Context, userID, sessionID, text string) (*adk.RunResult, error)
-}
-
-func (m *mockAgentRunner) Run(ctx context.Context, userID, sessionID, text string) (*adk.RunResult, error) {
-	if m.runFunc != nil {
-		return m.runFunc(ctx, userID, sessionID, text)
-	}
-	return &adk.RunResult{}, nil
-}
 
 func TestCreateMealLog(t *testing.T) {
 	_, api := humatest.New(t)
@@ -60,8 +49,8 @@ func TestCreateMealLog(t *testing.T) {
 	batch := models.MealsBatchPayload{Meals: []models.NutritionPayload{payload}}
 	payloadJSON, _ := json.Marshal(batch)
 
-	mockRunner := &mockAgentRunner{
-		runFunc: func(ctx context.Context, uid, sid, text string) (*adk.RunResult, error) {
+	mockRunner := &adkmocks.MockAgentRunner{
+		RunFunc: func(ctx context.Context, uid, sid, text string) (*adk.RunResult, error) {
 			return &adk.RunResult{
 				FinalText: string(payloadJSON),
 			}, nil

@@ -11,6 +11,21 @@ import (
 	adkmodel "google.golang.org/adk/model"
 )
 
+func NormalizeMealsBatchResponse(text string) (*models.MealsBatchPayload, error) {
+	text = StripMarkdownFences(text, "meal_orchestrator")
+
+	if !strings.HasPrefix(text, "{") {
+		return nil, nil
+	}
+
+	var batch models.MealsBatchPayload
+	if err := json.Unmarshal([]byte(text), &batch); err != nil {
+		return nil, fmt.Errorf("meal orchestrator: final response did not match expected schema: %w\nContent: %s", err, text)
+	}
+
+	return &batch, nil
+}
+
 func MealOrchestrator(macroEstimator agent.Agent) (agent.Agent, error) {
 	model, err := NewGeminiModel()
 	if err != nil {
@@ -29,15 +44,12 @@ func MealOrchestrator(macroEstimator agent.Agent) (agent.Agent, error) {
 			return resp, nil
 		}
 
-		text = StripMarkdownFences(text, "meal_orchestrator")
-
-		if !strings.HasPrefix(text, "{") {
-			return resp, nil
+		batch, err := NormalizeMealsBatchResponse(text)
+		if err != nil {
+			return nil, err
 		}
-
-		var batch models.MealsBatchPayload
-		if err := json.Unmarshal([]byte(text), &batch); err != nil {
-			return nil, fmt.Errorf("meal orchestrator: final response did not match expected schema: %w\nContent: %s", err, text)
+		if batch == nil {
+			return resp, nil
 		}
 
 		newBytes, err := json.Marshal(batch)
