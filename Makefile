@@ -32,5 +32,5 @@ tidy:
 build:
 	cd ./server/ && go build -o ../server-api ./cmd/api/main.go
 
-db:
+docker:
 	infisical run -- docker compose up -d

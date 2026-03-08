@@ -11,8 +11,20 @@
 
 ## Code Style Guidelines
 - **Imports**: Group standard library, then third-party, then local imports (server/*)
-- **API**: Use Huma v2 with Chi router, follow existing endpoint patterns in routes/
-- **Environment**: Load .env with godotenv, never commit secrets
+- **API (Huma v2 & Chi)**:
+    - **DO**: Define request/response types with a nested `Body` field (e.g., `type CreateResponse struct { Body struct { ... } }`).
+    - **DO**: Use descriptive `OperationID`s (e.g., `create-meal-log`) and `Tags` for documentation.
+    - **DO**: Use Huma's built-in error functions (e.g., `huma.Error404NotFound`) for consistent JSON error responses.
+    - **DO NOT**: Use generic `error` returns without Huma's structured error helpers.
+- **Database & Repository Layer**:
+    - **DO**: Access the database via the `db.DBProvider` interface and the `GetDB(provider)` helper in `internal/routes/util.go`.
+    - **DO**: Perform all DB operations through the repository layer (e.g., `database.Users().Create(...)`).
+    - **DO**: Use `database.WithTx(ctx, ...)` for operations requiring transactions.
+    - **DO NOT**: Directly use `sqlc` generated code or raw SQL outside of the `internal/db/repository` package.
+    - **DO NOT**: Manually manage database connection pools in route handlers; rely on the `LazyDatabase` initialized in `main.go`.
+- **Environment**: Load .env with godotenv, never commit secrets.
+- **Roadmap**: Refer to the `TODOS/` directory for pending architectural tasks like Authentication and Row Level Security.
+    - **DO NOT**: Assume authentication (AuthN) or Row Level Security (RLS) is active until these tasks are marked as completed.
 
 ## ADK (Agent Development Kit) Guidelines
 - **ADK Documentation**: https://google.github.io/adk-docs/ (primary reference)
