@@ -30,6 +30,6 @@ LIMIT $2 OFFSET $3;
 -- name: ListWeeklyNutritionSummariesByUserAndDateRange :many
 SELECT * FROM weekly_nutrition_summaries 
 WHERE user_id = $1 
-AND week_start_date >= $2 
-AND week_start_date <= $3
+AND week_start_date >= sqlc.arg('start_date')
+AND week_start_date <= sqlc.arg('end_date')
 ORDER BY week_start_date ASC;

@@ -85,6 +85,10 @@ func main() {
 	echoRunner := createRunner("echo_agent", echoAgent)
 	weatherRunner := createRunner("hello_time_agent", weatherAgent)
 
+	// Summary of runner status
+	log.Printf("Runner status: meal=%v, echo=%v, weather=%v",
+		mealRunner != nil, echoRunner != nil, weatherRunner != nil)
+
 	lazyDB := db.NewLazyDatabase(ctx)
 	defer lazyDB.Close()
 	log.Println("Lazy database initialized - will connect on first use")

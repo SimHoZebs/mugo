@@ -84,8 +84,9 @@ func (r *nutritionSummaryRepository) ListDailyByDateRange(ctx context.Context, u
 		return nil, err
 	}
 	arg := dbgenerated.ListDailyNutritionSummariesByUserAndDateRangeParams{
-		UserID: pgUUID,
-		Date:   pgutil.Date(startDate),
+		UserID:    pgUUID,
+		StartDate: pgutil.Date(startDate),
+		EndDate:   pgutil.Date(endDate),
 	}
 	results, err := r.queries.ListDailyNutritionSummariesByUserAndDateRange(ctx, arg)
 	if err != nil {
@@ -145,8 +146,9 @@ func (r *nutritionSummaryRepository) ListWeeklyByDateRange(ctx context.Context, 
 		return nil, err
 	}
 	arg := dbgenerated.ListWeeklyNutritionSummariesByUserAndDateRangeParams{
-		UserID:        pgUUID,
-		WeekStartDate: pgutil.Date(startDate),
+		UserID:    pgUUID,
+		StartDate: pgutil.Date(startDate),
+		EndDate:   pgutil.Date(endDate),
 	}
 	results, err := r.queries.ListWeeklyNutritionSummariesByUserAndDateRange(ctx, arg)
 	if err != nil {

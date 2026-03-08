@@ -23,8 +23,8 @@ ORDER BY recorded_at ASC;
 -- name: ListMealLogsByUserAndDateRange :many
 SELECT * FROM meal_logs 
 WHERE user_id = $1 
-AND recorded_at >= $2 
-AND recorded_at < $3
+AND recorded_at >= sqlc.arg('start_date')
+AND recorded_at < sqlc.arg('end_date')
 ORDER BY recorded_at ASC;
 
 -- name: ListMealLogsByConversation :many

@@ -25,6 +25,6 @@ LIMIT $2 OFFSET $3;
 -- name: ListDailyNutritionSummariesByUserAndDateRange :many
 SELECT * FROM daily_nutrition_summaries 
 WHERE user_id = $1 
-AND date >= $2 
-AND date <= $3
+AND date >= sqlc.arg('start_date')
+AND date <= sqlc.arg('end_date')
 ORDER BY date ASC;

@@ -62,7 +62,7 @@ func (r *mealLogRepository) Create(ctx context.Context, userID, conversationID, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create meal log: %w", err)
 	}
-	return mapToMealLog(result), nil
+	return mapToMealLog(result)
 }
 
 func (r *mealLogRepository) GetByID(ctx context.Context, id string) (*models.MealLog, error) {
@@ -74,7 +74,7 @@ func (r *mealLogRepository) GetByID(ctx context.Context, id string) (*models.Mea
 	if err != nil {
 		return nil, fmt.Errorf("failed to get meal log: %w", err)
 	}
-	return mapToMealLog(result), nil
+	return mapToMealLog(result)
 }
 
 func (r *mealLogRepository) ListByUser(ctx context.Context, userID string, limit, offset int) ([]*models.MealLog, error) {
@@ -93,7 +93,11 @@ func (r *mealLogRepository) ListByUser(ctx context.Context, userID string, limit
 	}
 	mealLogs := make([]*models.MealLog, len(results))
 	for i, m := range results {
-		mealLogs[i] = mapToMealLog(m)
+		var err error
+		mealLogs[i], err = mapToMealLog(m)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return mealLogs, nil
 }
@@ -113,7 +117,11 @@ func (r *mealLogRepository) ListByUserAndDate(ctx context.Context, userID string
 	}
 	mealLogs := make([]*models.MealLog, len(results))
 	for i, m := range results {
-		mealLogs[i] = mapToMealLog(m)
+		var err error
+		mealLogs[i], err = mapToMealLog(m)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return mealLogs, nil
 }
@@ -124,8 +132,9 @@ func (r *mealLogRepository) ListByUserAndDateRange(ctx context.Context, userID s
 		return nil, err
 	}
 	arg := dbgenerated.ListMealLogsByUserAndDateRangeParams{
-		UserID:     pgUUID,
-		RecordedAt: pgutil.Timestamp(startDate),
+		UserID:    pgUUID,
+		StartDate: pgutil.Timestamp(startDate),
+		EndDate:   pgutil.Timestamp(endDate),
 	}
 	results, err := r.queries.ListMealLogsByUserAndDateRange(ctx, arg)
 	if err != nil {
@@ -133,7 +142,11 @@ func (r *mealLogRepository) ListByUserAndDateRange(ctx context.Context, userID s
 	}
 	mealLogs := make([]*models.MealLog, len(results))
 	for i, m := range results {
-		mealLogs[i] = mapToMealLog(m)
+		var err error
+		mealLogs[i], err = mapToMealLog(m)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return mealLogs, nil
 }
@@ -149,7 +162,11 @@ func (r *mealLogRepository) ListByConversation(ctx context.Context, conversation
 	}
 	mealLogs := make([]*models.MealLog, len(results))
 	for i, m := range results {
-		mealLogs[i] = mapToMealLog(m)
+		var err error
+		mealLogs[i], err = mapToMealLog(m)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return mealLogs, nil
 }
@@ -189,7 +206,7 @@ func (r *mealLogRepository) Update(ctx context.Context, id string, foodName, mea
 	if err != nil {
 		return nil, fmt.Errorf("failed to update meal log: %w", err)
 	}
-	return mapToMealLog(result), nil
+	return mapToMealLog(result)
 }
 
 func (r *mealLogRepository) Delete(ctx context.Context, id string) error {
@@ -200,20 +217,26 @@ func (r *mealLogRepository) Delete(ctx context.Context, id string) error {
 	return r.queries.DeleteMealLog(ctx, pgUUID)
 }
 
-func mapToMealLog(m dbgenerated.MealLog) *models.MealLog {
+func mapToMealLog(m dbgenerated.MealLog) (*models.MealLog, error) {
 	var macros models.Macros
 	if m.Macros != nil {
-		json.Unmarshal(m.Macros, &macros)
+		if err := json.Unmarshal(m.Macros, &macros); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal macros: %w", err)
+		}
 	}
 
 	var assumptions []models.Assumption
 	if m.Assumptions != nil {
-		json.Unmarshal(m.Assumptions, &assumptions)
+		if err := json.Unmarshal(m.Assumptions, &assumptions); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal assumptions: %w", err)
+		}
 	}
 
 	var rawResponse interface{}
 	if m.RawResponse != nil {
-		json.Unmarshal(m.RawResponse, &rawResponse)
+		if err := json.Unmarshal(m.RawResponse, &rawResponse); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal raw response: %w", err)
+		}
 	}
 
 	var conversationID *string
@@ -222,17 +245,20 @@ func mapToMealLog(m dbgenerated.MealLog) *models.MealLog {
 		conversationID = &s
 	}
 
+	mealType, _ := m.MealType.(string)
+	foodSource, _ := m.FoodSource.(string)
+
 	return &models.MealLog{
 		ID:             m.ID.String(),
 		UserID:         m.UserID.String(),
 		ConversationID: conversationID,
 		FoodName:       m.FoodName,
-		MealType:       string(m.MealType.(string)),
+		MealType:       mealType,
 		RecordedAt:     m.RecordedAt.Time.Format(time.RFC3339),
 		Macros:         macros,
 		Assumptions:    assumptions,
-		FoodSource:     string(m.FoodSource.(string)),
+		FoodSource:     foodSource,
 		RawResponse:    rawResponse,
 		CreatedAt:      m.CreatedAt.Time.Format(time.RFC3339),
-	}
+	}, nil
 }

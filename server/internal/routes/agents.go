@@ -24,17 +24,17 @@ func RegisterAgentEndpoints(humaAPI huma.API, prefix string, echoRunner adk.Agen
 			input.Body.Message, input.Body.UserID, input.Body.SessionID)
 
 		if echoRunner == nil {
-			return nil, fmt.Errorf("echo_agent not found")
+			return nil, huma.Error503ServiceUnavailable("echo_agent not found")
 		}
 
 		// Ensure ADK session exists
 		if err := echoRunner.CreateSession(ctx, input.Body.UserID, input.Body.SessionID); err != nil {
-			return nil, fmt.Errorf("failed to create echo session: %w", err)
+			return nil, huma.Error500InternalServerError(fmt.Sprintf("failed to create echo session: %v", err))
 		}
 
 		result, err := echoRunner.Run(ctx, input.Body.UserID, input.Body.SessionID, input.Body.Message)
 		if err != nil {
-			return nil, fmt.Errorf("echo agent processing failed: %w", err)
+			return nil, huma.Error500InternalServerError(fmt.Sprintf("echo agent processing failed: %v", err))
 		}
 
 		resp := &api.EchoResponse{}
@@ -54,17 +54,17 @@ func RegisterAgentEndpoints(humaAPI huma.API, prefix string, echoRunner adk.Agen
 			input.Body.City, input.Body.UserID, input.Body.SessionID)
 
 		if weatherRunner == nil {
-			return nil, fmt.Errorf("hello_time_agent not found")
+			return nil, huma.Error503ServiceUnavailable("weather_agent not found")
 		}
 
 		// Ensure ADK session exists
 		if err := weatherRunner.CreateSession(ctx, input.Body.UserID, input.Body.SessionID); err != nil {
-			return nil, fmt.Errorf("failed to create weather session: %w", err)
+			return nil, huma.Error500InternalServerError(fmt.Sprintf("failed to create weather session: %v", err))
 		}
 
 		result, err := weatherRunner.Run(ctx, input.Body.UserID, input.Body.SessionID, input.Body.City)
 		if err != nil {
-			return nil, fmt.Errorf("weather agent processing failed: %w", err)
+			return nil, huma.Error500InternalServerError(fmt.Sprintf("weather agent processing failed: %v", err))
 		}
 
 		resp := &api.WeatherResponse{}
