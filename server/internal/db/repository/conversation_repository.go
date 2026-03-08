@@ -23,6 +23,11 @@ func (r *conversationRepository) Create(ctx context.Context, userID, sessionID, 
 	if err != nil {
 		return nil, err
 	}
+
+	if sessionID == "" {
+		sessionID = pgutil.GenerateUUID()
+	}
+
 	arg := dbgenerated.CreateConversationParams{
 		UserID:    pgUUID,
 		SessionID: sessionID,

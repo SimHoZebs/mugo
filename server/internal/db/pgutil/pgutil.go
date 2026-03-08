@@ -45,6 +45,10 @@ func TextPtr(s *string) pgtype.Text {
 	return pgtype.Text{String: *s, Valid: true}
 }
 
+func GenerateUUID() string {
+	return uuid.New().String()
+}
+
 func FromText(t pgtype.Text) *string {
 	if !t.Valid {
 		return nil

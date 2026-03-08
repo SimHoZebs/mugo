@@ -24,13 +24,25 @@ func TestCreateMealLog(t *testing.T) {
 	dbProviderMock := new(mocks.DBProviderMock)
 	dbMock := new(mocks.DBMock)
 	mealRepoMock := new(repomocks.MealLogRepositoryMock)
+	convRepoMock := new(repomocks.ConversationRepositoryMock)
 
 	dbProviderMock.On("GetDatabase").Return(dbMock, nil)
 	dbMock.On("Meals").Return(mealRepoMock)
+	dbMock.On("Conversations").Return(convRepoMock)
 
 	userID := "user-123"
 	sessionID := "session-456"
 	foodDescription := "I ate a chicken sandwich"
+
+	expectedConv := &models.Conversation{
+		ID:        "conv-789",
+		UserID:    userID,
+		SessionID: sessionID,
+		CreatedAt: time.Now().Format(time.RFC3339),
+		UpdatedAt: time.Now().Format(time.RFC3339),
+	}
+	convRepoMock.On("Create", mock.Anything, userID, sessionID, "New Meal Log").
+		Return(expectedConv, nil)
 
 	payload := models.NutritionPayload{
 		Name:     "Chicken Sandwich",
@@ -49,7 +61,14 @@ func TestCreateMealLog(t *testing.T) {
 	batch := models.MealsBatchPayload{Meals: []models.NutritionPayload{payload}}
 	payloadJSON, _ := json.Marshal(batch)
 
+	var createSessionCalled bool
 	mockRunner := &adkmocks.MockAgentRunner{
+		CreateSessionFunc: func(ctx context.Context, uid, sid string) error {
+			assert.Equal(t, userID, uid)
+			assert.Equal(t, sessionID, sid)
+			createSessionCalled = true
+			return nil
+		},
 		RunFunc: func(ctx context.Context, uid, sid, text string) (*adk.RunResult, error) {
 			return &adk.RunResult{
 				FinalText: string(payloadJSON),
@@ -82,9 +101,12 @@ func TestCreateMealLog(t *testing.T) {
 	})
 
 	assert.Equal(t, http.StatusOK, resp.Code)
+	assert.True(t, createSessionCalled, "CreateSession should be called for new conversations")
+	assert.Contains(t, resp.Body.String(), "session-456")
 	assert.Contains(t, resp.Body.String(), "meal-123")
 	assert.Contains(t, resp.Body.String(), "Chicken Sandwich")
 
 	dbProviderMock.AssertExpectations(t)
+	convRepoMock.AssertExpectations(t)
 	mealRepoMock.AssertExpectations(t)
 }

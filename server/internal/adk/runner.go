@@ -12,11 +12,11 @@ import (
 	"google.golang.org/adk/session/database"
 	"google.golang.org/genai"
 	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 type AgentRunner interface {
 	Run(ctx context.Context, userID, sessionID, text string) (*RunResult, error)
+	CreateSession(ctx context.Context, userID, sessionID string) error
 	Name() string
 }
 
@@ -103,6 +103,21 @@ func (r *agentRunner) Run(ctx context.Context, userID, sessionID, text string) (
 	}, nil
 }
 
+// CreateSession creates a new ADK session. Call this when starting a new
+// conversation, before the first Run() call. If the session already exists
+// or the ID is invalid, it returns an error.
+func (r *agentRunner) CreateSession(ctx context.Context, userID, sessionID string) error {
+	_, err := r.sessionService.Create(ctx, &session.CreateRequest{
+		AppName:   r.appName,
+		UserID:    userID,
+		SessionID: sessionID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create ADK session: %w", err)
+	}
+	return nil
+}
+
 func (r *agentRunner) GetSession(ctx context.Context, userID, sessionID string) (session.Session, error) {
 	resp, err := r.sessionService.Get(ctx, &session.GetRequest{
 		AppName:   r.appName,
@@ -134,14 +149,9 @@ func CreateSessionService() session.Service {
 
 	log.Println("Initializing database-backed session service for persistent sessions")
 
-	db, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{})
-	if err != nil {
-		log.Printf("Failed to connect to session database: %v", err)
-		log.Println("Warning: Agent calls will fail until database is available")
-		return NewLazySessionService(nil, err)
-	}
-
-	svc, err := database.NewSessionService(db.Dialector)
+	// Pass the dialector directly — postgres.Open() returns a gorm.Dialector
+	// without opening a connection. NewSessionService opens the one it needs internally.
+	svc, err := database.NewSessionService(postgres.Open(dbURL))
 	if err != nil {
 		log.Printf("Failed to create session service: %v", err)
 		log.Println("Warning: Agent calls will fail until database is available")

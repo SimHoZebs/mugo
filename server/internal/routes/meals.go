@@ -15,14 +15,15 @@ import (
 type CreateMealRequest struct {
 	Body struct {
 		UserID      string `json:"user_id" example:"user-123" doc:"User ID"`
-		SessionID   string `json:"session_id" example:"session-456" doc:"Session ID for conversation tracking"`
+		SessionID   string `json:"session_id,omitempty" example:"session-456" doc:"Optional Session ID. If not provided, a new conversation will be created."`
 		Description string `json:"description" example:"I ate a chicken sandwich" doc:"Description of the meal"`
 	}
 }
 
 type CreateMealResponse struct {
 	Body struct {
-		Meals []*models.MealLog `json:"meals"`
+		SessionID string            `json:"session_id" doc:"The session ID used for this request"`
+		Meals     []*models.MealLog `json:"meals"`
 	}
 }
 
@@ -79,7 +80,25 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 		today := time.Now().Format("2006-01-02")
 		message := fmt.Sprintf("Today's date is %s. %s", today, input.Body.Description)
 
-		result, err := mealRunner.Run(ctx, input.Body.UserID, input.Body.SessionID, message)
+		database, err := GetDB(provider)
+		if err != nil {
+			return nil, err
+		}
+
+		conv, err := database.Conversations().Create(ctx, input.Body.UserID, input.Body.SessionID, "New Meal Log")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create new conversation: %w", err)
+		}
+
+		// Create the ADK session for this new conversation so the runner can
+		// find it. Only done here — update/correction handlers expect the
+		// session to already exist and will fail if it doesn't.
+		if err := mealRunner.CreateSession(ctx, input.Body.UserID, conv.SessionID); err != nil {
+			return nil, fmt.Errorf("failed to create ADK session: %w", err)
+		}
+
+		// Run the nutrition agent using the string-based sessionID for ADK tracking
+		result, err := mealRunner.Run(ctx, input.Body.UserID, conv.SessionID, message)
 		if err != nil {
 			return nil, fmt.Errorf("nutrition agent processing failed: %w", err)
 		}
@@ -89,17 +108,13 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 			return nil, fmt.Errorf("failed to parse nutrition response: %w", err)
 		}
 
-		database, err := GetDB(provider)
-		if err != nil {
-			return nil, err
-		}
-
 		var meals []*models.MealLog
 		for _, payload := range batch.Meals {
 			mealDate := parseMealDate(payload.Date)
+			// Use conv.ID (the internal UUID) for the meal log's foreign key
 			meal, err := database.Meals().Create(ctx,
 				input.Body.UserID,
-				input.Body.SessionID,
+				conv.ID,
 				payload.Name,
 				string(payload.MealType),
 				mealDate,
@@ -115,6 +130,7 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 		}
 
 		resp := &CreateMealResponse{}
+		resp.Body.SessionID = conv.SessionID
 		resp.Body.Meals = meals
 		return resp, nil
 	})
@@ -138,19 +154,26 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 				return fmt.Errorf("failed to get meal: %w", err)
 			}
 
-			sessionID := ""
+			// meal.ConversationID is the conversations.id UUID (the FK target),
+			// NOT the ADK session ID. We must look up the conversation to get
+			// the actual session_id string that the ADK session was registered under.
+			adkSessionID := ""
 			if meal.ConversationID != nil {
-				sessionID = *meal.ConversationID
+				conv, err := txDB.ConversationRepository.GetByID(ctx, *meal.ConversationID)
+				if err != nil {
+					return fmt.Errorf("failed to get conversation for meal: %w", err)
+				}
+				adkSessionID = conv.SessionID
 			}
 
 			fmt.Printf("Updating meal %s with correction: %s (session: %s)\n",
-				input.MealID, input.Body.Correction, sessionID)
+				input.MealID, input.Body.Correction, adkSessionID)
 
 			if mealRunner == nil {
 				return huma.Error503ServiceUnavailable("AI meal parsing is currently disabled (missing configuration)")
 			}
 
-			result, err := mealRunner.Run(ctx, meal.UserID, sessionID, input.Body.Correction)
+			result, err := mealRunner.Run(ctx, meal.UserID, adkSessionID, input.Body.Correction)
 			if err != nil {
 				return fmt.Errorf("nutrition agent processing failed: %w", err)
 			}
