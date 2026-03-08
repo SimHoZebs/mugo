@@ -35,27 +35,6 @@ type RunResult struct {
 	FinalText string
 }
 
-type RunnerRegistry struct {
-	runners map[string]AgentRunner
-}
-
-func NewRunnerRegistry(runners ...AgentRunner) *RunnerRegistry {
-	r := &RunnerRegistry{
-		runners: make(map[string]AgentRunner),
-	}
-	for _, runner := range runners {
-		if runner != nil {
-			r.runners[runner.Name()] = runner
-		}
-	}
-	return r
-}
-
-func (r *RunnerRegistry) Get(appName string) (AgentRunner, bool) {
-	runner, ok := r.runners[appName]
-	return runner, ok
-}
-
 func NewAgentRunner(appName string, ag agent.Agent, sessionService session.Service) (AgentRunner, error) {
 	r, err := runner.New(runner.Config{
 		AppName:        appName,
@@ -130,21 +109,10 @@ func (r *agentRunner) GetSession(ctx context.Context, userID, sessionID string) 
 	return resp.Session, nil
 }
 
-func (r *RunnerRegistry) GetSessionService() session.Service {
-	for _, runner := range r.runners {
-		if ar, ok := runner.(*agentRunner); ok {
-			return ar.sessionService
-		}
-	}
-	return nil
-}
-
-func CreateSessionService() session.Service {
+func CreateSessionService() (session.Service, error) {
 	dbURL := config.GetDatabaseURL()
 	if dbURL == "" {
-		log.Println("No database URL configured for session storage")
-		log.Println("Warning: Agent calls will fail until database is available")
-		return NewLazySessionService(nil, fmt.Errorf("no database URL configured"))
+		return nil, fmt.Errorf("no database URL configured for session storage")
 	}
 
 	log.Println("Initializing database-backed session service for persistent sessions")
@@ -153,17 +121,13 @@ func CreateSessionService() session.Service {
 	// without opening a connection. NewSessionService opens the one it needs internally.
 	svc, err := database.NewSessionService(postgres.Open(dbURL))
 	if err != nil {
-		log.Printf("Failed to create session service: %v", err)
-		log.Println("Warning: Agent calls will fail until database is available")
-		return NewLazySessionService(nil, err)
+		return nil, fmt.Errorf("failed to create session service: %w", err)
 	}
 
 	if err := database.AutoMigrate(svc); err != nil {
-		log.Printf("Failed to migrate session tables: %v", err)
-		log.Println("Warning: Agent calls will fail until database is available")
-		return NewLazySessionService(nil, err)
+		return nil, fmt.Errorf("failed to migrate session tables: %w", err)
 	}
 
 	log.Println("ADK session tables migrated successfully")
-	return svc
+	return svc, nil
 }

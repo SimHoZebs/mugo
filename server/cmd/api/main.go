@@ -33,17 +33,27 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	sessionService := adk.CreateSessionService()
+	sessionService, err := adk.CreateSessionService()
+	if err != nil {
+		log.Printf("CRITICAL: ADK Session Service could not be initialized: %v", err)
+		log.Println("Warning: AI agent features will be disabled")
+	}
 
-	// 1. Initialize Individual Agents
+	// 1. Initialize Shared Gemini Model
+	sharedModel, err := agents.NewGeminiModel()
+	if err != nil {
+		log.Printf("CRITICAL: Shared Gemini Model could not be initialized: %v", err)
+	}
+
+	// 2. Initialize Individual Agents
 	// We do this manually for now to handle dependencies (like Orchestrator needing Macro)
 
-	macroAgent, err := agents.MacroEstimator()
+	macroAgent, err := agents.MacroEstimator(sharedModel)
 	if err != nil {
 		log.Printf("Macro Estimator could not be initialized: %v", err)
 	}
 
-	orchestratorAgent, err := agents.MealOrchestrator(macroAgent)
+	orchestratorAgent, err := agents.MealOrchestrator(sharedModel, macroAgent)
 	if err != nil {
 		log.Printf("Meal Orchestrator could not be initialized: %v", err)
 	}
@@ -53,31 +63,27 @@ func main() {
 		log.Printf("Warning: Echo Agent could not be initialized: %v", err)
 	}
 
-	weatherAgent, err := agents.Weather()
+	weatherAgent, err := agents.Weather(sharedModel)
 	if err != nil {
 		log.Printf("Weather Agent could not be initialized: %v", err)
 	}
 
-	// 2. Create Runners and Populate Registry
-	var runners []adk.AgentRunner
-	addRunner := func(id string, a agent.Agent) {
-		if a == nil {
-			return
+	// 3. Create Runners
+	createRunner := func(id string, a agent.Agent) adk.AgentRunner {
+		if a == nil || sessionService == nil {
+			return nil
 		}
 		r, err := adk.NewAgentRunner(id, a, sessionService)
 		if err != nil {
 			log.Printf("Warning: Failed to create runner for %s: %v", id, err)
-			return
+			return nil
 		}
-		runners = append(runners, r)
+		return r
 	}
 
-	addRunner("macro_estimator", macroAgent)
-	addRunner("meal_orchestrator", orchestratorAgent)
-	addRunner("echo_agent", echoAgent)
-	addRunner("hello_time_agent", weatherAgent)
-
-	runnersRegistry := adk.NewRunnerRegistry(runners...)
+	mealRunner := createRunner("meal_orchestrator", orchestratorAgent)
+	echoRunner := createRunner("echo_agent", echoAgent)
+	weatherRunner := createRunner("hello_time_agent", weatherAgent)
 
 	lazyDB := db.NewLazyDatabase(ctx)
 	defer lazyDB.Close()
@@ -100,10 +106,6 @@ func main() {
 		resp.Body.Message = fmt.Sprintf("Hello, %s!", input.Name)
 		return resp, nil
 	})
-
-	mealRunner, _ := runnersRegistry.Get("meal_orchestrator")
-	echoRunner, _ := runnersRegistry.Get("echo_agent")
-	weatherRunner, _ := runnersRegistry.Get("hello_time_agent")
 
 	routes.RegisterAgentEndpoints(api, "/agents", echoRunner, weatherRunner)
 	routes.RegisterDebugEndpoints(api, "/debug", sessionService, lazyDB)

@@ -26,11 +26,7 @@ func NormalizeMealsBatchResponse(text string) (*models.MealsBatchPayload, error)
 	return &batch, nil
 }
 
-func MealOrchestrator(macroEstimator agent.Agent) (agent.Agent, error) {
-	model, err := NewGeminiModel()
-	if err != nil {
-		return nil, err
-	}
+func MealOrchestrator(model adkmodel.LLM, macroEstimator agent.Agent) (agent.Agent, error) {
 
 	onAfterModelNormalize := llmagent.AfterModelCallback(func(ctx agent.CallbackContext, resp *adkmodel.LLMResponse, respErr error) (*adkmodel.LLMResponse, error) {
 		if respErr != nil {

@@ -6,14 +6,11 @@ import (
 	"github.com/simhozebs/mugo/internal/tools"
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
+	adkmodel "google.golang.org/adk/model"
 	"google.golang.org/adk/tool"
 )
 
-func Weather() (agent.Agent, error) {
-	model, err := NewGeminiModel()
-	if err != nil {
-		return nil, err
-	}
+func Weather(model adkmodel.LLM) (agent.Agent, error) {
 
 	testTool, err := tools.TestTool(context.Background())
 	if err != nil {

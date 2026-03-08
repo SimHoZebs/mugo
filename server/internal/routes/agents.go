@@ -27,6 +27,11 @@ func RegisterAgentEndpoints(humaAPI huma.API, prefix string, echoRunner adk.Agen
 			return nil, fmt.Errorf("echo_agent not found")
 		}
 
+		// Ensure ADK session exists
+		if err := echoRunner.CreateSession(ctx, input.Body.UserID, input.Body.SessionID); err != nil {
+			return nil, fmt.Errorf("failed to create echo session: %w", err)
+		}
+
 		result, err := echoRunner.Run(ctx, input.Body.UserID, input.Body.SessionID, input.Body.Message)
 		if err != nil {
 			return nil, fmt.Errorf("echo agent processing failed: %w", err)
@@ -50,6 +55,11 @@ func RegisterAgentEndpoints(humaAPI huma.API, prefix string, echoRunner adk.Agen
 
 		if weatherRunner == nil {
 			return nil, fmt.Errorf("hello_time_agent not found")
+		}
+
+		// Ensure ADK session exists
+		if err := weatherRunner.CreateSession(ctx, input.Body.UserID, input.Body.SessionID); err != nil {
+			return nil, fmt.Errorf("failed to create weather session: %w", err)
 		}
 
 		result, err := weatherRunner.Run(ctx, input.Body.UserID, input.Body.SessionID, input.Body.City)

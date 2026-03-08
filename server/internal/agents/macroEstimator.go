@@ -31,11 +31,7 @@ func NormalizeNutritionResponse(text string) (*models.NutritionPayload, error) {
 	return &payload, nil
 }
 
-func MacroEstimator() (agent.Agent, error) {
-	model, err := NewGeminiModel()
-	if err != nil {
-		return nil, err
-	}
+func MacroEstimator(model adkmodel.LLM) (agent.Agent, error) {
 
 	schema := &genai.Schema{
 		Type: genai.TypeObject,
