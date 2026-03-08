@@ -2,8 +2,10 @@ package integration
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/simhozebs/mugo/internal/models"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +16,7 @@ func TestUser_Create(t *testing.T) {
 	s := SetupTestSuite(t)
 	defer s.Teardown()
 
-	username := "test_create_user"
+	username := "test_create_user_" + fmt.Sprintf("%d", time.Now().UnixNano())
 	s.API.Delete("/users/by-username/" + username)
 
 	resp := s.API.Post("/users", struct {
@@ -38,7 +40,7 @@ func TestUser_Get(t *testing.T) {
 	defer s.Teardown()
 
 	// Setup: Create a user to get
-	username := "test_get_user"
+	username := "test_get_user_" + fmt.Sprintf("%d", time.Now().UnixNano())
 	s.API.Delete("/users/by-username/" + username)
 	createResp := s.API.Post("/users", struct {
 		Username string `json:"username"`
@@ -68,7 +70,7 @@ func TestUser_Update(t *testing.T) {
 	defer s.Teardown()
 
 	// Setup: Create a user to update
-	username := "test_update_user"
+	username := "test_update_user_" + fmt.Sprintf("%d", time.Now().UnixNano())
 	s.API.Delete("/users/by-username/" + username)
 	createResp := s.API.Post("/users", struct {
 		Username string `json:"username"`
@@ -82,7 +84,7 @@ func TestUser_Update(t *testing.T) {
 	userID := createBody.User.ID
 
 	// Test: Update the user
-	newUsername := "updated_user"
+	newUsername := "updated_user_" + t.Name()
 	resp := s.API.Put("/users/"+userID, struct {
 		Username string `json:"username"`
 	}{
@@ -103,7 +105,7 @@ func TestUser_Delete(t *testing.T) {
 	defer s.Teardown()
 
 	// Setup: Create a user to delete
-	username := "test_delete_user"
+	username := "test_delete_user_" + fmt.Sprintf("%d", time.Now().UnixNano())
 	s.API.Delete("/users/by-username/" + username)
 	createResp := s.API.Post("/users", struct {
 		Username string `json:"username"`

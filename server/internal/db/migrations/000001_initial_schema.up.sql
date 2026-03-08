@@ -1,17 +1,14 @@
--- +migrate Up
--- +migrate StatementBegin
-
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(50) UNIQUE NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
 -- Enums
 DO $$ BEGIN
@@ -33,7 +30,7 @@ EXCEPTION
 END $$;
 
 -- Conversations table
-CREATE TABLE conversations (
+CREATE TABLE IF NOT EXISTS conversations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     session_id VARCHAR(255) NOT NULL,
@@ -44,11 +41,11 @@ CREATE TABLE conversations (
     CONSTRAINT unique_user_session UNIQUE (user_id, session_id)
 );
 
-CREATE INDEX idx_conversations_user_id ON conversations(user_id);
-CREATE INDEX idx_conversations_session_id ON conversations(session_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON conversations(user_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_session_id ON conversations(session_id);
 
 -- Conversation messages table
-CREATE TABLE conversation_messages (
+CREATE TABLE IF NOT EXISTS conversation_messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
     role message_role NOT NULL,
@@ -57,11 +54,11 @@ CREATE TABLE conversation_messages (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_messages_conversation_id ON conversation_messages(conversation_id);
-CREATE INDEX idx_messages_created_at ON conversation_messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON conversation_messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_created_at ON conversation_messages(created_at);
 
 -- Meal logs table
-CREATE TABLE meal_logs (
+CREATE TABLE IF NOT EXISTS meal_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     conversation_id UUID REFERENCES conversations(id) ON DELETE SET NULL,
@@ -75,12 +72,12 @@ CREATE TABLE meal_logs (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_meal_logs_user_id ON meal_logs(user_id);
-CREATE INDEX idx_meal_logs_conversation_id ON meal_logs(conversation_id);
-CREATE INDEX idx_meal_logs_recorded_at ON meal_logs(recorded_at);
+CREATE INDEX IF NOT EXISTS idx_meal_logs_user_id ON meal_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_meal_logs_conversation_id ON meal_logs(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_meal_logs_recorded_at ON meal_logs(recorded_at);
 
 -- Daily nutrition summaries table
-CREATE TABLE daily_nutrition_summaries (
+CREATE TABLE IF NOT EXISTS daily_nutrition_summaries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     date DATE NOT NULL,
@@ -95,11 +92,11 @@ CREATE TABLE daily_nutrition_summaries (
     CONSTRAINT unique_user_date UNIQUE (user_id, date)
 );
 
-CREATE INDEX idx_daily_summaries_user_id ON daily_nutrition_summaries(user_id);
-CREATE INDEX idx_daily_summaries_date ON daily_nutrition_summaries(date);
+CREATE INDEX IF NOT EXISTS idx_daily_summaries_user_id ON daily_nutrition_summaries(user_id);
+CREATE INDEX IF NOT EXISTS idx_daily_summaries_date ON daily_nutrition_summaries(date);
 
 -- Weekly nutrition summaries table
-CREATE TABLE weekly_nutrition_summaries (
+CREATE TABLE IF NOT EXISTS weekly_nutrition_summaries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     week_start_date DATE NOT NULL,
@@ -118,23 +115,5 @@ CREATE TABLE weekly_nutrition_summaries (
     CONSTRAINT unique_user_week UNIQUE (user_id, week_start_date)
 );
 
-CREATE INDEX idx_weekly_summaries_user_id ON weekly_nutrition_summaries(user_id);
-CREATE INDEX idx_weekly_summaries_week ON weekly_nutrition_summaries(week_start_date);
-
--- +migrate StatementEnd
-
--- +migrate Down
--- +migrate StatementBegin
-
-DROP TABLE IF EXISTS weekly_nutrition_summaries CASCADE;
-DROP TABLE IF EXISTS daily_nutrition_summaries CASCADE;
-DROP TABLE IF EXISTS meal_logs CASCADE;
-DROP TABLE IF EXISTS conversation_messages CASCADE;
-DROP TABLE IF EXISTS conversations CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
-
-DROP TYPE IF EXISTS meal_type CASCADE;
-DROP TYPE IF EXISTS food_source CASCADE;
-DROP TYPE IF EXISTS message_role CASCADE;
-
--- +migrate StatementEnd
+CREATE INDEX IF NOT EXISTS idx_weekly_summaries_user_id ON weekly_nutrition_summaries(user_id);
+CREATE INDEX IF NOT EXISTS idx_weekly_summaries_week ON weekly_nutrition_summaries(week_start_date);

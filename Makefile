@@ -1,6 +1,15 @@
 include .env
 
-.PHONY: server mobile emulator tidy build db sqlc adk orval
+.PHONY: server mobile emulator tidy build db sqlc adk orval migrate-up migrate-down migrate-force
+
+migrate-up:
+	cd ./server/ && infisical run -- go run ./cmd/migrate/main.go up
+
+migrate-down:
+	cd ./server/ && infisical run -- go run ./cmd/migrate/main.go down $(steps)
+
+migrate-force:
+	cd ./server/ && infisical run -- go run ./cmd/migrate/main.go force $(version)
 
 mobile:
 	cd ./mobile/ && infisical run -- nr start
