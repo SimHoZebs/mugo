@@ -108,3 +108,59 @@ func TestGetUser(t *testing.T) {
 	dbProviderMock.AssertExpectations(t)
 	userRepoMock.AssertExpectations(t)
 }
+
+func TestUpdateUser(t *testing.T) {
+	_, api := humatest.New(t)
+
+	dbProviderMock := new(mocks.DBProviderMock)
+	dbMock := new(mocks.DBMock)
+	userRepoMock := new(repomocks.UserRepositoryMock)
+
+	dbProviderMock.On("GetDatabase").Return(dbMock, nil)
+	dbMock.On("Users").Return(userRepoMock)
+
+	userID := "user-123"
+	newUsername := "updateduser"
+	expectedUser := &models.User{
+		ID:       userID,
+		Username: newUsername,
+	}
+
+	userRepoMock.On("Update", mock.Anything, userID, newUsername).Return(expectedUser, nil)
+
+	routes.RegisterUserEndpoints(api, "/users", dbProviderMock)
+
+	resp := api.Put("/users/"+userID, struct {
+		Username string `json:"username"`
+	}{
+		Username: newUsername,
+	})
+
+	assert.Equal(t, http.StatusOK, resp.Code)
+	assert.Contains(t, resp.Body.String(), newUsername)
+	dbProviderMock.AssertExpectations(t)
+	userRepoMock.AssertExpectations(t)
+}
+
+func TestDeleteUser(t *testing.T) {
+	_, api := humatest.New(t)
+
+	dbProviderMock := new(mocks.DBProviderMock)
+	dbMock := new(mocks.DBMock)
+	userRepoMock := new(repomocks.UserRepositoryMock)
+
+	dbProviderMock.On("GetDatabase").Return(dbMock, nil)
+	dbMock.On("Users").Return(userRepoMock)
+
+	userID := "user-123"
+
+	userRepoMock.On("Delete", mock.Anything, userID).Return(nil)
+
+	routes.RegisterUserEndpoints(api, "/users", dbProviderMock)
+
+	resp := api.Delete("/users/" + userID)
+
+	assert.Equal(t, http.StatusNoContent, resp.Code)
+	dbProviderMock.AssertExpectations(t)
+	userRepoMock.AssertExpectations(t)
+}
