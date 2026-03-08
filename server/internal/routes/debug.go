@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/simhozebs/mugo/internal/adk"
 	"github.com/simhozebs/mugo/internal/db"
 	"google.golang.org/adk/session"
 )
@@ -28,7 +27,7 @@ type debugListSessionsResponse struct {
 	}
 }
 
-func RegisterDebugEndpoints(humaAPI huma.API, prefix string, registry *adk.RunnerRegistry, provider db.DBProvider) {
+func RegisterDebugEndpoints(humaAPI huma.API, prefix string, sessionService session.Service, provider db.DBProvider) {
 	debugGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(
@@ -77,7 +76,6 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, registry *adk.Runne
 			},
 		},
 		func(ctx context.Context, input *DebugGetMessagesRequest) (response *debugGetMessagesResponse, err error) {
-			sessionService := registry.GetSessionService()
 			if sessionService == nil {
 				return nil, huma.Error500InternalServerError("Session service not available")
 			}

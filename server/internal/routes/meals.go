@@ -59,7 +59,7 @@ type ListMealsByDateRangeRequest struct {
 
 const mealLogTags = "Logs"
 
-func RegisterMealEndpoints(humaAPI huma.API, prefix string, macroRunner adk.AgentRunner, provider db.DBProvider) {
+func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.AgentRunner, provider db.DBProvider) {
 	mealsGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(mealsGroup, huma.Operation{
@@ -69,13 +69,17 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, macroRunner adk.Agen
 		Summary:     "Create a new meal-log",
 		Tags:        []string{mealLogTags},
 	}, func(ctx context.Context, input *CreateMealRequest) (*CreateMealResponse, error) {
+		if mealRunner == nil {
+			return nil, huma.Error503ServiceUnavailable("AI meal parsing is currently disabled (missing configuration)")
+		}
+
 		fmt.Printf("Creating meal: %s (user: %s, session: %s)\n",
 			input.Body.Description, input.Body.UserID, input.Body.SessionID)
 
 		today := time.Now().Format("2006-01-02")
 		message := fmt.Sprintf("Today's date is %s. %s", today, input.Body.Description)
 
-		result, err := macroRunner.Run(ctx, input.Body.UserID, input.Body.SessionID, message)
+		result, err := mealRunner.Run(ctx, input.Body.UserID, input.Body.SessionID, message)
 		if err != nil {
 			return nil, fmt.Errorf("nutrition agent processing failed: %w", err)
 		}
@@ -142,7 +146,11 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, macroRunner adk.Agen
 			fmt.Printf("Updating meal %s with correction: %s (session: %s)\n",
 				input.MealID, input.Body.Correction, sessionID)
 
-			result, err := macroRunner.Run(ctx, meal.UserID, sessionID, input.Body.Correction)
+			if mealRunner == nil {
+				return huma.Error503ServiceUnavailable("AI meal parsing is currently disabled (missing configuration)")
+			}
+
+			result, err := mealRunner.Run(ctx, meal.UserID, sessionID, input.Body.Correction)
 			if err != nil {
 				return fmt.Errorf("nutrition agent processing failed: %w", err)
 			}

@@ -54,6 +54,15 @@ func (ld *LazyDatabase) getOrConnect() (*Database, error) {
 	ld.db = db
 	ld.connErr = nil
 	log.Println("Database connected successfully")
+
+	// Run migrations
+	if err := ld.runMigrations(ld.ctx, db); err != nil {
+		ld.db = nil
+		ld.connErr = err
+		log.Printf("Failed to run migrations: %v", err)
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
+	}
+
 	return ld.db, nil
 }
 

@@ -55,6 +55,7 @@ func TestCreateMealLog(t *testing.T) {
 				FinalText: string(payloadJSON),
 			}, nil
 		},
+		NameFunc: func() string { return "meal_orchestrator" },
 	}
 
 	expectedMeal := &models.MealLog{

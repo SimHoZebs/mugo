@@ -7,8 +7,15 @@ import (
 )
 
 type MockAgentRunner struct {
-	adk.AgentRunner
-	RunFunc func(ctx context.Context, userID, sessionID, text string) (*adk.RunResult, error)
+	RunFunc  func(ctx context.Context, userID, sessionID, text string) (*adk.RunResult, error)
+	NameFunc func() string
+}
+
+func (m *MockAgentRunner) Name() string {
+	if m.NameFunc != nil {
+		return m.NameFunc()
+	}
+	return "mock"
 }
 
 func (m *MockAgentRunner) Run(ctx context.Context, userID, sessionID, text string) (*adk.RunResult, error) {

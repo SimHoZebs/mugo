@@ -17,6 +17,7 @@ import (
 	"github.com/simhozebs/mugo/internal/agents"
 	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/routes"
+	"google.golang.org/adk/agent"
 )
 
 type GreetingOutput struct {
@@ -34,47 +35,49 @@ func main() {
 
 	sessionService := adk.CreateSessionService()
 
+	// 1. Initialize Individual Agents
+	// We do this manually for now to handle dependencies (like Orchestrator needing Macro)
+
 	macroAgent, err := agents.MacroEstimator()
 	if err != nil {
-		log.Fatalf("Failed to create macro estimator agent: %v", err)
+		log.Printf("Macro Estimator could not be initialized: %v", err)
 	}
 
 	orchestratorAgent, err := agents.MealOrchestrator(macroAgent)
 	if err != nil {
-		log.Fatalf("Failed to create meal orchestrator agent: %v", err)
+		log.Printf("Meal Orchestrator could not be initialized: %v", err)
 	}
 
 	echoAgent, err := agents.NewEchoAgent()
 	if err != nil {
-		log.Fatalf("Failed to create echo agent: %v", err)
+		log.Printf("Warning: Echo Agent could not be initialized: %v", err)
 	}
 
 	weatherAgent, err := agents.Weather()
 	if err != nil {
-		log.Fatalf("Failed to create weather agent: %v", err)
+		log.Printf("Weather Agent could not be initialized: %v", err)
 	}
 
-	macroRunner, err := adk.NewAgentRunner("macro_estimator", macroAgent, sessionService)
-	if err != nil {
-		log.Fatalf("Failed to create macro runner: %v", err)
+	// 2. Create Runners and Populate Registry
+	var runners []adk.AgentRunner
+	addRunner := func(id string, a agent.Agent) {
+		if a == nil {
+			return
+		}
+		r, err := adk.NewAgentRunner(id, a, sessionService)
+		if err != nil {
+			log.Printf("Warning: Failed to create runner for %s: %v", id, err)
+			return
+		}
+		runners = append(runners, r)
 	}
 
-	orchestratorRunner, err := adk.NewAgentRunner("meal_orchestrator", orchestratorAgent, sessionService)
-	if err != nil {
-		log.Fatalf("Failed to create orchestrator runner: %v", err)
-	}
+	addRunner("macro_estimator", macroAgent)
+	addRunner("meal_orchestrator", orchestratorAgent)
+	addRunner("echo_agent", echoAgent)
+	addRunner("hello_time_agent", weatherAgent)
 
-	echoRunner, err := adk.NewAgentRunner("echo_agent", echoAgent, sessionService)
-	if err != nil {
-		log.Fatalf("Failed to create echo runner: %v", err)
-	}
-
-	weatherRunner, err := adk.NewAgentRunner("hello_time_agent", weatherAgent, sessionService)
-	if err != nil {
-		log.Fatalf("Failed to create weather runner: %v", err)
-	}
-
-	runnerRegistry := adk.NewRunnerRegistry(macroRunner, orchestratorRunner, echoRunner, weatherRunner)
+	runnersRegistry := adk.NewRunnerRegistry(runners...)
 
 	lazyDB := db.NewLazyDatabase(ctx)
 	defer lazyDB.Close()
@@ -98,10 +101,14 @@ func main() {
 		return resp, nil
 	})
 
-	routes.RegisterAgentEndpoints(api, "/agents", runnerRegistry)
-	routes.RegisterDebugEndpoints(api, "/debug", runnerRegistry, lazyDB)
+	mealRunner, _ := runnersRegistry.Get("meal_orchestrator")
+	echoRunner, _ := runnersRegistry.Get("echo_agent")
+	weatherRunner, _ := runnersRegistry.Get("hello_time_agent")
+
+	routes.RegisterAgentEndpoints(api, "/agents", echoRunner, weatherRunner)
+	routes.RegisterDebugEndpoints(api, "/debug", sessionService, lazyDB)
 	routes.RegisterUserEndpoints(api, "/users", lazyDB)
-	routes.RegisterMealEndpoints(api, "/meals", orchestratorRunner, lazyDB)
+	routes.RegisterMealEndpoints(api, "/meals", mealRunner, lazyDB)
 	routes.RegisterAnalyticsEndpoints(api, "/analytics", lazyDB)
 	routes.RegisterConversationEndpoints(api, "/conversations", lazyDB)
 	routes.RegisterTranscriptionEndpoints(api, "/transcription")

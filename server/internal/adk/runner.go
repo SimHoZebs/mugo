@@ -17,12 +17,17 @@ import (
 
 type AgentRunner interface {
 	Run(ctx context.Context, userID, sessionID, text string) (*RunResult, error)
+	Name() string
 }
 
 type agentRunner struct {
 	runner         *runner.Runner
 	sessionService session.Service
 	appName        string
+}
+
+func (r *agentRunner) Name() string {
+	return r.appName
 }
 
 type RunResult struct {
@@ -39,8 +44,8 @@ func NewRunnerRegistry(runners ...AgentRunner) *RunnerRegistry {
 		runners: make(map[string]AgentRunner),
 	}
 	for _, runner := range runners {
-		if ar, ok := runner.(*agentRunner); ok {
-			r.runners[ar.appName] = runner
+		if runner != nil {
+			r.runners[runner.Name()] = runner
 		}
 	}
 	return r
