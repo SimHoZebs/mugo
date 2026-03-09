@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	dbgenerated "github.com/simhozebs/mugo/internal/db/dbgenerated"
+	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"github.com/simhozebs/mugo/internal/models"
 )
 
@@ -13,40 +14,47 @@ type userRepository struct {
 	queries *dbgenerated.Queries
 }
 
+func (repo *userRepository) q(ctx context.Context) *dbgenerated.Queries {
+	if tx, ok := pgutil.TxFromContext(ctx); ok {
+		return repo.queries.WithTx(tx)
+	}
+	return repo.queries
+}
+
 func NewUserRepository(queries *dbgenerated.Queries) UserRepository {
 	return &userRepository{queries: queries}
 }
 
-func (r *userRepository) Create(ctx context.Context, username string) (*models.User, error) {
-	result, err := r.queries.CreateUser(ctx, username)
+func (repo *userRepository) Create(ctx context.Context, username string) (*models.User, error) {
+	result, err := repo.q(ctx).CreateUser(ctx, username)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 	return mapToUser(result), nil
 }
 
-func (r *userRepository) GetByID(ctx context.Context, id pgtype.UUID) (*models.User, error) {
-	result, err := r.queries.GetUserByID(ctx, id)
+func (repo *userRepository) GetByID(ctx context.Context, id pgtype.UUID) (*models.User, error) {
+	result, err := repo.q(ctx).GetUserByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 	return mapToUser(result), nil
 }
 
-func (r *userRepository) GetByUsername(ctx context.Context, username string) (*models.User, error) {
-	result, err := r.queries.GetUserByUsername(ctx, username)
+func (repo *userRepository) GetByUsername(ctx context.Context, username string) (*models.User, error) {
+	result, err := repo.q(ctx).GetUserByUsername(ctx, username)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user by username: %w", err)
 	}
 	return mapToUser(result), nil
 }
 
-func (r *userRepository) Exists(ctx context.Context, username string) (bool, error) {
-	return r.queries.UserExists(ctx, username)
+func (repo *userRepository) Exists(ctx context.Context, username string) (bool, error) {
+	return repo.q(ctx).UserExists(ctx, username)
 }
 
-func (r *userRepository) List(ctx context.Context) ([]*models.User, error) {
-	results, err := r.queries.ListUsers(ctx)
+func (repo *userRepository) List(ctx context.Context) ([]*models.User, error) {
+	results, err := repo.q(ctx).ListUsers(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
@@ -57,13 +65,13 @@ func (r *userRepository) List(ctx context.Context) ([]*models.User, error) {
 	return users, nil
 }
 
-func (r *userRepository) Update(ctx context.Context, id pgtype.UUID, username string) (*models.User, error) {
+func (repo *userRepository) Update(ctx context.Context, id pgtype.UUID, username string) (*models.User, error) {
 	arg := dbgenerated.UpdateUserParams{
 		ID:       id,
 		Username: username,
 	}
 
-	result, err := r.queries.UpdateUser(ctx, arg)
+	result, err := repo.q(ctx).UpdateUser(ctx, arg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
@@ -71,8 +79,8 @@ func (r *userRepository) Update(ctx context.Context, id pgtype.UUID, username st
 	return mapToUser(result), nil
 }
 
-func (r *userRepository) Delete(ctx context.Context, id pgtype.UUID) error {
-	err := r.queries.DeleteUser(ctx, id)
+func (repo *userRepository) Delete(ctx context.Context, id pgtype.UUID) error {
+	err := repo.q(ctx).DeleteUser(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}

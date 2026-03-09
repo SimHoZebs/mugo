@@ -12,7 +12,7 @@ type DB interface {
 	Conversations() repository.ConversationRepository
 	Meals() repository.MealLogRepository
 	Nutrition() repository.NutritionSummaryRepository
-	WithTx(ctx context.Context, fn func(ctx context.Context, txDB *TxDatabase) error) error
+	WithTx(ctx context.Context, fn func(ctx context.Context, txDB DB) error) error
 }
 
 // DBProvider interface defines how to obtain a DB connection.

@@ -122,7 +122,7 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 		var meals []*models.MealLog
 		for _, payload := range batch.Meals {
 			mealDate := parseMealDate(payload.Date)
-			// Apply default units if missing from LLM response
+			// Apply default units since LLM now implies grams
 			for i := range payload.Assumptions {
 				payload.Assumptions[i].Unit = "g"
 			}
@@ -158,67 +158,60 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 		Summary:     "Update/correct an existing meal",
 		Tags:        []string{mealLogTags},
 	}, func(ctx context.Context, input *UpdateMealRequest) (*UpdateMealResponse, error) {
-		database, err := GetDB(provider)
+		db, err := GetDB(provider)
 		if err != nil {
 			return nil, err
 		}
 
-		var updatedMeal *models.MealLog
-		txErr := database.WithTx(ctx, func(ctx context.Context, txDB *db.TxDatabase) error {
-			mealUUID, err := pgutil.ParseUUID(input.MealID)
-			if err != nil {
-				return huma.Error400BadRequest("invalid meal ID", err)
-			}
-
-			meal, adkSessionID, err := txDB.MealLogRepository.GetByIDWithSession(ctx, mealUUID)
-			if err != nil {
-				return fmt.Errorf("failed to get meal: %w", err)
-			}
-
-			fmt.Printf("Updating meal %s with correction: %s (session: %s)\n",
-				input.MealID, input.Body.Correction, adkSessionID)
-
-			if mealRunner == nil {
-				return huma.Error503ServiceUnavailable("AI meal parsing is currently disabled (missing configuration)")
-			}
-
-			result, err := mealRunner.Run(ctx, meal.UserID, adkSessionID, input.Body.Correction)
-			if err != nil {
-				return fmt.Errorf("nutrition agent processing failed: %w", err)
-			}
-
-			var batch models.MealsBatchPayload
-			if err := json.Unmarshal([]byte(result.FinalText), &batch); err != nil {
-				return huma.Error422UnprocessableEntity("failed to parse nutrition response", err)
-			}
-			if len(batch.Meals) == 0 {
-				return huma.Error422UnprocessableEntity("nutrition agent returned no meals")
-			}
-			payload := batch.Meals[0]
-
-			// Apply default units since LLM now implies grams
-			for i := range payload.Assumptions {
-				payload.Assumptions[i].Unit = "g"
-			}
-
-			newMeal, err := txDB.MealLogRepository.Update(ctx,
-				mealUUID,
-				payload.Name,
-				string(payload.MealType),
-				payload.Macros,
-				payload.Assumptions,
-				payload,
-			)
-			if err != nil {
-				return fmt.Errorf("failed to update meal: %w", err)
-			}
-			updatedMeal = newMeal
-			return nil
-		})
-
-		if txErr != nil {
-			return nil, txErr
+		mealUUID, err := pgutil.ParseUUID(input.MealID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid meal ID", err)
 		}
+
+		meal, adkSessionID, err := db.Meals().GetByIDWithSession(ctx, mealUUID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get meal: %w", err)
+		}
+
+		fmt.Printf("Updating meal %s with correction: %s (session: %s)\n",
+			input.MealID, input.Body.Correction, adkSessionID)
+
+		if mealRunner == nil {
+			return nil, huma.Error503ServiceUnavailable("AI meal parsing is currently disabled (missing configuration)")
+		}
+
+		result, err := mealRunner.Run(ctx, meal.UserID, adkSessionID, input.Body.Correction)
+		if err != nil {
+			return nil, fmt.Errorf("nutrition agent processing failed: %w", err)
+		}
+
+		var batch models.MealsBatchPayload
+		if err := json.Unmarshal([]byte(result.FinalText), &batch); err != nil {
+			return nil, huma.Error422UnprocessableEntity("failed to parse nutrition response", err)
+		}
+		if len(batch.Meals) == 0 {
+			return nil, huma.Error422UnprocessableEntity("nutrition agent returned no meals")
+		}
+		payload := batch.Meals[0]
+
+		// Apply default units since LLM now implies grams
+		for i := range payload.Assumptions {
+			payload.Assumptions[i].Unit = "g"
+		}
+
+		var updatedMeal *models.MealLog
+		newMeal, err := db.Meals().Update(ctx,
+			mealUUID,
+			payload.Name,
+			string(payload.MealType),
+			payload.Macros,
+			payload.Assumptions,
+			payload,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update meal: %w", err)
+		}
+		updatedMeal = newMeal
 
 		resp := &UpdateMealResponse{}
 		resp.Body.Meal = updatedMeal

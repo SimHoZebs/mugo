@@ -16,11 +16,18 @@ type nutritionSummaryRepository struct {
 	queries *dbgenerated.Queries
 }
 
+func (repo *nutritionSummaryRepository) q(ctx context.Context) *dbgenerated.Queries {
+	if tx, ok := pgutil.TxFromContext(ctx); ok {
+		return repo.queries.WithTx(tx)
+	}
+	return repo.queries
+}
+
 func NewNutritionSummaryRepository(queries *dbgenerated.Queries) NutritionSummaryRepository {
 	return &nutritionSummaryRepository{queries: queries}
 }
 
-func (r *nutritionSummaryRepository) UpsertDaily(ctx context.Context, userID pgtype.UUID, date time.Time, totalCalories, totalProtein, totalCarbs, totalFat float64, mealCount int) (*models.DailyNutritionSummary, error) {
+func (repo *nutritionSummaryRepository) UpsertDaily(ctx context.Context, userID pgtype.UUID, date time.Time, totalCalories, totalProtein, totalCarbs, totalFat float64, mealCount int) (*models.DailyNutritionSummary, error) {
 	arg := dbgenerated.UpsertDailyNutritionSummaryParams{
 		UserID:        userID,
 		Date:          pgutil.Date(date),
@@ -30,32 +37,32 @@ func (r *nutritionSummaryRepository) UpsertDaily(ctx context.Context, userID pgt
 		TotalFat:      pgtype.Numeric{Int: big.NewInt(int64(totalFat)), Valid: true},
 		MealCount:     int32(mealCount),
 	}
-	result, err := r.queries.UpsertDailyNutritionSummary(ctx, arg)
+	result, err := repo.q(ctx).UpsertDailyNutritionSummary(ctx, arg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to upsert daily nutrition summary: %w", err)
 	}
 	return mapToDailySummary(result), nil
 }
 
-func (r *nutritionSummaryRepository) GetDaily(ctx context.Context, userID pgtype.UUID, date time.Time) (*models.DailyNutritionSummary, error) {
+func (repo *nutritionSummaryRepository) GetDaily(ctx context.Context, userID pgtype.UUID, date time.Time) (*models.DailyNutritionSummary, error) {
 	arg := dbgenerated.GetDailyNutritionSummaryParams{
 		UserID: userID,
 		Date:   pgutil.Date(date),
 	}
-	result, err := r.queries.GetDailyNutritionSummary(ctx, arg)
+	result, err := repo.q(ctx).GetDailyNutritionSummary(ctx, arg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get daily nutrition summary: %w", err)
 	}
 	return mapToDailySummary(result), nil
 }
 
-func (r *nutritionSummaryRepository) ListDailyByUser(ctx context.Context, userID pgtype.UUID, limit, offset int) ([]*models.DailyNutritionSummary, error) {
+func (repo *nutritionSummaryRepository) ListDailyByUser(ctx context.Context, userID pgtype.UUID, limit, offset int) ([]*models.DailyNutritionSummary, error) {
 	arg := dbgenerated.ListDailyNutritionSummariesByUserParams{
 		UserID: userID,
 		Limit:  int32(limit),
 		Offset: int32(offset),
 	}
-	results, err := r.queries.ListDailyNutritionSummariesByUser(ctx, arg)
+	results, err := repo.q(ctx).ListDailyNutritionSummariesByUser(ctx, arg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list daily nutrition summaries: %w", err)
 	}
@@ -66,13 +73,13 @@ func (r *nutritionSummaryRepository) ListDailyByUser(ctx context.Context, userID
 	return summaries, nil
 }
 
-func (r *nutritionSummaryRepository) ListDailyByDateRange(ctx context.Context, userID pgtype.UUID, startDate, endDate time.Time) ([]*models.DailyNutritionSummary, error) {
+func (repo *nutritionSummaryRepository) ListDailyByDateRange(ctx context.Context, userID pgtype.UUID, startDate, endDate time.Time) ([]*models.DailyNutritionSummary, error) {
 	arg := dbgenerated.ListDailyNutritionSummariesByUserAndDateRangeParams{
 		UserID:    userID,
 		StartDate: pgutil.Date(startDate),
 		EndDate:   pgutil.Date(endDate),
 	}
-	results, err := r.queries.ListDailyNutritionSummariesByUserAndDateRange(ctx, arg)
+	results, err := repo.q(ctx).ListDailyNutritionSummariesByUserAndDateRange(ctx, arg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list daily nutrition summaries by date range: %w", err)
 	}
@@ -83,7 +90,7 @@ func (r *nutritionSummaryRepository) ListDailyByDateRange(ctx context.Context, u
 	return summaries, nil
 }
 
-func (r *nutritionSummaryRepository) UpsertWeekly(ctx context.Context, userID pgtype.UUID, weekStartDate time.Time, totalCalories, totalProtein, totalCarbs, totalFat, avgDailyCalories, avgDailyProtein, avgDailyCarbs, avgDailyFat float64, mealCount int) (*models.WeeklyNutritionSummary, error) {
+func (repo *nutritionSummaryRepository) UpsertWeekly(ctx context.Context, userID pgtype.UUID, weekStartDate time.Time, totalCalories, totalProtein, totalCarbs, totalFat, avgDailyCalories, avgDailyProtein, avgDailyCarbs, avgDailyFat float64, mealCount int) (*models.WeeklyNutritionSummary, error) {
 	arg := dbgenerated.UpsertWeeklyNutritionSummaryParams{
 		UserID:           userID,
 		WeekStartDate:    pgutil.Date(weekStartDate),
@@ -97,32 +104,32 @@ func (r *nutritionSummaryRepository) UpsertWeekly(ctx context.Context, userID pg
 		AvgDailyFat:      pgtype.Numeric{Int: big.NewInt(int64(avgDailyFat)), Valid: true},
 		MealCount:        int32(mealCount),
 	}
-	result, err := r.queries.UpsertWeeklyNutritionSummary(ctx, arg)
+	result, err := repo.q(ctx).UpsertWeeklyNutritionSummary(ctx, arg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to upsert weekly nutrition summary: %w", err)
 	}
 	return mapToWeeklySummary(result), nil
 }
 
-func (r *nutritionSummaryRepository) GetWeekly(ctx context.Context, userID pgtype.UUID, weekStartDate time.Time) (*models.WeeklyNutritionSummary, error) {
+func (repo *nutritionSummaryRepository) GetWeekly(ctx context.Context, userID pgtype.UUID, weekStartDate time.Time) (*models.WeeklyNutritionSummary, error) {
 	arg := dbgenerated.GetWeeklyNutritionSummaryParams{
 		UserID:        userID,
 		WeekStartDate: pgutil.Date(weekStartDate),
 	}
-	result, err := r.queries.GetWeeklyNutritionSummary(ctx, arg)
+	result, err := repo.q(ctx).GetWeeklyNutritionSummary(ctx, arg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get weekly nutrition summary: %w", err)
 	}
 	return mapToWeeklySummary(result), nil
 }
 
-func (r *nutritionSummaryRepository) ListWeeklyByDateRange(ctx context.Context, userID pgtype.UUID, startDate, endDate time.Time) ([]*models.WeeklyNutritionSummary, error) {
+func (repo *nutritionSummaryRepository) ListWeeklyByDateRange(ctx context.Context, userID pgtype.UUID, startDate, endDate time.Time) ([]*models.WeeklyNutritionSummary, error) {
 	arg := dbgenerated.ListWeeklyNutritionSummariesByUserAndDateRangeParams{
 		UserID:    userID,
 		StartDate: pgutil.Date(startDate),
 		EndDate:   pgutil.Date(endDate),
 	}
-	results, err := r.queries.ListWeeklyNutritionSummariesByUserAndDateRange(ctx, arg)
+	results, err := repo.q(ctx).ListWeeklyNutritionSummariesByUserAndDateRange(ctx, arg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list weekly nutrition summaries by date range: %w", err)
 	}

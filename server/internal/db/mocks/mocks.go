@@ -33,7 +33,7 @@ func (m *DBMock) Nutrition() repository.NutritionSummaryRepository {
 	return args.Get(0).(repository.NutritionSummaryRepository)
 }
 
-func (m *DBMock) WithTx(ctx context.Context, fn func(ctx context.Context, txDB *db.TxDatabase) error) error {
+func (m *DBMock) WithTx(ctx context.Context, fn func(ctx context.Context, txDB db.DB) error) error {
 	args := m.Called(ctx, fn)
 	return args.Error(0)
 }
