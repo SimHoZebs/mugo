@@ -11,24 +11,15 @@ import (
 	"google.golang.org/genai"
 )
 
-func NormalizeNutritionResponse(text string) (*models.NutritionPayload, error) {
-	text = StripMarkdownFences(text, "macro_estimator")
+func NormalizeNutritionResponse(text string) (string, *models.NutritionPayload, error) {
+	text = StripMarkdownFences(text)
 
 	var payload models.NutritionPayload
 	if err := json.Unmarshal([]byte(text), &payload); err != nil {
-		return nil, fmt.Errorf("nutrition agent: response did not match expected schema: %w\nContent: %s", err, text)
+		return text, nil, fmt.Errorf("nutrition agent: response did not match expected schema: %w\nContent: %s", err, text)
 	}
 
-	for i := range payload.Assumptions {
-		if payload.Assumptions[i].ID == "" {
-			payload.Assumptions[i].ID = fmt.Sprintf("A%d", i+1)
-		}
-		if payload.Assumptions[i].Unit == "" {
-			payload.Assumptions[i].Unit = "g"
-		}
-	}
-
-	return &payload, nil
+	return text, &payload, nil
 }
 
 func MacroEstimator(model adkmodel.LLM) (agent.Agent, error) {
@@ -59,15 +50,13 @@ func MacroEstimator(model adkmodel.LLM) (agent.Agent, error) {
 				Items: &genai.Schema{
 					Type: genai.TypeObject,
 					Properties: map[string]*genai.Schema{
-						"id":            {Type: genai.TypeString, Description: "assumption id"},
-						"text":          {Type: genai.TypeString, Description: "assumption text"},
-						"category":      {Type: genai.TypeString},
-						"field":         {Type: genai.TypeString},
-						"assumed_value": {Type: genai.TypeNumber},
+						"category":      {Type: genai.TypeString, Description: "Category of assumption (e.g. portion, ingredient)"},
+						"field":         {Type: genai.TypeString, Description: "The field being assumed (e.g. weight, quantity)"},
+						"assumed_value": {Type: genai.TypeNumber, Description: "The numerical value used for the assumption"},
 						"confidence":    {Type: genai.TypeString, Description: "low|medium|high"},
-						"rationale":     {Type: genai.TypeString},
+						"rationale":     {Type: genai.TypeString, Description: "Reasoning behind the assumption"},
 					},
-					Required: []string{"assumed_value"},
+					Required: []string{"assumed_value", "rationale"},
 				},
 			},
 			"meal_type": {
@@ -90,16 +79,12 @@ func MacroEstimator(model adkmodel.LLM) (agent.Agent, error) {
 			return resp, nil
 		}
 
-		payload, err := NormalizeNutritionResponse(text)
+		cleanText, _, err := NormalizeNutritionResponse(text)
 		if err != nil {
 			return nil, err
 		}
 
-		newBytes, err := json.Marshal(payload)
-		if err != nil {
-			return nil, fmt.Errorf("nutrition agent: failed to marshal normalized payload: %w", err)
-		}
-		resp.Content.Parts[0].Text = string(newBytes)
+		resp.Content.Parts[0].Text = cleanText
 		return resp, nil
 	})
 

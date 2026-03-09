@@ -64,6 +64,35 @@ func (r *mealLogRepository) GetByID(ctx context.Context, id pgtype.UUID) (*model
 	return mapToMealLog(result)
 }
 
+func (r *mealLogRepository) GetByIDWithSession(ctx context.Context, id pgtype.UUID) (*models.MealLog, string, error) {
+	result, err := r.queries.GetMealLogWithSession(ctx, id)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get meal log with session: %w", err)
+	}
+
+	// Map GetMealLogWithSessionRow to dbgenerated.MealLog so we can reuse mapToMealLog
+	m := dbgenerated.MealLog{
+		ID:             result.ID,
+		UserID:         result.UserID,
+		ConversationID: result.ConversationID,
+		FoodName:       result.FoodName,
+		MealType:       result.MealType,
+		RecordedAt:     result.RecordedAt,
+		Macros:         result.Macros,
+		Assumptions:    result.Assumptions,
+		FoodSource:     result.FoodSource,
+		RawResponse:    result.RawResponse,
+		CreatedAt:      result.CreatedAt,
+	}
+
+	meal, err := mapToMealLog(m)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return meal, result.AdkSessionID.String, nil
+}
+
 func (r *mealLogRepository) ListByUser(ctx context.Context, userID pgtype.UUID, limit, offset int) ([]*models.MealLog, error) {
 	arg := dbgenerated.ListMealLogsByUserParams{
 		UserID: userID,

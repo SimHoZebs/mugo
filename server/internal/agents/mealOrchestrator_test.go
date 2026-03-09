@@ -98,12 +98,16 @@ func TestNormalizeMealsBatchResponse(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := NormalizeMealsBatchResponse(tt.input)
+			cleanText, result, err := NormalizeMealsBatchResponse(tt.input)
 
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
+				if !tt.wantNil {
+					assert.NotEmpty(t, cleanText)
+					assert.NotContains(t, cleanText, "```")
+				}
 			}
 
 			if tt.wantNil {

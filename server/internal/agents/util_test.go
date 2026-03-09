@@ -61,7 +61,7 @@ func TestStripMarkdownFences(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := StripMarkdownFences(tt.input, "test_agent")
+			result := StripMarkdownFences(tt.input)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

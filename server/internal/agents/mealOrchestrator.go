@@ -11,19 +11,19 @@ import (
 	adkmodel "google.golang.org/adk/model"
 )
 
-func NormalizeMealsBatchResponse(text string) (*models.MealsBatchPayload, error) {
-	text = StripMarkdownFences(text, "meal_orchestrator")
+func NormalizeMealsBatchResponse(text string) (string, *models.MealsBatchPayload, error) {
+	text = StripMarkdownFences(text)
 
 	if !strings.HasPrefix(text, "{") {
-		return nil, nil
+		return text, nil, nil
 	}
 
 	var batch models.MealsBatchPayload
 	if err := json.Unmarshal([]byte(text), &batch); err != nil {
-		return nil, fmt.Errorf("meal orchestrator: final response did not match expected schema: %w\nContent: %s", err, text)
+		return text, nil, fmt.Errorf("meal orchestrator: final response did not match expected schema: %w\nContent: %s", err, text)
 	}
 
-	return &batch, nil
+	return text, &batch, nil
 }
 
 func MealOrchestrator(model adkmodel.LLM, macroEstimator agent.Agent) (agent.Agent, error) {
@@ -40,7 +40,7 @@ func MealOrchestrator(model adkmodel.LLM, macroEstimator agent.Agent) (agent.Age
 			return resp, nil
 		}
 
-		batch, err := NormalizeMealsBatchResponse(text)
+		cleanText, batch, err := NormalizeMealsBatchResponse(text)
 		if err != nil {
 			return nil, err
 		}
@@ -48,11 +48,7 @@ func MealOrchestrator(model adkmodel.LLM, macroEstimator agent.Agent) (agent.Age
 			return resp, nil
 		}
 
-		newBytes, err := json.Marshal(batch)
-		if err != nil {
-			return nil, fmt.Errorf("meal orchestrator: failed to marshal batch payload: %w", err)
-		}
-		resp.Content.Parts[0].Text = string(newBytes)
+		resp.Content.Parts[0].Text = cleanText
 		return resp, nil
 	})
 

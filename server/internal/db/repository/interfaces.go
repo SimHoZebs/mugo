@@ -30,6 +30,7 @@ type ConversationRepository interface {
 type MealLogRepository interface {
 	Create(ctx context.Context, userID, conversationID pgtype.UUID, foodName, mealType string, recordedAt time.Time, macros models.Macros, assumptions []models.Assumption, foodSource string, rawResponse interface{}) (*models.MealLog, error)
 	GetByID(ctx context.Context, id pgtype.UUID) (*models.MealLog, error)
+	GetByIDWithSession(ctx context.Context, id pgtype.UUID) (*models.MealLog, string, error)
 	ListByUser(ctx context.Context, userID pgtype.UUID, limit, offset int) ([]*models.MealLog, error)
 	ListByUserAndDate(ctx context.Context, userID pgtype.UUID, date time.Time) ([]*models.MealLog, error)
 	ListByUserAndDateRange(ctx context.Context, userID pgtype.UUID, startDate, endDate time.Time) ([]*models.MealLog, error)

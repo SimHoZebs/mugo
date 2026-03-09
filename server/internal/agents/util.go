@@ -5,10 +5,10 @@ import (
 	"strings"
 )
 
-func StripMarkdownFences(text string, agentName string) string {
+func StripMarkdownFences(text string) string {
 	text = strings.TrimSpace(text)
 	if strings.HasPrefix(text, "```") {
-		log.Printf("Warning: Gemini wrapped response in markdown code blocks for %s", agentName)
+		log.Printf("Warning: wrapped response in markdown code blocks")
 		lines := strings.Split(text, "\n")
 		if len(lines) > 2 {
 			text = strings.Join(lines[1:len(lines)-1], "\n")

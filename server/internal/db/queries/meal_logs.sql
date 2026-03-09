@@ -9,6 +9,14 @@ RETURNING *;
 -- name: GetMealLog :one
 SELECT * FROM meal_logs WHERE id = $1;
 
+-- name: GetMealLogWithSession :one
+SELECT 
+    m.*,
+    c.session_id as adk_session_id
+FROM meal_logs m
+LEFT JOIN conversations c ON m.conversation_id = c.id
+WHERE m.id = $1;
+
 -- name: ListMealLogsByUser :many
 SELECT * FROM meal_logs 
 WHERE user_id = $1 

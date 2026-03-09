@@ -116,12 +116,17 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 
 		var batch models.MealsBatchPayload
 		if err := json.Unmarshal([]byte(result.FinalText), &batch); err != nil {
-			return nil, fmt.Errorf("failed to parse nutrition response: %w", err)
+			return nil, huma.Error422UnprocessableEntity("failed to parse nutrition response", err)
 		}
 
 		var meals []*models.MealLog
 		for _, payload := range batch.Meals {
 			mealDate := parseMealDate(payload.Date)
+			// Apply default units if missing from LLM response
+			for i := range payload.Assumptions {
+				payload.Assumptions[i].Unit = "g"
+			}
+
 			// Use conv.ID (the internal UUID) for the meal log's foreign key
 			meal, err := database.Meals().Create(ctx,
 				userUUID,
@@ -165,25 +170,9 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 				return huma.Error400BadRequest("invalid meal ID", err)
 			}
 
-			meal, err := txDB.MealLogRepository.GetByID(ctx, mealUUID)
+			meal, adkSessionID, err := txDB.MealLogRepository.GetByIDWithSession(ctx, mealUUID)
 			if err != nil {
 				return fmt.Errorf("failed to get meal: %w", err)
-			}
-
-			// meal.ConversationID is the conversations.id UUID (the FK target),
-			// NOT the ADK session ID. We must look up the conversation to get
-			// the actual session_id string that the ADK session was registered under.
-			adkSessionID := ""
-			if meal.ConversationID != nil {
-				convUUID, err := pgutil.ParseUUID(*meal.ConversationID)
-				if err != nil {
-					return fmt.Errorf("failed to parse conversation ID: %w", err)
-				}
-				conv, err := txDB.ConversationRepository.GetByID(ctx, convUUID)
-				if err != nil {
-					return fmt.Errorf("failed to get conversation for meal: %w", err)
-				}
-				adkSessionID = conv.SessionID
 			}
 
 			fmt.Printf("Updating meal %s with correction: %s (session: %s)\n",
@@ -200,12 +189,17 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 
 			var batch models.MealsBatchPayload
 			if err := json.Unmarshal([]byte(result.FinalText), &batch); err != nil {
-				return fmt.Errorf("failed to parse nutrition response: %w", err)
+				return huma.Error422UnprocessableEntity("failed to parse nutrition response", err)
 			}
 			if len(batch.Meals) == 0 {
-				return fmt.Errorf("nutrition agent returned no meals")
+				return huma.Error422UnprocessableEntity("nutrition agent returned no meals")
 			}
 			payload := batch.Meals[0]
+
+			// Apply default units since LLM now implies grams
+			for i := range payload.Assumptions {
+				payload.Assumptions[i].Unit = "g"
+			}
 
 			newMeal, err := txDB.MealLogRepository.Update(ctx,
 				mealUUID,
