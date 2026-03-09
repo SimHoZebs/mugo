@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	dbgenerated "github.com/simhozebs/mugo/internal/db/dbgenerated"
-	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"github.com/simhozebs/mugo/internal/models"
 )
 
@@ -25,12 +25,8 @@ func (r *userRepository) Create(ctx context.Context, username string) (*models.U
 	return mapToUser(result), nil
 }
 
-func (r *userRepository) GetByID(ctx context.Context, id string) (*models.User, error) {
-	pgUUID, err := pgutil.ParseUUID(id)
-	if err != nil {
-		return nil, err
-	}
-	result, err := r.queries.GetUserByID(ctx, pgUUID)
+func (r *userRepository) GetByID(ctx context.Context, id pgtype.UUID) (*models.User, error) {
+	result, err := r.queries.GetUserByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
@@ -61,14 +57,9 @@ func (r *userRepository) List(ctx context.Context) ([]*models.User, error) {
 	return users, nil
 }
 
-func (r *userRepository) Update(ctx context.Context, id string, username string) (*models.User, error) {
-	pgUUID, err := pgutil.ParseUUID(id)
-	if err != nil {
-		return nil, err
-	}
-
+func (r *userRepository) Update(ctx context.Context, id pgtype.UUID, username string) (*models.User, error) {
 	arg := dbgenerated.UpdateUserParams{
-		ID:       pgUUID,
+		ID:       id,
 		Username: username,
 	}
 
@@ -80,13 +71,8 @@ func (r *userRepository) Update(ctx context.Context, id string, username string)
 	return mapToUser(result), nil
 }
 
-func (r *userRepository) Delete(ctx context.Context, id string) error {
-	pgUUID, err := pgutil.ParseUUID(id)
-	if err != nil {
-		return err
-	}
-
-	err = r.queries.DeleteUser(ctx, pgUUID)
+func (r *userRepository) Delete(ctx context.Context, id pgtype.UUID) error {
+	err := r.queries.DeleteUser(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}

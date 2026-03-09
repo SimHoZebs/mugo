@@ -6,6 +6,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2/humatest"
 	"github.com/simhozebs/mugo/internal/db/mocks"
+	"github.com/simhozebs/mugo/internal/db/pgutil"
 	repomocks "github.com/simhozebs/mugo/internal/db/repository/mocks"
 	"github.com/simhozebs/mugo/internal/models"
 	"github.com/simhozebs/mugo/internal/routes"
@@ -91,13 +92,14 @@ func TestGetUser(t *testing.T) {
 	dbProviderMock.On("GetDatabase").Return(dbMock, nil)
 	dbMock.On("Users").Return(userRepoMock)
 
-	userID := "user-123"
+	userID := "550e8400-e29b-41d4-a716-446655440000"
+	userUUID, _ := pgutil.ParseUUID(userID)
 	expectedUser := &models.User{
 		ID:       userID,
 		Username: "testuser",
 	}
 
-	userRepoMock.On("GetByID", mock.Anything, userID).Return(expectedUser, nil)
+	userRepoMock.On("GetByID", mock.Anything, userUUID).Return(expectedUser, nil)
 
 	routes.RegisterUserEndpoints(api, "/users", dbProviderMock)
 
@@ -119,14 +121,15 @@ func TestUpdateUser(t *testing.T) {
 	dbProviderMock.On("GetDatabase").Return(dbMock, nil)
 	dbMock.On("Users").Return(userRepoMock)
 
-	userID := "user-123"
+	userID := "550e8400-e29b-41d4-a716-446655440000"
+	userUUID, _ := pgutil.ParseUUID(userID)
 	newUsername := "updateduser"
 	expectedUser := &models.User{
 		ID:       userID,
 		Username: newUsername,
 	}
 
-	userRepoMock.On("Update", mock.Anything, userID, newUsername).Return(expectedUser, nil)
+	userRepoMock.On("Update", mock.Anything, userUUID, newUsername).Return(expectedUser, nil)
 
 	routes.RegisterUserEndpoints(api, "/users", dbProviderMock)
 
@@ -152,9 +155,10 @@ func TestDeleteUser(t *testing.T) {
 	dbProviderMock.On("GetDatabase").Return(dbMock, nil)
 	dbMock.On("Users").Return(userRepoMock)
 
-	userID := "user-123"
+	userID := "550e8400-e29b-41d4-a716-446655440000"
+	userUUID, _ := pgutil.ParseUUID(userID)
 
-	userRepoMock.On("Delete", mock.Anything, userID).Return(nil)
+	userRepoMock.On("Delete", mock.Anything, userUUID).Return(nil)
 
 	routes.RegisterUserEndpoints(api, "/users", dbProviderMock)
 

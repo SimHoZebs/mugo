@@ -9,6 +9,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/simhozebs/mugo/internal/adk"
 	"github.com/simhozebs/mugo/internal/db"
+	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"github.com/simhozebs/mugo/internal/models"
 )
 
@@ -85,9 +86,19 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 			return nil, err
 		}
 
-		conv, err := database.Conversations().Create(ctx, input.Body.UserID, input.Body.SessionID, "New Meal Log")
+		userUUID, err := pgutil.ParseUUID(input.Body.UserID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid user ID", err)
+		}
+
+		conv, err := database.Conversations().Create(ctx, userUUID, input.Body.SessionID, "New Meal Log")
 		if err != nil {
 			return nil, fmt.Errorf("failed to create new conversation: %w", err)
+		}
+
+		convUUID, err := pgutil.ParseUUID(conv.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse conversation ID: %w", err)
 		}
 
 		// Create the ADK session for this new conversation so the runner can
@@ -113,8 +124,8 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 			mealDate := parseMealDate(payload.Date)
 			// Use conv.ID (the internal UUID) for the meal log's foreign key
 			meal, err := database.Meals().Create(ctx,
-				input.Body.UserID,
-				conv.ID,
+				userUUID,
+				convUUID,
 				payload.Name,
 				string(payload.MealType),
 				mealDate,
@@ -149,7 +160,12 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 
 		var updatedMeal *models.MealLog
 		txErr := database.WithTx(ctx, func(ctx context.Context, txDB *db.TxDatabase) error {
-			meal, err := txDB.MealLogRepository.GetByID(ctx, input.MealID)
+			mealUUID, err := pgutil.ParseUUID(input.MealID)
+			if err != nil {
+				return huma.Error400BadRequest("invalid meal ID", err)
+			}
+
+			meal, err := txDB.MealLogRepository.GetByID(ctx, mealUUID)
 			if err != nil {
 				return fmt.Errorf("failed to get meal: %w", err)
 			}
@@ -159,7 +175,11 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 			// the actual session_id string that the ADK session was registered under.
 			adkSessionID := ""
 			if meal.ConversationID != nil {
-				conv, err := txDB.ConversationRepository.GetByID(ctx, *meal.ConversationID)
+				convUUID, err := pgutil.ParseUUID(*meal.ConversationID)
+				if err != nil {
+					return fmt.Errorf("failed to parse conversation ID: %w", err)
+				}
+				conv, err := txDB.ConversationRepository.GetByID(ctx, convUUID)
 				if err != nil {
 					return fmt.Errorf("failed to get conversation for meal: %w", err)
 				}
@@ -188,7 +208,7 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 			payload := batch.Meals[0]
 
 			newMeal, err := txDB.MealLogRepository.Update(ctx,
-				input.MealID,
+				mealUUID,
 				payload.Name,
 				string(payload.MealType),
 				payload.Macros,
@@ -227,7 +247,12 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 			return nil, err
 		}
 
-		meals, err := database.Meals().ListByUser(ctx, input.UserID, input.Limit, input.Offset)
+		userUUID, err := pgutil.ParseUUID(input.UserID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid user ID", err)
+		}
+
+		meals, err := database.Meals().ListByUser(ctx, userUUID, input.Limit, input.Offset)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list meals: %w", err)
 		}
@@ -252,12 +277,17 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 			return nil, err
 		}
 
+		userUUID, err := pgutil.ParseUUID(input.UserID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid user ID", err)
+		}
+
 		date, err := parseDate(input.Date)
 		if err != nil {
 			return nil, huma.Error400BadRequest("Invalid date format. Expected YYYY-MM-DD", err)
 		}
 
-		meals, err := database.Meals().ListByUserAndDate(ctx, input.UserID, date)
+		meals, err := database.Meals().ListByUserAndDate(ctx, userUUID, date)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list meals by date: %w", err)
 		}
@@ -283,6 +313,11 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 			return nil, err
 		}
 
+		userUUID, err := pgutil.ParseUUID(input.UserID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid user ID", err)
+		}
+
 		start, err := parseDate(input.StartDate)
 		if err != nil {
 			return nil, huma.Error400BadRequest("Invalid start_date format. Expected YYYY-MM-DD", err)
@@ -293,7 +328,7 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 			return nil, huma.Error400BadRequest("Invalid end_date format. Expected YYYY-MM-DD", err)
 		}
 
-		meals, err := database.Meals().ListByUserAndDateRange(ctx, input.UserID, start, end)
+		meals, err := database.Meals().ListByUserAndDateRange(ctx, userUUID, start, end)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list meals by date range: %w", err)
 		}
@@ -318,7 +353,12 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 			return nil, err
 		}
 
-		meals, err := database.Meals().ListByConversation(ctx, input.ConversationID)
+		convUUID, err := pgutil.ParseUUID(input.ConversationID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid conversation ID", err)
+		}
+
+		meals, err := database.Meals().ListByConversation(ctx, convUUID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list meals by conversation: %w", err)
 		}
@@ -342,7 +382,12 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 			return nil, err
 		}
 
-		meal, err := database.Meals().GetByID(ctx, input.MealID)
+		mealUUID, err := pgutil.ParseUUID(input.MealID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid meal ID", err)
+		}
+
+		meal, err := database.Meals().GetByID(ctx, mealUUID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get meal: %w", err)
 		}

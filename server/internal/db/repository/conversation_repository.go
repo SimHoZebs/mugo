@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	dbgenerated "github.com/simhozebs/mugo/internal/db/dbgenerated"
 	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"github.com/simhozebs/mugo/internal/models"
@@ -18,18 +19,13 @@ func NewConversationRepository(queries *dbgenerated.Queries) ConversationReposit
 	return &conversationRepository{queries: queries}
 }
 
-func (r *conversationRepository) Create(ctx context.Context, userID, sessionID, title string) (*models.Conversation, error) {
-	pgUUID, err := pgutil.ParseUUID(userID)
-	if err != nil {
-		return nil, err
-	}
-
+func (r *conversationRepository) Create(ctx context.Context, userID pgtype.UUID, sessionID, title string) (*models.Conversation, error) {
 	if sessionID == "" {
 		sessionID = pgutil.GenerateUUID()
 	}
 
 	arg := dbgenerated.CreateConversationParams{
-		UserID:    pgUUID,
+		UserID:    userID,
 		SessionID: sessionID,
 		Title:     pgutil.Text(title),
 	}
@@ -40,25 +36,17 @@ func (r *conversationRepository) Create(ctx context.Context, userID, sessionID, 
 	return mapToConversation(result), nil
 }
 
-func (r *conversationRepository) GetByID(ctx context.Context, id string) (*models.Conversation, error) {
-	pgUUID, err := pgutil.ParseUUID(id)
-	if err != nil {
-		return nil, err
-	}
-	result, err := r.queries.GetConversation(ctx, pgUUID)
+func (r *conversationRepository) GetByID(ctx context.Context, id pgtype.UUID) (*models.Conversation, error) {
+	result, err := r.queries.GetConversation(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get conversation: %w", err)
 	}
 	return mapToConversation(result), nil
 }
 
-func (r *conversationRepository) GetBySessionID(ctx context.Context, userID, sessionID string) (*models.Conversation, error) {
-	pgUUID, err := pgutil.ParseUUID(userID)
-	if err != nil {
-		return nil, err
-	}
+func (r *conversationRepository) GetBySessionID(ctx context.Context, userID pgtype.UUID, sessionID string) (*models.Conversation, error) {
 	arg := dbgenerated.GetConversationBySessionIDParams{
-		UserID:    pgUUID,
+		UserID:    userID,
 		SessionID: sessionID,
 	}
 	result, err := r.queries.GetConversationBySessionID(ctx, arg)
@@ -68,12 +56,8 @@ func (r *conversationRepository) GetBySessionID(ctx context.Context, userID, ses
 	return mapToConversation(result), nil
 }
 
-func (r *conversationRepository) ListByUser(ctx context.Context, userID string) ([]*models.Conversation, error) {
-	pgUUID, err := pgutil.ParseUUID(userID)
-	if err != nil {
-		return nil, err
-	}
-	results, err := r.queries.ListConversationsByUser(ctx, pgUUID)
+func (r *conversationRepository) ListByUser(ctx context.Context, userID pgtype.UUID) ([]*models.Conversation, error) {
+	results, err := r.queries.ListConversationsByUser(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list conversations: %w", err)
 	}
@@ -84,13 +68,9 @@ func (r *conversationRepository) ListByUser(ctx context.Context, userID string) 
 	return conversations, nil
 }
 
-func (r *conversationRepository) UpdateTitle(ctx context.Context, id, title string) (*models.Conversation, error) {
-	pgUUID, err := pgutil.ParseUUID(id)
-	if err != nil {
-		return nil, err
-	}
+func (r *conversationRepository) UpdateTitle(ctx context.Context, id pgtype.UUID, title string) (*models.Conversation, error) {
 	arg := dbgenerated.UpdateConversationTitleParams{
-		ID:    pgUUID,
+		ID:    id,
 		Title: pgutil.Text(title),
 	}
 	result, err := r.queries.UpdateConversationTitle(ctx, arg)
@@ -100,12 +80,8 @@ func (r *conversationRepository) UpdateTitle(ctx context.Context, id, title stri
 	return mapToConversation(result), nil
 }
 
-func (r *conversationRepository) Delete(ctx context.Context, id string) error {
-	pgUUID, err := pgutil.ParseUUID(id)
-	if err != nil {
-		return err
-	}
-	return r.queries.DeleteConversation(ctx, pgUUID)
+func (r *conversationRepository) Delete(ctx context.Context, id pgtype.UUID) error {
+	return r.queries.DeleteConversation(ctx, id)
 }
 
 func mapToConversation(c dbgenerated.Conversation) *models.Conversation {

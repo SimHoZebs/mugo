@@ -11,6 +11,7 @@ import (
 	"github.com/simhozebs/mugo/internal/adk"
 	adkmocks "github.com/simhozebs/mugo/internal/adk/mocks"
 	"github.com/simhozebs/mugo/internal/db/mocks"
+	"github.com/simhozebs/mugo/internal/db/pgutil"
 	repomocks "github.com/simhozebs/mugo/internal/db/repository/mocks"
 	"github.com/simhozebs/mugo/internal/models"
 	"github.com/simhozebs/mugo/internal/routes"
@@ -30,18 +31,19 @@ func TestCreateMealLog(t *testing.T) {
 	dbMock.On("Meals").Return(mealRepoMock)
 	dbMock.On("Conversations").Return(convRepoMock)
 
-	userID := "user-123"
+	userID := "550e8400-e29b-41d4-a716-446655440000"
+	userUUID, _ := pgutil.ParseUUID(userID)
 	sessionID := "session-456"
 	foodDescription := "I ate a chicken sandwich"
 
 	expectedConv := &models.Conversation{
-		ID:        "conv-789",
+		ID:        "550e8400-e29b-41d4-a716-446655440001",
 		UserID:    userID,
 		SessionID: sessionID,
 		CreatedAt: time.Now().Format(time.RFC3339),
 		UpdatedAt: time.Now().Format(time.RFC3339),
 	}
-	convRepoMock.On("Create", mock.Anything, userID, sessionID, "New Meal Log").
+	convRepoMock.On("Create", mock.Anything, userUUID, sessionID, "New Meal Log").
 		Return(expectedConv, nil)
 
 	payload := models.NutritionPayload{

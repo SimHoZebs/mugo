@@ -6,6 +6,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/simhozebs/mugo/internal/db"
+	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"github.com/simhozebs/mugo/internal/models"
 )
 
@@ -38,7 +39,12 @@ func RegisterConversationEndpoints(humaAPI huma.API, prefix string, provider db.
 			return nil, err
 		}
 
-		conversations, err := database.Conversations().ListByUser(ctx, input.UserID)
+		userUUID, err := pgutil.ParseUUID(input.UserID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid user ID", err)
+		}
+
+		conversations, err := database.Conversations().ListByUser(ctx, userUUID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list conversations: %w", err)
 		}
@@ -63,7 +69,12 @@ func RegisterConversationEndpoints(humaAPI huma.API, prefix string, provider db.
 			return nil, err
 		}
 
-		conversation, err := database.Conversations().GetBySessionID(ctx, input.UserID, input.SessionID)
+		userUUID, err := pgutil.ParseUUID(input.UserID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid user ID", err)
+		}
+
+		conversation, err := database.Conversations().GetBySessionID(ctx, userUUID, input.SessionID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get conversation: %w", err)
 		}
@@ -87,7 +98,12 @@ func RegisterConversationEndpoints(humaAPI huma.API, prefix string, provider db.
 			return nil, err
 		}
 
-		conversation, err := database.Conversations().GetByID(ctx, input.ConversationID)
+		convUUID, err := pgutil.ParseUUID(input.ConversationID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid conversation ID", err)
+		}
+
+		conversation, err := database.Conversations().GetByID(ctx, convUUID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get conversation: %w", err)
 		}

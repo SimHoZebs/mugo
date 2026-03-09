@@ -6,6 +6,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/simhozebs/mugo/internal/db"
+	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"github.com/simhozebs/mugo/internal/models"
 )
 
@@ -119,7 +120,12 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, provider db.DBProvid
 			return nil, err
 		}
 
-		user, err := database.Users().GetByID(ctx, input.UserID)
+		userUUID, err := pgutil.ParseUUID(input.UserID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid user ID", err)
+		}
+
+		user, err := database.Users().GetByID(ctx, userUUID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user: %w", err)
 		}
@@ -165,7 +171,12 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, provider db.DBProvid
 			return nil, err
 		}
 
-		user, err := database.Users().Update(ctx, input.UserID, input.Body.Username)
+		userUUID, err := pgutil.ParseUUID(input.UserID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid user ID", err)
+		}
+
+		user, err := database.Users().Update(ctx, userUUID, input.Body.Username)
 		if err != nil {
 			return nil, fmt.Errorf("failed to update user: %w", err)
 		}
@@ -187,7 +198,12 @@ func RegisterUserEndpoints(humaAPI huma.API, prefix string, provider db.DBProvid
 			return nil, err
 		}
 
-		err = database.Users().Delete(ctx, input.UserID)
+		userUUID, err := pgutil.ParseUUID(input.UserID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid user ID", err)
+		}
+
+		err = database.Users().Delete(ctx, userUUID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to delete user: %w", err)
 		}

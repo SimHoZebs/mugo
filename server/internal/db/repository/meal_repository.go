@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	dbgenerated "github.com/simhozebs/mugo/internal/db/dbgenerated"
 	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"github.com/simhozebs/mugo/internal/models"
@@ -19,17 +20,7 @@ func NewMealLogRepository(queries *dbgenerated.Queries) MealLogRepository {
 	return &mealLogRepository{queries: queries}
 }
 
-func (r *mealLogRepository) Create(ctx context.Context, userID, conversationID, foodName, mealType string, recordedAt time.Time, macros models.Macros, assumptions []models.Assumption, foodSource string, rawResponse interface{}) (*models.MealLog, error) {
-	pgUUID, err := pgutil.ParseUUID(userID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid user UUID: %w", err)
-	}
-
-	convUUID, err := pgutil.ParseUUIDPtr(conversationID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid conversation UUID: %w", err)
-	}
-
+func (r *mealLogRepository) Create(ctx context.Context, userID, conversationID pgtype.UUID, foodName, mealType string, recordedAt time.Time, macros models.Macros, assumptions []models.Assumption, foodSource string, rawResponse interface{}) (*models.MealLog, error) {
 	macrosJSON, err := json.Marshal(macros)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal macros: %w", err)
@@ -48,8 +39,8 @@ func (r *mealLogRepository) Create(ctx context.Context, userID, conversationID, 
 	}
 
 	arg := dbgenerated.CreateMealLogParams{
-		UserID:         pgUUID,
-		ConversationID: convUUID,
+		UserID:         userID,
+		ConversationID: conversationID,
 		FoodName:       foodName,
 		MealType:       mealType,
 		RecordedAt:     pgutil.Timestamp(recordedAt),
@@ -65,25 +56,17 @@ func (r *mealLogRepository) Create(ctx context.Context, userID, conversationID, 
 	return mapToMealLog(result)
 }
 
-func (r *mealLogRepository) GetByID(ctx context.Context, id string) (*models.MealLog, error) {
-	pgUUID, err := pgutil.ParseUUID(id)
-	if err != nil {
-		return nil, err
-	}
-	result, err := r.queries.GetMealLog(ctx, pgUUID)
+func (r *mealLogRepository) GetByID(ctx context.Context, id pgtype.UUID) (*models.MealLog, error) {
+	result, err := r.queries.GetMealLog(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get meal log: %w", err)
 	}
 	return mapToMealLog(result)
 }
 
-func (r *mealLogRepository) ListByUser(ctx context.Context, userID string, limit, offset int) ([]*models.MealLog, error) {
-	pgUUID, err := pgutil.ParseUUID(userID)
-	if err != nil {
-		return nil, err
-	}
+func (r *mealLogRepository) ListByUser(ctx context.Context, userID pgtype.UUID, limit, offset int) ([]*models.MealLog, error) {
 	arg := dbgenerated.ListMealLogsByUserParams{
-		UserID: pgUUID,
+		UserID: userID,
 		Limit:  int32(limit),
 		Offset: int32(offset),
 	}
@@ -102,13 +85,9 @@ func (r *mealLogRepository) ListByUser(ctx context.Context, userID string, limit
 	return mealLogs, nil
 }
 
-func (r *mealLogRepository) ListByUserAndDate(ctx context.Context, userID string, date time.Time) ([]*models.MealLog, error) {
-	pgUUID, err := pgutil.ParseUUID(userID)
-	if err != nil {
-		return nil, err
-	}
+func (r *mealLogRepository) ListByUserAndDate(ctx context.Context, userID pgtype.UUID, date time.Time) ([]*models.MealLog, error) {
 	arg := dbgenerated.ListMealLogsByUserAndDateParams{
-		UserID:     pgUUID,
+		UserID:     userID,
 		RecordedAt: pgutil.Timestamp(date),
 	}
 	results, err := r.queries.ListMealLogsByUserAndDate(ctx, arg)
@@ -126,13 +105,9 @@ func (r *mealLogRepository) ListByUserAndDate(ctx context.Context, userID string
 	return mealLogs, nil
 }
 
-func (r *mealLogRepository) ListByUserAndDateRange(ctx context.Context, userID string, startDate, endDate time.Time) ([]*models.MealLog, error) {
-	pgUUID, err := pgutil.ParseUUID(userID)
-	if err != nil {
-		return nil, err
-	}
+func (r *mealLogRepository) ListByUserAndDateRange(ctx context.Context, userID pgtype.UUID, startDate, endDate time.Time) ([]*models.MealLog, error) {
 	arg := dbgenerated.ListMealLogsByUserAndDateRangeParams{
-		UserID:    pgUUID,
+		UserID:    userID,
 		StartDate: pgutil.Timestamp(startDate),
 		EndDate:   pgutil.Timestamp(endDate),
 	}
@@ -151,12 +126,8 @@ func (r *mealLogRepository) ListByUserAndDateRange(ctx context.Context, userID s
 	return mealLogs, nil
 }
 
-func (r *mealLogRepository) ListByConversation(ctx context.Context, conversationID string) ([]*models.MealLog, error) {
-	pgUUID, err := pgutil.ParseUUID(conversationID)
-	if err != nil {
-		return nil, err
-	}
-	results, err := r.queries.ListMealLogsByConversation(ctx, pgUUID)
+func (r *mealLogRepository) ListByConversation(ctx context.Context, conversationID pgtype.UUID) ([]*models.MealLog, error) {
+	results, err := r.queries.ListMealLogsByConversation(ctx, conversationID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list meal logs by conversation: %w", err)
 	}
@@ -171,12 +142,7 @@ func (r *mealLogRepository) ListByConversation(ctx context.Context, conversation
 	return mealLogs, nil
 }
 
-func (r *mealLogRepository) Update(ctx context.Context, id string, foodName, mealType string, macros models.Macros, assumptions []models.Assumption, rawResponse interface{}) (*models.MealLog, error) {
-	pgUUID, err := pgutil.ParseUUID(id)
-	if err != nil {
-		return nil, err
-	}
-
+func (r *mealLogRepository) Update(ctx context.Context, id pgtype.UUID, foodName, mealType string, macros models.Macros, assumptions []models.Assumption, rawResponse interface{}) (*models.MealLog, error) {
 	macrosJSON, err := json.Marshal(macros)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal macros: %w", err)
@@ -195,7 +161,7 @@ func (r *mealLogRepository) Update(ctx context.Context, id string, foodName, mea
 	}
 
 	arg := dbgenerated.UpdateMealLogParams{
-		ID:          pgUUID,
+		ID:          id,
 		FoodName:    foodName,
 		MealType:    mealType,
 		Macros:      macrosJSON,
@@ -209,12 +175,8 @@ func (r *mealLogRepository) Update(ctx context.Context, id string, foodName, mea
 	return mapToMealLog(result)
 }
 
-func (r *mealLogRepository) Delete(ctx context.Context, id string) error {
-	pgUUID, err := pgutil.ParseUUID(id)
-	if err != nil {
-		return err
-	}
-	return r.queries.DeleteMealLog(ctx, pgUUID)
+func (r *mealLogRepository) Delete(ctx context.Context, id pgtype.UUID) error {
+	return r.queries.DeleteMealLog(ctx, id)
 }
 
 func mapToMealLog(m dbgenerated.MealLog) (*models.MealLog, error) {

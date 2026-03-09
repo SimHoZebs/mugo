@@ -3,6 +3,7 @@ package routes
 import (
 	"context"
 	"fmt"
+	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -49,7 +50,13 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, sessionService sess
 				return resp, nil
 			}
 
-			conversations, err := database.Conversations().ListByUser(ctx, input.UserId)
+			userUUID, err := pgutil.ParseUUID(input.UserId)
+			if err != nil {
+				resp.Body.SessionIds = []string{fmt.Sprintf("Invalid user ID: %v", err)}
+				return resp, nil
+			}
+
+			conversations, err := database.Conversations().ListByUser(ctx, userUUID)
 			if err != nil {
 				resp.Body.SessionIds = []string{fmt.Sprintf("Could not retrieve sessions for user: %s", input.UserId)}
 				return resp, nil

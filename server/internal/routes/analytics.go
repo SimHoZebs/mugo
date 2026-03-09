@@ -7,6 +7,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/simhozebs/mugo/internal/db"
+	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"github.com/simhozebs/mugo/internal/models"
 )
 
@@ -52,6 +53,11 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 			return nil, err
 		}
 
+		userUUID, err := pgutil.ParseUUID(input.UserID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid user ID", err)
+		}
+
 		date, err := parseDate(input.Date)
 		if err != nil && input.Date != "" {
 			return nil, huma.Error400BadRequest("Invalid date format. Expected YYYY-MM-DD", err)
@@ -60,7 +66,7 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 			date = time.Now()
 		}
 
-		summary, err := database.Nutrition().GetDaily(ctx, input.UserID, date)
+		summary, err := database.Nutrition().GetDaily(ctx, userUUID, date)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get daily summary: %w", err)
 		}
@@ -88,6 +94,11 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 			return nil, err
 		}
 
+		userUUID, err := pgutil.ParseUUID(input.UserID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid user ID", err)
+		}
+
 		start, err := parseDate(input.StartDate)
 		if err != nil {
 			return nil, huma.Error400BadRequest("Invalid start_date format. Expected YYYY-MM-DD", err)
@@ -98,7 +109,7 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 			return nil, huma.Error400BadRequest("Invalid end_date format. Expected YYYY-MM-DD", err)
 		}
 
-		summaries, err := database.Nutrition().ListDailyByDateRange(ctx, input.UserID, start, end)
+		summaries, err := database.Nutrition().ListDailyByDateRange(ctx, userUUID, start, end)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list daily summaries: %w", err)
 		}
@@ -123,6 +134,11 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 			return nil, err
 		}
 
+		userUUID, err := pgutil.ParseUUID(input.UserID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid user ID", err)
+		}
+
 		weekStart, err := parseDate(input.WeekStartDate)
 		if err != nil && input.WeekStartDate != "" {
 			return nil, huma.Error400BadRequest("Invalid week_start_date format. Expected YYYY-MM-DD", err)
@@ -132,7 +148,7 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 			weekStart = now.AddDate(0, 0, -int(now.Weekday()-1))
 		}
 
-		summary, err := database.Nutrition().GetWeekly(ctx, input.UserID, weekStart)
+		summary, err := database.Nutrition().GetWeekly(ctx, userUUID, weekStart)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get weekly summary: %w", err)
 		}
@@ -160,6 +176,11 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 			return nil, err
 		}
 
+		userUUID, err := pgutil.ParseUUID(input.UserID)
+		if err != nil {
+			return nil, huma.Error400BadRequest("invalid user ID", err)
+		}
+
 		start, err := parseDate(input.StartDate)
 		if err != nil {
 			return nil, huma.Error400BadRequest("Invalid start_date format. Expected YYYY-MM-DD", err)
@@ -170,7 +191,7 @@ func RegisterAnalyticsEndpoints(humaAPI huma.API, prefix string, provider db.DBP
 			return nil, huma.Error400BadRequest("Invalid end_date format. Expected YYYY-MM-DD", err)
 		}
 
-		summaries, err := database.Nutrition().ListWeeklyByDateRange(ctx, input.UserID, start, end)
+		summaries, err := database.Nutrition().ListWeeklyByDateRange(ctx, userUUID, start, end)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list weekly summaries: %w", err)
 		}
