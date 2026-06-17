@@ -1,6 +1,12 @@
-import { NutritionResponseBody } from "@/lib/api/conversationAPI.schemas";
+import { Assumption, Macros } from "@/lib/api/mugoAPI.schemas";
 
-export const defaultMeals: Array<NutritionResponseBody["analysis"]> = [
+type DefaultMeal = {
+  name: string;
+  assumptions: Assumption[];
+  macros: Macros;
+};
+
+export const defaultMeals: DefaultMeal[] = [
   {
     name: "Oatmeal with Berries",
     assumptions: [
@@ -215,4 +221,3 @@ export const defaultMeals: Array<NutritionResponseBody["analysis"]> = [
     },
   },
 ];
-

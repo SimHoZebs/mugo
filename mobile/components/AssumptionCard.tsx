@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { Assumption } from "@/lib/api/conversationAPI.schemas";
+import { Assumption } from "@/lib/api/mugoAPI.schemas";
 import { Text } from "@/components/ui/Text";
 import { Badge } from "@/components/ui/Badge";
 

@@ -1,134 +1,46 @@
-# LazyFood Go Server - Agent Guidelines
+# Mugo / LazyFood Agent Guidelines
 
-## Build & Development Commands
-- **Run API**: `make server` (runs on localhost:8888)
-- **Run ADK**: `make adk` (runs ADK with web, api, and webui)
-- **Build**: `make build` (builds the API binary)
-- **Database**: `make db` (starts database services)
-- **Generate SQL**: `make sqlc` (generates Go code from SQL)
-- **Dependencies**: `make tidy` (installs and cleans up dependencies)
-- **API Docs**: Available at `http://localhost:8888/docs` when the server is running
-- **Environment variables**: Available via CLI `infisical`
+This repo contains a Go API/ADK server and an Expo React Native mobile app. Prefer the closest `AGENTS.md` file for stack-specific rules: `server/AGENTS.md` for backend work and `mobile/AGENTS.md` for mobile work.
 
-## Code Style Guidelines
-- **Imports**: Group standard library, then third-party, then local imports (server/*)
-- **API (Huma v2 & Chi)**:
-    - **DO**: Define request/response types with a nested `Body` field (e.g., `type CreateResponse struct { Body struct { ... } }`).
-    - **DO**: Use descriptive `OperationID`s (e.g., `create-meal-log`) and `Tags` for documentation.
-    - **DO**: Use Huma's built-in error functions (e.g., `huma.Error404NotFound`) for consistent JSON error responses.
-    - **DO NOT**: Use generic `error` returns without Huma's structured error helpers.
-- **Database & Repository Layer**:
-    - **DO**: Access the database via the `db.DBProvider` interface and the `GetDB(provider)` helper in `internal/routes/util.go`.
-    - **DO**: Perform all DB operations through the repository layer (e.g., `database.Users().Create(...)`).
-    - **DO**: Use `database.WithTx(ctx, ...)` for operations requiring transactions.
-    - **DO NOT**: Directly use `sqlc` generated code or raw SQL outside of the `internal/db/repository` package.
-    - **DO NOT**: Manually manage database connection pools in route handlers; rely on the `LazyDatabase` initialized in `main.go`.
-- **Environment**: Load .env with godotenv, never commit secrets.
-- **Roadmap**: Refer to the `TODOS/` directory for pending architectural tasks like Authentication and Row Level Security.
-    - **DO NOT**: Assume authentication (AuthN) or Row Level Security (RLS) is active until these tasks are marked as completed.
+## Current Commands
+- Start dependencies: `make docker`
+- Start API: `make server` (serves API on `http://localhost:8888`)
+- Build API: `make build`
+- Generate sqlc code: `make sqlc`
+- Run migrations up: `make migrate-up`
+- Run migrations down: `make migrate-down steps=1`
+- Force migration version: `make migrate-force version=<version>`
+- Start mobile dev server: `make mobile`
+- Start Android emulator: `make emulator`
+- Regenerate mobile API client: `make orval`
+- Go tests: `make test-server`
+- Mobile lint: `make lint-mobile`
+- Mobile tests: `make test-mobile`
 
-## ADK (Agent Development Kit) Guidelines
-- **ADK Documentation**: https://google.github.io/adk-docs/ (primary reference)
-- **Go ADK API**: https://pkg.go.dev/google.golang.org/adk
-- **Agent Creation**: Use llmagent.New() with gemini models (see agents/weather.go:31)
-- **Runner Pattern**: Create agents in agents/, initialize runners in runners/ (see runners/echo.go:10)
-- **Session Management**: Use session.InMemoryService() for conversation state
-- **Tools**: Leverage geminitool.GoogleSearch{} and other built-in tools
-- **Model Config**: Use gemini.NewModel() with GOOGLE_API_KEY from environment
+## Verification Matrix
+- Go API change: `make test-server`
+- Go build or wiring change: `make build`
+- SQL query or migration change: `make sqlc && make test-server`
+- Runtime DB behavior change: `make docker`, then `make migrate-up`, then relevant Go tests
+- Mobile UI/state change: `make lint-mobile && make test-mobile`
+- API contract change: start the API with `make server`, then run `make orval`, then `make lint-mobile && make test-mobile`
 
----
+## Environment Notes
+- Runtime commands generally use `infisical run` through the `Makefile`.
+- Important env vars include `DATABASE_URL`, `GOOGLE_API_KEY`, `API_SERVER_URL`, `DB_PORT`, `WHISPER_PORT`, `TRANSCRIPTION_SERVER_URL`, and `PORT`.
+- Do not commit secrets. Check existing config and command output before asking the user for env details.
+- Docker Compose starts Postgres and Whisper. The Postgres service is named `db`; the Whisper service is named `whisper`.
 
-## Mobile Frontend Guidelines (React Native / Expo)
+## Generated Code Boundaries
+- Do not hand-edit `server/internal/db/dbgenerated/`; edit SQL in `server/internal/db/queries/` or migrations, then run `make sqlc`.
+- Do not hand-edit `mobile/lib/api/`; update Huma route schemas, run the API, then run `make orval`.
+- Generated files may appear in diffs after `make sqlc` or `make orval`; keep them only when they are required by the source/schema change.
 
-### Build & Development Commands
-- **Start dev server**: `make mobile` (starts Expo dev server via infisical)
-- **Start Android emulator**: `make emulator`
-- **Regenerate API client**: `make orval`
-- **Lint**: `cd mobile && npm run lint`
-- **Tests**: `cd mobile && npm test`
+## API Contract Workflow
+- Huma serves OpenAPI at `/openapi.json` when the API is running.
+- Orval reads `process.env.API_SERVER_URL + "/openapi.json"` from `mobile/orval.config.ts`.
+- If request/response structs, route paths, tags, or operation IDs change, regenerate the mobile client with `make orval`.
 
-### Styling Rules
-- Use NativeWind (Tailwind) `className` exclusively. Never use `StyleSheet.create()` for visual styles.
-- Do **NOT** hardcode color hex values inline (e.g., `color="#10B981"`). Use Tailwind token classes.
-- Always include dark mode variants: every `bg-*`, `text-*`, `border-*` must have a `dark:` pair.
-
-### Component Rules
-- Compose screens from primitives in `mobile/components/ui/`. Do not re-implement Text, Button, Card inline.
-- New domain-specific components go in `mobile/components/`. New primitive base elements go in `mobile/components/ui/`.
-- Loading states use skeleton shimmer (`stone-200 dark:stone-700` placeholder views), not spinners.
-
-### Layout Rules
-- Horizontal screen padding: `px-4`
-- Section spacing: `mb-6`
-- Card internal padding: `p-4`
-- Use `rounded-xl` for cards, `rounded-2xl` for inputs/buttons, `rounded-full` for pills/icons.
-- Use `<ScreenLayout>` from `mobile/components/ui/ScreenLayout.tsx` as the root wrapper for each screen.
-
-### Typography Hierarchy
-- Page title: `text-2xl font-bold leading-8`
-- Section title: `text-xl font-bold`
-- Card title: `text-base font-semibold leading-6`
-- Body: `text-base leading-6`
-- Label/caption: `text-sm`
-- Metadata/pill: `text-xs`
-
-Use the `<Text>` primitive from `mobile/components/ui/Text.tsx` with the matching `variant` prop instead of repeating these classes inline.
-
-### Color Semantics
-- Primary action / success: `emerald-500`
-- Warning / assumptions: `amber-*`
-- Calories: `amber-500` | Protein: `emerald-500` | Carbs: `blue-500` | Fat: `rose-500`
-- Page background: `stone-50 dark:stone-950`
-- Card background: `white dark:stone-900`
-- Subtle fill (inputs, sub-cards): `stone-100/200 dark:stone-800`
-
-### UX Patterns
-- Pressable feedback: `active:opacity-70` or specific `active:bg-*` variant
-- Disabled state: muted fill (`stone-300 dark:stone-800`) + muted text (`stone-500`)
-- Inline confirmation uses a checkmark icon (emerald), not a text label
-- Badges/pills use the `<Badge>` primitive from `mobile/components/ui/Badge.tsx`
-
-### Primitive UI Component Library (`mobile/components/ui/`)
-
-| Component | Purpose |
-|---|---|
-| `Text.tsx` | Typed variants: `h1`, `h2`, `h3`, `body`, `caption`, `micro` — pre-wired with theme tokens |
-| `Card.tsx` | Standard rounded + bordered + padded surface |
-| `Button.tsx` | Variants: `primary`, `ghost`, `destructive` with disabled states |
-| `Badge.tsx` | Inline label (replaces ad-hoc amber/stone badge patterns) |
-| `Divider.tsx` | Consistent `h-px` separator |
-| `ScreenLayout.tsx` | Page wrapper with standard `bg + px-4` + safe area insets |
-| `SectionHeader.tsx` | Labeled section with optional trailing action |
-
-### Screen Layout Reference
-```
-## Screen: Home Tab
-┌─────────────────────────┐
-│ [ScreenLayout px-4]     │
-│  SectionHeader "Today"  │
-│  ─────────────────────  │
-│  TotalMacroPanel        │
-│  ─────────────────────  │
-│  MealCard               │
-│  MealCard (loading)     │
-│ [InputBar sticky]       │
-└─────────────────────────┘
-```
-
----
-
-## Notion Pages Relevant to Mugo (LazyFood / ai-nutrition-tracker)
-Below are Notion pages and databases I found that appear directly related to this project. Each entry is the page title followed by the Notion URL.
-
-- Mugo — https://www.notion.so/Mugo-29cee37bd028800ba00cd39ec50dd022
-- LazyFood Tasks (database) — https://www.notion.so/6934f50dcef646e6a374a6edc0b44319
-- Build single nutrition agent — https://www.notion.so/Build-single-nutrition-agent-fb282cf142ed48d58358871f8c09b129
-- LazyFood: Technical Architecture — https://www.notion.so/LazyFood-Technical-Architecture-ce5f20d767774a04bb89a83c4e029bd2
-- LazyFood: Market Analysis — https://www.notion.so/LazyFood-Market-Analysis-7843fc72e72441a1afd1b5696490e5d0
-- LazyFood: Business Plan — https://www.notion.so/LazyFood-Business-Plan-2b99b481337f4501b3a7df083ad73574
-- Add LazyFood project to website — https://www.notion.so/Add-LazyFood-project-to-website-285ee37bd02880c89984eca5cbbde3fd
-- LazyFood: October 27, 2025 → November 2, 2025 (weekly note) — https://www.notion.so/LazyFood-October-27-2025-November-2-2025-6d5a994b19694b9f9387b48cea796fed
-- Integrate Gemini API for AI cleanup — https://www.notion.so/Integrate-Gemini-API-for-AI-cleanup-5f4892c3f93042fb8ca938c0959fd226
-- Integrate Gemini API for AI summaries — https://www.notion.so/Integrate-Gemini-API-for-AI-summaries-90c3efc56a574de1a169557aa68b8829
-
-If you want more pages added (e.g., broader research links, weekly notes, or task pages), tell me the scope and I can append them.
+## Project Memory
+- `server/TODOS/` contains known backend architecture and bug tasks. Check it before assuming AuthN, RLS, or related infrastructure exists.
+- Relevant Notion pages are tracked in project/global agent memory, but local source and TODO files are the source of truth for implementation.

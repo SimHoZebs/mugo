@@ -1,6 +1,6 @@
 include .env
 
-.PHONY: server mobile emulator tidy build db sqlc orval migrate-up migrate-down migrate-force
+.PHONY: server mobile emulator tidy build docker db sqlc orval migrate-up migrate-down migrate-force test-server lint-mobile test-mobile verify
 
 migrate-up:
 	cd ./server/ && infisical run -- go run ./cmd/migrate/main.go up
@@ -34,3 +34,16 @@ build:
 
 docker:
 	infisical run -- docker compose up -d
+
+db: docker
+
+test-server:
+	cd ./server/ && go test ./...
+
+lint-mobile:
+	cd ./mobile/ && pnpm lint
+
+test-mobile:
+	cd ./mobile/ && pnpm test
+
+verify: test-server build lint-mobile test-mobile
