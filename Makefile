@@ -1,6 +1,6 @@
 include .env
 
-.PHONY: server mobile emulator tidy build db sqlc adk orval migrate-up migrate-down migrate-force
+.PHONY: server mobile emulator tidy build db sqlc orval migrate-up migrate-down migrate-force
 
 migrate-up:
 	cd ./server/ && infisical run -- go run ./cmd/migrate/main.go up
@@ -22,15 +22,6 @@ orval:
 
 server:
 	cd ./server/ && infisical run -- go run ./cmd/api/main.go
-
-adk:
-	cd ./server/ && infisical run -- go run ./cmd/adk/main.go web api webui
-
-adk-api:
-	cd ./server/ && infisical run -- go run ./cmd/adk/main.go web api
-
-adk-help:
-	cd ./server/ && infisical run -- go run ./cmd/adk/main.go --help
 
 sqlc:
 	cd ./server/ && go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate

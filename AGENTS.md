@@ -8,6 +8,7 @@
 - **Generate SQL**: `make sqlc` (generates Go code from SQL)
 - **Dependencies**: `make tidy` (installs and cleans up dependencies)
 - **API Docs**: Available at `http://localhost:8888/docs` when the server is running
+- **Environment variables**: Available via CLI `infisical`
 
 ## Code Style Guidelines
 - **Imports**: Group standard library, then third-party, then local imports (server/*)
@@ -118,7 +119,6 @@ Use the `<Text>` primitive from `mobile/components/ui/Text.tsx` with the matchin
 
 ## Notion Pages Relevant to Mugo (LazyFood / ai-nutrition-tracker)
 Below are Notion pages and databases I found that appear directly related to this project. Each entry is the page title followed by the Notion URL.
-
 
 - Mugo — https://www.notion.so/Mugo-29cee37bd028800ba00cd39ec50dd022
 - LazyFood Tasks (database) — https://www.notion.so/6934f50dcef646e6a374a6edc0b44319
