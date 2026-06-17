@@ -43,24 +43,22 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, sessionService sess
 		func(ctx context.Context, input *struct {
 			UserId string `path:"user_id" example:"user_12345" doc:"User ID to list sessions for"`
 		}) (response *debugListSessionsResponse, err error) {
-			resp := &debugListSessionsResponse{}
 			database, err := GetDB(provider)
 			if err != nil {
-				resp.Body.SessionIds = []string{fmt.Sprintf("Database unavailable: %v", err)}
-				return resp, nil
+				return nil, huma.Error500InternalServerError(fmt.Sprintf("Database unavailable: %v", err))
 			}
 
 			userUUID, err := pgutil.ParseUUID(input.UserId)
 			if err != nil {
-				resp.Body.SessionIds = []string{fmt.Sprintf("Invalid user ID: %v", err)}
-				return resp, nil
+				return nil, huma.Error400BadRequest(fmt.Sprintf("Invalid user ID: %v", err))
 			}
 
 			conversations, err := database.Conversations().ListByUser(ctx, userUUID)
 			if err != nil {
-				resp.Body.SessionIds = []string{fmt.Sprintf("Could not retrieve sessions for user: %s", input.UserId)}
-				return resp, nil
+				return nil, huma.Error500InternalServerError(fmt.Sprintf("Could not retrieve sessions for user: %s", input.UserId))
 			}
+
+			resp := &debugListSessionsResponse{}
 			for _, c := range conversations {
 				resp.Body.SessionIds = append(resp.Body.SessionIds, c.SessionID)
 			}
