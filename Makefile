@@ -1,6 +1,6 @@
 include .env
 
-.PHONY: server mobile emulator tidy build docker db sqlc orval migrate-up migrate-down migrate-force test-server lint-mobile test-mobile verify dev
+.PHONY: server mobile emulator tidy build docker db sqlc orval migrate-up migrate-down migrate-force test-server lint-mobile test-mobile verify dev dev-server dev-mobile doctor stop-dev
 
 migrate-up:
 	cd ./server/ && infisical run -- go run ./cmd/migrate/main.go up
@@ -15,7 +15,7 @@ mobile:
 	cd ./mobile/ && infisical run -- nr start
 
 emulator:
-	$(ANDROID_SDK_ROOT)/emulator/emulator -avd Medium_Phone_API_36.1 &
+	./scripts/dev.sh android
 
 orval:
 	cd ./mobile/ && infisical run -- nr orval
@@ -38,7 +38,19 @@ docker:
 db: docker
 
 dev:
-	infisical run -- docker compose up -d && trap 'docker compose down' EXIT; cd ./server/ && infisical run -- air
+	./scripts/dev.sh
+
+dev-server:
+	./scripts/dev.sh server
+
+dev-mobile:
+	./scripts/dev.sh mobile
+
+doctor:
+	./scripts/dev-doctor.sh
+
+stop-dev:
+	./scripts/dev.sh stop
 
 test-server:
 	cd ./server/ && go test ./...

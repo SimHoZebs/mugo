@@ -1,21 +1,5 @@
-#!/bin/bash
-# Split top pane vertically (left/right)
-tmux split-window -h
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Split horizontally (top/bottom)
-tmux select-pane -t 0
-tmux split-window -v
-
-# Split bottom pane vertically (left/right)
-tmux select-pane -t 1
-tmux split-window -v
-
-# Run commands in panes
-tmux select-pane -t 0
-tmux send-keys 'make mobile' C-m
-
-tmux select-pane -t 1
-tmux send-keys 'make dev' C-m
-
-# Attach to session
-tmux attach -t lazyfood-dev
+cd "$(dirname "${BASH_SOURCE[0]}")"
+exec ./scripts/dev.sh
