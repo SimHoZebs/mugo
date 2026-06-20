@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
@@ -33,27 +32,27 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
+	lazyDB := db.NewLazyDatabase(ctx)
+	defer lazyDB.Close()
+	log.Println("Lazy database initialized - will connect on first use")
+
 	sessionService, err := adk.CreateSessionService()
 	if err != nil {
 		log.Printf("CRITICAL: ADK Session Service could not be initialized: %v", err)
 		log.Println("Warning: AI agent features will be disabled")
 	}
 
-	// 1. Initialize Shared Gemini Model
-	sharedModel, err := agents.NewGeminiModel()
+	model, err := agents.NewGeminiModel()
 	if err != nil {
 		log.Printf("CRITICAL: Shared Gemini Model could not be initialized: %v", err)
 	}
 
-	// 2. Initialize Individual Agents
-	// We do this manually for now to handle dependencies (like Orchestrator needing Macro)
-
-	macroAgent, err := agents.MacroEstimator(sharedModel)
+	macroAgent, err := agents.MacroEstimator(model)
 	if err != nil {
 		log.Printf("Macro Estimator could not be initialized: %v", err)
 	}
 
-	orchestratorAgent, err := agents.MealOrchestrator(sharedModel, macroAgent)
+	orchestratorAgent, err := agents.MealOrchestrator(model, macroAgent)
 	if err != nil {
 		log.Printf("Meal Orchestrator could not be initialized: %v", err)
 	}
@@ -63,12 +62,11 @@ func main() {
 		log.Printf("Warning: Echo Agent could not be initialized: %v", err)
 	}
 
-	weatherAgent, err := agents.Weather(sharedModel)
+	weatherAgent, err := agents.Weather(model)
 	if err != nil {
 		log.Printf("Weather Agent could not be initialized: %v", err)
 	}
 
-	// 3. Create Runners
 	createRunner := func(id string, a agent.Agent) adk.AgentRunner {
 		if a == nil || sessionService == nil {
 			return nil
@@ -83,15 +81,7 @@ func main() {
 
 	mealRunner := createRunner("meal_orchestrator", orchestratorAgent)
 	echoRunner := createRunner("echo_agent", echoAgent)
-	weatherRunner := createRunner("hello_time_agent", weatherAgent)
-
-	// Summary of runner status
-	log.Printf("Runner status: meal=%v, echo=%v, weather=%v",
-		mealRunner != nil, echoRunner != nil, weatherRunner != nil)
-
-	lazyDB := db.NewLazyDatabase(ctx)
-	defer lazyDB.Close()
-	log.Println("Lazy database initialized - will connect on first use")
+	weatherRunner := createRunner("weather_agent", weatherAgent)
 
 	r := chi.NewMux()
 	api := humachi.New(r, huma.DefaultConfig("Mugo API", "0.1.0"))
@@ -139,16 +129,6 @@ func main() {
 	case err := <-serverErrors:
 		log.Fatalf("Server failed to start: %v", err)
 	case sig := <-sigChan:
-		log.Printf("Received signal %v, starting graceful shutdown...", sig)
-
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer shutdownCancel()
-
-		if err := srv.Shutdown(shutdownCtx); err != nil {
-			log.Printf("Server forced to shutdown: %v", err)
-			srv.Close()
-		}
-
-		log.Println("Server stopped gracefully")
+		log.Printf("Received signal %v, shutting down", sig)
 	}
 }
