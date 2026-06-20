@@ -4,6 +4,7 @@ The server is a Go 1.24 API using Huma v2, Chi, pgx/sqlc, Postgres migrations, a
 
 ## Commands
 - Run API: `make server`
+- Run API with hot reload + docker lifecycle: `make dev` (uses [air](https://github.com/air-verse/air) — auto-rebuilds on save, starts/stops docker containers)
 - Build API: `make build`
 - Run Go tests: `make test-server`
 - Start dependencies: `make docker`

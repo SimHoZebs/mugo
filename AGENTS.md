@@ -5,6 +5,7 @@ This repo contains a Go API/ADK server and an Expo React Native mobile app. Pref
 ## Current Commands
 - Start dependencies: `make docker`
 - Start API: `make server` (serves API on `http://localhost:8888`)
+- Start API with hot reload + docker lifecycle: `make dev`
 - Build API: `make build`
 - Generate sqlc code: `make sqlc`
 - Run migrations up: `make migrate-up`
