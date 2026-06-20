@@ -180,6 +180,14 @@ func (m *MealLogRepositoryMock) Delete(ctx context.Context, id pgtype.UUID) erro
 	return args.Error(0)
 }
 
+func (m *MealLogRepositoryMock) GetByIDWithSession(ctx context.Context, id pgtype.UUID) (*models.MealLog, string, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, "", args.Error(1)
+	}
+	return args.Get(0).(*models.MealLog), args.String(1), args.Error(1)
+}
+
 // NutritionSummaryRepositoryMock is a mock implementation of the NutritionSummaryRepository interface.
 type NutritionSummaryRepositoryMock struct {
 	mock.Mock

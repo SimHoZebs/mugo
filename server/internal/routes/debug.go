@@ -115,4 +115,5 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, sessionService sess
 			return resp, nil
 		},
 	)
+
 }
