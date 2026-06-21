@@ -12,8 +12,8 @@ import (
 )
 
 type DebugGetMessagesRequest struct {
-	UserId    string `path:"user_id" example:"user_12345" doc:"User ID associated with the session"`
-	SessionId string `path:"session_id" example:"session_12345" doc:"Session ID to retrieve messages from"`
+	UserID    string `path:"user_id" example:"user_12345" doc:"User ID associated with the session"`
+	SessionID string `path:"session_id" example:"session_12345" doc:"Session ID to retrieve messages from"`
 }
 
 type debugGetMessagesResponse struct {
@@ -24,7 +24,7 @@ type debugGetMessagesResponse struct {
 
 type debugListSessionsResponse struct {
 	Body struct {
-		SessionIds []string `json:"session_ids"`
+		SessionIDs []string `json:"session_ids"`
 	}
 }
 
@@ -41,26 +41,26 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, sessionService sess
 			Tags:        []string{"Debug"},
 		},
 		func(ctx context.Context, input *struct {
-			UserId string `path:"user_id" example:"user_12345" doc:"User ID to list sessions for"`
+			UserID string `path:"user_id" example:"user_12345" doc:"User ID to list sessions for"`
 		}) (response *debugListSessionsResponse, err error) {
 			database, err := GetDB(provider)
 			if err != nil {
 				return nil, huma.Error500InternalServerError(fmt.Sprintf("Database unavailable: %v", err))
 			}
 
-			userUUID, err := pgutil.ParseUUID(input.UserId)
+			userUUID, err := pgutil.ParseUUID(input.UserID)
 			if err != nil {
 				return nil, huma.Error400BadRequest(fmt.Sprintf("Invalid user ID: %v", err))
 			}
 
 			conversations, err := database.Conversations().ListByUser(ctx, userUUID)
 			if err != nil {
-				return nil, huma.Error500InternalServerError(fmt.Sprintf("Could not retrieve sessions for user: %s", input.UserId))
+				return nil, huma.Error500InternalServerError(fmt.Sprintf("Could not retrieve sessions for user: %s", input.UserID))
 			}
 
 			resp := &debugListSessionsResponse{}
 			for _, c := range conversations {
-				resp.Body.SessionIds = append(resp.Body.SessionIds, c.SessionID)
+				resp.Body.SessionIDs = append(resp.Body.SessionIDs, c.SessionID)
 			}
 			return resp, nil
 		},
@@ -87,15 +87,15 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, sessionService sess
 
 			sess, err := sessionService.Get(ctx, &session.GetRequest{
 				AppName:   "macro_estimator",
-				UserID:    input.UserId,
-				SessionID: input.SessionId,
+				UserID:    input.UserID,
+				SessionID: input.SessionID,
 			})
 			if err != nil {
 				return nil, huma.Error400BadRequest(fmt.Sprintf("Error retrieving session: %v", err))
 			}
 
 			if sess == nil || sess.Session == nil {
-				return nil, huma.Error400BadRequest(fmt.Sprintf("Session not found: %s", input.SessionId))
+				return nil, huma.Error400BadRequest(fmt.Sprintf("Session not found: %s", input.SessionID))
 			}
 
 			var messages []string
