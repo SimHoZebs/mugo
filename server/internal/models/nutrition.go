@@ -4,6 +4,7 @@ type MealType string
 
 const (
 	MealTypeBreakfast MealType = "breakfast"
+	MealTypeBrunch    MealType = "brunch"
 	MealTypeLunch     MealType = "lunch"
 	MealTypeDinner    MealType = "dinner"
 	MealTypeSnack     MealType = "snack"

@@ -12,7 +12,7 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
 -- Enums
 DO $$ BEGIN
-    CREATE TYPE meal_type AS ENUM ('breakfast', 'lunch', 'dinner', 'snack', 'unknown');
+    CREATE TYPE meal_type AS ENUM ('breakfast', 'brunch', 'lunch', 'dinner', 'snack', 'unknown');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;

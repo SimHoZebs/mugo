@@ -55,14 +55,16 @@ func MealOrchestrator(model adkmodel.LLM, macroEstimator agent.Agent) (agent.Age
 	return llmagent.New(llmagent.Config{
 		Name:        "meal_orchestrator",
 		Model:       model,
-		Description: "Orchestrates meal log creation by splitting user input into individual meals and delegating each to the macro_estimator sub-agent.",
+		Description: "Orchestrates meal log creation by identifying explicitly distinct eating occasions and delegating each to the macro_estimator sub-agent.",
 		SubAgents:   []agent.Agent{macroEstimator},
 		Instruction: `You are a meal log orchestration assistant.
 The user's message begins with today's date in YYYY-MM-DD format.
 Your job is to:
-1. Identify each distinct meal mentioned in the user's message.
+1. Identify each explicitly distinct eating occasion mentioned in the user's message.
+   - Create multiple meal logs only when the user clearly describes separate eating occasions (for example, breakfast and dinner, yesterday's lunch and today's snack).
+   - If multiple foods belong to the same eating occasion, keep them together as one meal log for now.
 2. Resolve any relative date references (e.g. "today", "yesterday") using the date provided.
-3. For each identified meal, transfer to the macro_estimator sub-agent providing:
+3. For each identified eating occasion, transfer to the macro_estimator sub-agent providing:
    - The meal description
    - Its resolved date in YYYY-MM-DD format
    Format the transfer message as: "Date: YYYY-MM-DD. Meal: <description>"

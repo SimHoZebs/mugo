@@ -61,10 +61,10 @@ func MacroEstimator(model adkmodel.LLM) (agent.Agent, error) {
 			},
 			"meal_type": {
 				Type:        genai.TypeString,
-				Description: "The type of meal (breakfast, lunch, dinner, or snack)",
+				Description: "The type of meal (breakfast, brunch, lunch, dinner, snack, or unknown)",
 			},
 		},
-		Required: []string{"name", "date", "macros", "assumptions"},
+		Required: []string{"name", "date", "macros", "assumptions", "meal_type"},
 	}
 
 	onAfterModelAssignIDs := llmagent.AfterModelCallback(func(ctx agent.CallbackContext, resp *adkmodel.LLMResponse, respErr error) (*adkmodel.LLMResponse, error) {
@@ -99,7 +99,7 @@ You MUST provide:
 2. The date of the meal in YYYY-MM-DD format (as provided in the input)
 3. The estimated macronutrients (calories, protein, carbs, fat)
 4. A list of assumptions you made to reach these estimates
-5. The meal type (breakfast, lunch, dinner, or snack)
+5. The meal type (breakfast, brunch, lunch, dinner, snack, or unknown)
 `,
 		OutputSchema:        schema,
 		AfterModelCallbacks: []llmagent.AfterModelCallback{onAfterModelAssignIDs},

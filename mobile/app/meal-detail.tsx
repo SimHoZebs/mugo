@@ -13,6 +13,8 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ScreenLayout } from "@/components/ui/ScreenLayout";
 import { Text } from "@/components/ui/Text";
 import useGlobalStore from "@/lib/store";
+import type { UpdateMealResponseBody } from "@/lib/api/mugoAPI.schemas";
+import { toLocalMealLog } from "@/lib/types";
 
 // Temporary: Direct fetch until we regenerate API client with orval
 const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8888";
@@ -22,6 +24,7 @@ export default function MealDetailScreen() {
 
   const { id } = useLocalSearchParams<{ id: string }>();
   const meal = useGlobalStore((state) => state.meals.find((m) => m.id === id));
+  const updateMeal = useGlobalStore((state) => state.updateMeal);
 
   const handleSubmitCorrection = async (text: string) => {
     if (isSubmitting || !meal) return;
@@ -40,9 +43,8 @@ export default function MealDetailScreen() {
         throw new Error(`Server error: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log("Meal updated:", data.meal);
-      // TODO: Update the meal in global state
+      const data = (await response.json()) as UpdateMealResponseBody;
+      updateMeal(meal.id, toLocalMealLog(data.meal, meal.sessionId));
     } catch (error) {
       console.error("Failed to submit correction:", error);
     } finally {
@@ -52,14 +54,14 @@ export default function MealDetailScreen() {
 
   return !meal ? (
     <ScreenLayout className="items-center justify-center">
-      <Text variant="body">Meal not found</Text>
+      <Text variant="body">Log not found</Text>
     </ScreenLayout>
   ) : (
     <View className="flex-1 bg-stone-50 dark:bg-stone-950">
       <KeyboardAwareScrollView className="flex-1 px-4">
         <View className="pt-4 pb-6">
           <Text variant="h1">
-            {meal.nutrition.name || "Meal Details"}
+            {meal.nutrition.name || "Log Details"}
           </Text>
         </View>
 
@@ -117,7 +119,7 @@ export default function MealDetailScreen() {
 
       <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
         <InputBar onSubmit={handleSubmitCorrection} isLoading={isSubmitting}>
-          <InputBar.Input placeholder="Correct this meal..." />
+          <InputBar.Input placeholder="Correct what you ate..." />
         </InputBar>
       </KeyboardStickyView>
     </View>

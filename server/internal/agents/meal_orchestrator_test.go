@@ -18,12 +18,13 @@ func TestNormalizeMealsBatchResponse(t *testing.T) {
 	}{
 		{
 			name:    "valid single meal batch",
-			input:   `{"meals":[{"name":"Chicken Sandwich","date":"2025-01-07","macros":{"calories":450,"protein":35,"carbs":40,"fat":15},"assumptions":[]}]}`,
+			input:   `{"meals":[{"name":"Chicken Sandwich","date":"2025-01-07","meal_type":"brunch","macros":{"calories":450,"protein":35,"carbs":40,"fat":15},"assumptions":[]}]}`,
 			wantErr: false,
 			wantNil: false,
 			validate: func(t *testing.T, batch *models.MealsBatchPayload) {
 				require.Len(t, batch.Meals, 1)
 				assert.Equal(t, "Chicken Sandwich", batch.Meals[0].Name)
+				assert.Equal(t, models.MealTypeBrunch, batch.Meals[0].MealType)
 			},
 		},
 		{

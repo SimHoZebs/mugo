@@ -33,10 +33,11 @@ func TestNormalizeNutritionResponse(t *testing.T) {
 		},
 		{
 			name:    "strips markdown code blocks",
-			input:   "```json\n{\"name\":\"Test\",\"date\":\"2025-01-07\",\"macros\":{\"calories\":100,\"protein\":10,\"carbs\":10,\"fat\":5},\"assumptions\":[]}\n```",
+			input:   "```json\n{\"name\":\"Test\",\"date\":\"2025-01-07\",\"macros\":{\"calories\":100,\"protein\":10,\"carbs\":10,\"fat\":5},\"assumptions\":[],\"meal_type\":\"brunch\"}\n```",
 			wantErr: false,
 			validate: func(t *testing.T, payload *models.NutritionPayload) {
 				assert.Equal(t, "Test", payload.Name)
+				assert.Equal(t, models.MealTypeBrunch, payload.MealType)
 			},
 		},
 		{

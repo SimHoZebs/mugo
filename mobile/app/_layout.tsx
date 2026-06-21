@@ -31,7 +31,7 @@ export default function RootLayout() {
             name="meal-detail"
             options={{
               presentation: "fullScreenModal",
-              title: "Meal Detail",
+              title: "Log Detail",
             }}
           />
         </Stack>

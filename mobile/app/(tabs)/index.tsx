@@ -13,7 +13,9 @@ import MealCard from "@/components/MealCard";
 import InputBar from "@/components/InputBar";
 import { Text } from "@/components/ui/Text";
 import useGlobalStore from "@/lib/store";
-import { createMealLog,getCreateMealLogUrl } from "@/lib/api/logs/logs";
+import { createMealLog, getCreateMealLogUrl } from "@/lib/api/logs/logs";
+import type { CreateMealResponseBody } from "@/lib/api/mugoAPI.schemas";
+import { toLocalMealLog } from "@/lib/types";
 
 export default function HomeScreen() {
   const meals = useGlobalStore((state) => state.meals);
@@ -38,22 +40,17 @@ export default function HomeScreen() {
       );
       const response = await createMealLog(payload);
 
-      if (response.status !== 200) {
+      if (response.status < 200 || response.status >= 300) {
         throw response.data;
       }
 
-      const data = response.data;
-      const newMeal = {
-        id: data.meal.id,
-        sessionId: newSessionId,
-        nutrition: {
-          name: data.meal.food_name,
-          macros: data.meal.macros,
-          assumptions: data.meal.assumptions,
-          meal_type: data.meal.meal_type,
-        },
-      };
-      setMeals([...meals, newMeal]);
+      const data = response.data as CreateMealResponseBody;
+      const sessionId = data.session_id || newSessionId;
+      const newMealLogs = (data.meals ?? []).map((meal) =>
+        toLocalMealLog(meal, sessionId),
+      );
+
+      setMeals([...useGlobalStore.getState().meals, ...newMealLogs]);
       setPendingMealId(null);
     } catch (error) {
       console.error("Error submitting request to:", getCreateMealLogUrl());
@@ -84,7 +81,7 @@ export default function HomeScreen() {
           <InputBar.Action onPress={() => console.log("Mic pressed")}>
             <Text className="text-lg">🎤</Text>
           </InputBar.Action>
-          <InputBar.Input placeholder="Describe your meals..." />
+          <InputBar.Input placeholder="Log what you ate..." />
           <InputBar.Action onPress={() => console.log("Camera pressed")}>
             <Text className="text-lg">📷</Text>
           </InputBar.Action>
