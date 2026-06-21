@@ -1,6 +1,6 @@
 include .env
 
-.PHONY: server mobile emulator tidy build docker db sqlc orval migrate-up migrate-down migrate-force test-server lint-mobile test-mobile verify dev dev-server dev-mobile doctor stop-dev
+.PHONY: server mobile emulator tidy build docker db sqlc orval migrate-up migrate-down migrate-force test-server lint-mobile test-mobile verify dev dev-server dev-mobile doctor doctor-android stop-dev
 
 migrate-up:
 	cd ./server/ && infisical run -- go run ./cmd/migrate/main.go up
@@ -48,6 +48,9 @@ dev-mobile:
 
 doctor:
 	./scripts/dev-doctor.sh
+
+doctor-android:
+	./scripts/dev-doctor.sh --android
 
 stop-dev:
 	./scripts/dev.sh stop

@@ -2,7 +2,6 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SESSION_NAME="${MUGO_TMUX_SESSION:-mugo-dev}"
 AVD_NAME="${MUGO_AVD:-Medium_Phone_API_36.1}"
 BOOT_TIMEOUT_SECONDS="${MUGO_ANDROID_BOOT_TIMEOUT:-180}"
 
@@ -14,7 +13,6 @@ Daily startup:
   make dev
 
 Optional environment:
-  MUGO_TMUX_SESSION      tmux session name (default: mugo-dev)
   MUGO_AVD               Android virtual device name (default: Medium_Phone_API_36.1)
   MUGO_SKIP_MIGRATIONS   set to 1 to skip make migrate-up during backend startup
 USAGE
@@ -200,41 +198,32 @@ start_mobile() {
   ensure_command infisical "Install the Infisical CLI."
   ensure_command pnpm "Install pnpm."
 
-  if has_command adb && wait_for_android_boot; then
-    printf 'Starting Expo and opening Android...\n'
-    exec infisical run -- pnpm expo start --android
-  fi
-
-  printf 'Android emulator is not ready; starting Expo only. Press `a` in this pane after Android boots.\n'
+  printf 'Starting Expo. Open the displayed URL from your emulator when ready.\n'
   exec infisical run -- pnpm expo start
 }
 
 start_tmux() {
   ensure_command tmux "Install tmux."
   ensure_command infisical "Install the Infisical CLI."
-  wait_for_docker
 
-  if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-    printf 'Attaching to existing tmux session `%s`.\n' "$SESSION_NAME"
-    exec tmux attach-session -t "$SESSION_NAME"
+  if [ -z "${TMUX:-}" ]; then
+    fail "make dev is intended to run inside your existing tmux session."
   fi
 
-  tmux new-session -d -s "$SESSION_NAME" -n backend "cd '$ROOT_DIR' && scripts/dev.sh server; exec bash"
-  tmux new-window -t "$SESSION_NAME" -n android "cd '$ROOT_DIR' && scripts/dev.sh android; exec bash"
-  tmux new-window -t "$SESSION_NAME" -n mobile "cd '$ROOT_DIR' && scripts/dev.sh mobile; exec bash"
-  tmux new-window -t "$SESSION_NAME" -n doctor "cd '$ROOT_DIR' && scripts/dev-doctor.sh; printf '\nPress Ctrl-b then w to switch panes/windows.\n'; exec bash"
-  tmux select-window -t "$SESSION_NAME:backend"
+  wait_for_docker
 
-  exec tmux attach-session -t "$SESSION_NAME"
+  local original_pane backend_pane
+  original_pane="$(tmux display-message -p '#{pane_id}')"
+
+  backend_pane="$(tmux split-window -d -h -P -F '#{pane_id}' -t "$original_pane" "cd '$ROOT_DIR' && scripts/dev.sh server; exec bash")"
+  tmux split-window -d -v -t "$original_pane" "cd '$ROOT_DIR' && scripts/dev.sh mobile; exec bash"
+  tmux split-window -d -v -t "$backend_pane" "cd '$ROOT_DIR' && scripts/dev-doctor.sh; printf '\nPress Ctrl-b then arrow keys to switch panes.\n'; exec bash"
+  tmux select-layout tiled >/dev/null
+  tmux select-pane -t "$original_pane"
 }
 
 stop_dev() {
   cd "$ROOT_DIR"
-  if has_command tmux && tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-    tmux kill-session -t "$SESSION_NAME"
-    printf 'Stopped tmux session `%s`.\n' "$SESSION_NAME"
-  fi
-
   if has_command docker && docker info >/dev/null 2>&1; then
     docker compose stop
     printf 'Stopped Docker Compose services.\n'
