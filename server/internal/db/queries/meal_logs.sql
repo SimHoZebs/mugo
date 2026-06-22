@@ -54,3 +54,10 @@ SET food_name = $2,
     raw_response = $6
 WHERE id = $1
 RETURNING *;
+
+-- name: CreateMealLogs :copyfrom
+INSERT INTO meal_logs (
+    user_id, conversation_id, food_name, meal_type, recorded_at,
+    macros, assumptions, food_source, raw_response
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);

@@ -13,7 +13,7 @@ import MealCard from "@/components/MealCard";
 import InputBar from "@/components/InputBar";
 import { Text } from "@/components/ui/Text";
 import useGlobalStore from "@/lib/store";
-import { createMealLog,getCreateMealLogUrl } from "@/lib/api/logs/logs";
+import { createMealsBatch } from "@/lib/api/logs/logs";
 
 export default function HomeScreen() {
   const meals = useGlobalStore((state) => state.meals);
@@ -36,7 +36,7 @@ export default function HomeScreen() {
       requestAnimationFrame(() =>
         scrollViewRef.current?.scrollToEnd({ animated: true }),
       );
-      const response = await createMealLog(payload);
+      const response = await createMealsBatch(payload);
 
       if (response.status !== 200) {
         throw response.data;

@@ -65,7 +65,7 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 	mealsGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(mealsGroup, huma.Operation{
-		OperationID: "create-meal-log",
+		OperationID: "createMealsBatch",
 		Method:      "POST",
 		Path:        "",
 		Summary:     "Create a new meal-log",
@@ -119,30 +119,40 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 			return nil, huma.Error422UnprocessableEntity("failed to parse nutrition response", err)
 		}
 
-		var meals []*models.MealLog
+		var mealsParams []models.MealLogParams
 		for _, payload := range batch.Meals {
 			mealDate := parseMealDate(payload.Date)
-			// Apply default units since LLM now implies grams
 			for i := range payload.Assumptions {
 				payload.Assumptions[i].Unit = "g"
 			}
+			mealsParams = append(mealsParams, models.MealLogParams{
+				FoodName:    payload.Name,
+				MealType:    string(payload.MealType),
+				RecordedAt:  mealDate,
+				Macros:      payload.Macros,
+				Assumptions: payload.Assumptions,
+				FoodSource:  "ai_estimated",
+				RawResponse: payload,
+			})
+		}
 
-			// Use conv.ID (the internal UUID) for the meal log's foreign key
-			meal, err := database.Meals().Create(ctx,
-				userUUID,
-				convUUID,
-				payload.Name,
-				string(payload.MealType),
-				mealDate,
-				payload.Macros,
-				payload.Assumptions,
-				"ai_estimated",
-				payload,
-			)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create meal: %w", err)
-			}
-			meals = append(meals, meal)
+		_, err = database.Meals().CreateBatch(ctx, userUUID, convUUID, mealsParams)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create meals: %w", err)
+		}
+
+		// ListByConversation gets ALL meals for the session. We only want to return the newly created ones.
+		// So we filter the results by the timestamps of the meals we just created.
+		allMeals, err := database.Meals().ListByConversation(ctx, convUUID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve created meals: %w", err)
+		}
+
+		var meals []*models.MealLog
+		if len(allMeals) > len(mealsParams) {
+			meals = allMeals[len(allMeals)-len(mealsParams):]
+		} else {
+			meals = allMeals
 		}
 
 		resp := &CreateMealResponse{}

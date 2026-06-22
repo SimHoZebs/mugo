@@ -248,3 +248,11 @@ func (m *NutritionSummaryRepositoryMock) ListWeeklyByDateRange(ctx context.Conte
 	}
 	return args.Get(0).([]*models.WeeklyNutritionSummary), args.Error(1)
 }
+
+func (m *MealLogRepositoryMock) CreateBatch(ctx context.Context, userID, conversationID pgtype.UUID, meals []models.MealLogParams) ([]*models.MealLog, error) {
+	args := m.Called(ctx, userID, conversationID, meals)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.MealLog), args.Error(1)
+}

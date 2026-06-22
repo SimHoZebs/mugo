@@ -87,7 +87,9 @@ func TestCreateMealLog(t *testing.T) {
 		Macros:   payload.Macros,
 	}
 
-	mealRepoMock.On("Create", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	mealRepoMock.On("CreateBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(([]*models.MealLog)(nil), nil)
+	mealRepoMock.On("ListByConversation", mock.Anything, mock.Anything).Return([]*models.MealLog{expectedMeal}, nil)
+	mealRepoMock.On("ListByConversation", mock.Anything, mock.Anything).
 		Return(expectedMeal, nil)
 
 	routes.RegisterMealEndpoints(api, "/meals", mockRunner, dbProviderMock)
