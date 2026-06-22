@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["jest", "detox"]
+  },
+  "include": ["e2e/**/*.ts"]
+}

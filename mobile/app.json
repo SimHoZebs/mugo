@@ -40,7 +40,14 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "@config-plugins/detox",
+        {
+          "skipProguard": false,
+          "subdomains": "*"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

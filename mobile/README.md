@@ -48,3 +48,45 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## End-to-End Testing with Detox
+
+This app uses [Detox](https://wix.github.io/Detox/) for End-to-End (E2E) testing. Due to the high cost and slowness of running mobile emulators in CI/CD pipelines, E2E tests are configured to be run **manually and locally** before major releases, rather than automatically on every pull request.
+
+### Prerequisites
+
+1.  **Detox CLI:** Install the Detox CLI globally on your machine:
+    ```bash
+    npm install -g detox-cli
+    ```
+2.  **Environment Setup:** Follow the [Detox Environment Setup Guide](https://wix.github.io/Detox/docs/introduction/environment-setup) to ensure you have the necessary tools for iOS (Xcode, applesimutils) or Android (Android Studio, Java, Emulators).
+3.  **Running Backend:** The app needs to communicate with the backend. Ensure the Go server and database are running locally:
+    ```bash
+    make db
+    make server
+    ```
+
+### Running Tests
+
+**For Android:**
+1.  Ensure you have an Android emulator created (e.g., `Pixel_3a_API_30_x86`). If your emulator has a different name, update `mobile/.detoxrc.js` to match it.
+2.  Start your Android emulator.
+3.  Build the app for testing:
+    ```bash
+    pnpm e2e:build-android
+    ```
+4.  Run the tests:
+    ```bash
+    pnpm e2e:test-android
+    ```
+
+**For iOS:**
+1.  Ensure you have an iOS Simulator installed (e.g., `iPhone 15`). Update `mobile/.detoxrc.js` if you are using a different simulator name or iOS version.
+2.  Build the app for testing:
+    ```bash
+    pnpm e2e:build-ios
+    ```
+3.  Run the tests:
+    ```bash
+    pnpm e2e:test-ios
+    ```
