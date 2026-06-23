@@ -24,6 +24,7 @@ export default function HomeScreen() {
   const scrollViewRef = useRef<ScrollView | null>(null);
 
   const handleSubmitNutrition = async (text: string) => {
+    console.debug("handle submit nutrition request received")
     const newSessionId = uuid7();
     const loadingMealId = `loading-${newSessionId}`;
 
@@ -38,7 +39,9 @@ export default function HomeScreen() {
       requestAnimationFrame(() =>
         scrollViewRef.current?.scrollToEnd({ animated: true }),
       );
+      console.debug("making createMealLog request")
       const response = await createMealLog(payload);
+      console.debug("completed createMealLog request")
 
       if (response.status < 200 || response.status >= 300) {
         throw response.data;
