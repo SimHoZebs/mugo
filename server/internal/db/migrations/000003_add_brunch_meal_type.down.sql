@@ -1,0 +1,2 @@
+-- PostgreSQL does not support dropping enum values safely in-place.
+-- Rolling this migration back intentionally leaves the 'brunch' value available.

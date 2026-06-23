@@ -1,11 +1,11 @@
 import { Pressable, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Meal } from "@/lib/types";
+import { MealLog } from "@/lib/types";
 import { Text } from "@/components/ui/Text";
 import { Badge } from "@/components/ui/Badge";
 
 interface MealCardProps {
-  meal?: Meal;
+  meal?: MealLog;
   loading?: boolean;
 }
 

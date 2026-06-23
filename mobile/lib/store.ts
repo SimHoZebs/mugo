@@ -1,11 +1,11 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { Meal, UserProfile, DietaryPreference } from "./types";
+import { MealLog, UserProfile, DietaryPreference } from "./types";
 
 interface GlobalState {
-  meals: Meal[];
-  setMeals: (meals: Meal[]) => void;
-  updateMeal: (id: string, meal: Meal) => void;
+  meals: MealLog[];
+  setMeals: (meals: MealLog[]) => void;
+  updateMeal: (id: string, meal: MealLog) => void;
   userProfile: UserProfile | null;
   setUserProfile: (profile: UserProfile | null) => void;
   updateUserProfile: (profile: Partial<UserProfile>) => void;

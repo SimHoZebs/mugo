@@ -17,7 +17,7 @@ type TestResponse struct {
 	Value string `json:"value" example:"test response" doc:"Response from the test tool"`
 }
 
-func yeet(ctx tool.Context, args TestArgs) (TestResponse, error) {
+func readTestFile(ctx tool.Context, args TestArgs) (TestResponse, error) {
 
 	content, err := os.ReadFile("./tools/test.md")
 	if err != nil {
@@ -38,7 +38,7 @@ func TestTool(ctx context.Context) (tool.Tool, error) {
 			Name:        "test_tool",
 			Description: "A tool that reads content from a test file.",
 		},
-		yeet,
+		readTestFile,
 	)
 
 }

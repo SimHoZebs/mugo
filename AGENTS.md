@@ -31,6 +31,7 @@ This repo contains a Go API/ADK server and an Expo React Native mobile app. Pref
 - Important env vars include `DATABASE_URL`, `GOOGLE_API_KEY`, `API_SERVER_URL`, `DB_PORT`, `WHISPER_PORT`, `TRANSCRIPTION_SERVER_URL`, and `PORT`.
 - Do not commit secrets. Check existing config and command output before asking the user for env details.
 - Docker Compose starts Postgres and Whisper. The Postgres service is named `db`; the Whisper service is named `whisper`.
+- If you start long-running servers for testing, such as `make dev`, `make server`, `make mobile`, or Expo/Go processes, stop them before handing back unless the user explicitly asks to keep them running.
 
 ## Generated Code Boundaries
 - Do not hand-edit `server/internal/db/dbgenerated/`; edit SQL in `server/internal/db/queries/` or migrations, then run `make sqlc`.

@@ -52,7 +52,7 @@ interface InputProps {
   placeholder?: string;
 }
 
-function Input({ placeholder = "Describe your meals..." }: InputProps) {
+function Input({ placeholder = "Log what you ate..." }: InputProps) {
   const { text, setText, onSubmit, isLoading, disabled } = useInputBarContext();
 
   const handleSubmit = () => {

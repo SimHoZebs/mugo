@@ -3,8 +3,10 @@ package integration
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/simhozebs/mugo/internal/adk"
 	"github.com/simhozebs/mugo/internal/adk/mocks"
@@ -14,7 +16,7 @@ import (
 )
 
 func createTestUser(t *testing.T, s *TestSuite, username string) string {
-	s.API.Delete("/users/by-username/" + username)
+	username = fmt.Sprintf("%s_%d", username, time.Now().UnixNano())
 	resp := s.API.Post("/users", struct {
 		Username string `json:"username"`
 	}{
@@ -41,7 +43,7 @@ func setupMockMealRunner() adk.AgentRunner {
 							"meal_type": "lunch",
 							"date": "2025-05-20",
 							"macros": {"calories": 450, "protein": 35, "carbs": 10, "fat": 25},
-							"assumptions": ["standard portions"],
+							"assumptions": [{"category":"portion","field":"serving_size","assumed_value":1,"unit":"serving","confidence":"medium","rationale":"standard portions"}],
 							"confidence": 0.9
 						}
 					]
@@ -69,10 +71,12 @@ func TestMeals_Create(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.Code)
 
 	var body struct {
-		Meals []*models.MealLog `json:"meals"`
+		SessionID string            `json:"session_id"`
+		Meals     []*models.MealLog `json:"meals"`
 	}
 	err := json.Unmarshal(resp.Body.Bytes(), &body)
 	require.NoError(t, err)
+	assert.NotEmpty(t, body.SessionID)
 	require.Len(t, body.Meals, 1)
 	assert.Equal(t, "Chicken Salad", body.Meals[0].FoodName)
 }
@@ -102,6 +106,6 @@ func TestMeals_List(t *testing.T) {
 	}
 	err := json.Unmarshal(resp.Body.Bytes(), &body)
 	require.NoError(t, err)
-	assert.NotEmpty(t, body.Meals)
+	require.NotEmpty(t, body.Meals)
 	assert.Equal(t, userID, body.Meals[0].UserID)
 }

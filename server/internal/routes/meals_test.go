@@ -17,6 +17,7 @@ import (
 	"github.com/simhozebs/mugo/internal/routes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateMealLog(t *testing.T) {
@@ -106,9 +107,16 @@ func TestCreateMealLog(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.Code)
 	assert.True(t, createSessionCalled, "CreateSession should be called for new conversations")
-	assert.Contains(t, resp.Body.String(), "session-456")
-	assert.Contains(t, resp.Body.String(), "meal-123")
-	assert.Contains(t, resp.Body.String(), "Chicken Sandwich")
+
+	var body struct {
+		SessionID string            `json:"session_id"`
+		Meals     []*models.MealLog `json:"meals"`
+	}
+	require.NoError(t, json.Unmarshal(resp.Body.Bytes(), &body))
+	assert.Equal(t, sessionID, body.SessionID)
+	require.Len(t, body.Meals, 1)
+	assert.Equal(t, "meal-123", body.Meals[0].ID)
+	assert.Equal(t, "Chicken Sandwich", body.Meals[0].FoodName)
 
 	dbProviderMock.AssertExpectations(t)
 	convRepoMock.AssertExpectations(t)

@@ -1,10 +1,10 @@
 import { View } from "react-native";
 import { MacroDisplay } from "@/components/MacroDisplay";
-import { Meal } from "@/lib/types";
+import { MealLog } from "@/lib/types";
 import { Text } from "@/components/ui/Text";
 
 interface TotalMarcoPanelProps {
-  meals: Meal[];
+  meals: MealLog[];
 }
 
 export default function TotalMacroPanel(props: TotalMarcoPanelProps) {
@@ -66,4 +66,3 @@ export default function TotalMacroPanel(props: TotalMarcoPanelProps) {
     </View>
   );
 }
-
