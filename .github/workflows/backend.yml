@@ -39,6 +39,10 @@ jobs:
         echo "DATABASE_URL=postgres://nutrition_user:nutrition_pass@localhost:5432/nutrition_db?sslmode=disable" >> $GITHUB_ENV
         # Setting a dummy API key to bypass nil agent runner errors if tests require it
         echo "GOOGLE_API_KEY=dummy_key" >> $GITHUB_ENV
+        cp .env.example .env
+
+    - name: Generate SQLC code
+      run: cd server && go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate
 
     - name: Test Server
       run: cd server && go test ./...
