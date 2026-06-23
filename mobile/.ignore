@@ -1,2 +1,3 @@
 !lib/api
 !lib/api/**
+!.env

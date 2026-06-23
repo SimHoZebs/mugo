@@ -1,16 +1,18 @@
 import { defineConfig } from "orval";
 
+const specUrl = "http://localhost:8888/openapi.json";
+const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8888";
+
 export default defineConfig({
   api: {
     input: {
-      // Huma usually serves the spec here by default
-      target: process.env.API_SERVER_URL + "/openapi.json",
+      target: specUrl,
     },
     output: {
       mode: "tags-split",
       target: "./lib/api",
-      client: "fetch", // Uses native fetch (perfect for React Native)
-      baseUrl: process.env.API_SERVER_URL
+      client: "fetch",
+      baseUrl: baseUrl,
     },
   },
 });

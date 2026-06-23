@@ -28,7 +28,7 @@ This repo contains a Go API/ADK server and an Expo React Native mobile app. Pref
 
 ## Environment Notes
 - Runtime commands generally use `infisical run` through the `Makefile`.
-- Important env vars include `DATABASE_URL`, `GOOGLE_API_KEY`, `API_SERVER_URL`, `DB_PORT`, `WHISPER_PORT`, `TRANSCRIPTION_SERVER_URL`, and `PORT`.
+- Important env vars include `DATABASE_URL`, `GOOGLE_API_KEY`, `EXPO_PUBLIC_API_URL`, `DB_PORT`, `WHISPER_PORT`, `TRANSCRIPTION_SERVER_URL`, and `PORT`.
 - Do not commit secrets. Check existing config and command output before asking the user for env details.
 - Docker Compose starts Postgres and Whisper. The Postgres service is named `db`; the Whisper service is named `whisper`.
 - If you start long-running servers for testing, such as `make dev`, `make server`, `make mobile`, or Expo/Go processes, stop them before handing back unless the user explicitly asks to keep them running.
@@ -40,7 +40,8 @@ This repo contains a Go API/ADK server and an Expo React Native mobile app. Pref
 
 ## API Contract Workflow
 - Huma serves OpenAPI at `/openapi.json` when the API is running.
-- Orval reads `process.env.API_SERVER_URL + "/openapi.json"` from `mobile/orval.config.ts`.
+- Orval fetches the spec from `http://localhost:8888/openapi.json` and bakes `EXPO_PUBLIC_API_URL` into generated URLs.
+- When the API URL changes (different machine/network), update `EXPO_PUBLIC_API_URL` in Infisical and re-run `make orval`.
 - If request/response structs, route paths, tags, or operation IDs change, regenerate the mobile client with `make orval`.
 
 ## Project Memory

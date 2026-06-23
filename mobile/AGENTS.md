@@ -22,7 +22,8 @@ The mobile app is an Expo Router React Native app using React 19, NativeWind, Zu
 
 ## Generated API Client
 - Do not hand-edit `lib/api/`.
-- Orval reads the Huma OpenAPI spec from `API_SERVER_URL + "/openapi.json"`.
+- Orval fetches the spec from `http://localhost:8888/openapi.json` and bakes `EXPO_PUBLIC_API_URL` into generated URLs.
+- When the API URL changes, update `EXPO_PUBLIC_API_URL` in Infisical and re-run `make orval`.
 - After backend route schema changes, run the API, then `make orval`, then `make lint-mobile && make test-mobile`.
 
 ## Styling Rules
