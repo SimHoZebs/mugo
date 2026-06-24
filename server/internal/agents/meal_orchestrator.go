@@ -26,7 +26,7 @@ func NormalizeMealsBatchResponse(text string) (string, *models.MealsBatchPayload
 	return text, &batch, nil
 }
 
-func MealOrchestrator(model adkmodel.LLM, macroEstimator agent.Agent) (agent.Agent, error) {
+func CreateMealOrchestrator(model adkmodel.LLM, macroEstimator agent.Agent) (agent.Agent, error) {
 
 	onAfterModelNormalize := llmagent.AfterModelCallback(func(ctx agent.CallbackContext, resp *adkmodel.LLMResponse, respErr error) (*adkmodel.LLMResponse, error) {
 		if respErr != nil {

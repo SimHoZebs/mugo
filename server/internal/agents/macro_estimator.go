@@ -22,7 +22,7 @@ func NormalizeNutritionResponse(text string) (string, *models.NutritionPayload, 
 	return text, &payload, nil
 }
 
-func MacroEstimator(model adkmodel.LLM) (agent.Agent, error) {
+func CreateMacroEstimator(model adkmodel.LLM) (agent.Agent, error) {
 
 	schema := &genai.Schema{
 		Type: genai.TypeObject,
