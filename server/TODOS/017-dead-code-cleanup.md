@@ -15,9 +15,9 @@ Multiple files and functions exist in the project that are never imported, calle
 **Lines:** entire file (9 lines)
 **Issue:** `Hello()` is never registered in any router.
 
-**File:** `internal/adk/runner.go`
-**Lines:** 121-131
-**Issue:** `GetSession()` is defined but not part of any interface and never called.
+**File:** ~~`internal/adk/runner.go`~~
+**Lines:** ~~121-131~~
+**Issue:** ~~`GetSession()` is defined but not part of any interface and never called.~~ **RESOLVED:** Removed during runner package refactor.
 
 **File:** `internal/db/migrations.go`
 **Lines:** 61-69

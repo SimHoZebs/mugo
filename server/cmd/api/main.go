@@ -12,10 +12,10 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
-	"github.com/simhozebs/mugo/internal/adk"
 	"github.com/simhozebs/mugo/internal/agents"
 	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/routes"
+	"github.com/simhozebs/mugo/internal/runner"
 	"google.golang.org/adk/agent"
 )
 
@@ -36,7 +36,7 @@ func main() {
 	defer lazyDB.Close()
 	log.Println("Lazy database initialized - will connect on first use")
 
-	sessionService, err := adk.CreateSessionService()
+	sessionService, err := runner.CreateSessionService()
 	if err != nil {
 		log.Printf("CRITICAL: ADK Session Service could not be initialized: %v", err)
 		log.Println("Warning: AI agent features will be disabled")
@@ -47,12 +47,12 @@ func main() {
 		log.Printf("CRITICAL: Shared Gemini Model could not be initialized: %v", err)
 	}
 
-	macroAgent, err := agents.MacroEstimator(model)
+	macroAgent, err := agents.CreateMacroEstimator(model)
 	if err != nil {
 		log.Printf("Macro Estimator could not be initialized: %v", err)
 	}
 
-	orchestratorAgent, err := agents.MealOrchestrator(model, macroAgent)
+	orchestratorAgent, err := agents.CreateMealOrchestrator(model, macroAgent)
 	if err != nil {
 		log.Printf("Meal Orchestrator could not be initialized: %v", err)
 	}
@@ -67,21 +67,27 @@ func main() {
 		log.Printf("Weather Agent could not be initialized: %v", err)
 	}
 
-	createRunner := func(id string, a agent.Agent) adk.AgentRunner {
+	createRunner := func(id string, a agent.Agent) (runner.RunFunc, runner.CreateSessionFunc) {
 		if a == nil || sessionService == nil {
-			return nil
+			return nil, nil
 		}
-		r, err := adk.NewAgentRunner(id, a, sessionService)
+		r, err := runner.NewRunner(id, a, sessionService)
 		if err != nil {
 			log.Printf("Warning: Failed to create runner for %s: %v", id, err)
-			return nil
+			return nil, nil
 		}
-		return r
+		run := func(ctx context.Context, userID, sessionID, text string) (*runner.RunResult, error) {
+			return runner.Run(ctx, r, userID, sessionID, text)
+		}
+		createSession := func(ctx context.Context, userID, sessionID string) error {
+			return runner.CreateSession(ctx, sessionService, id, userID, sessionID)
+		}
+		return run, createSession
 	}
 
-	mealRunner := createRunner("meal_orchestrator", orchestratorAgent)
-	echoRunner := createRunner("echo_agent", echoAgent)
-	weatherRunner := createRunner("weather_agent", weatherAgent)
+	mealRun, mealCreateSession := createRunner("meal_orchestrator", orchestratorAgent)
+	echoRun, echoCreateSession := createRunner("echo_agent", echoAgent)
+	weatherRun, weatherCreateSession := createRunner("weather_agent", weatherAgent)
 
 	r := chi.NewMux()
 	api := humachi.New(r, huma.DefaultConfig("Mugo API", "0.1.0"))
@@ -101,10 +107,10 @@ func main() {
 		return resp, nil
 	})
 
-	routes.RegisterAgentEndpoints(api, "/agents", echoRunner, weatherRunner)
+	routes.RegisterAgentEndpoints(api, "/agents", echoRun, echoCreateSession, weatherRun, weatherCreateSession)
 	routes.RegisterDebugEndpoints(api, "/debug", sessionService, lazyDB)
 	routes.RegisterUserEndpoints(api, "/users", lazyDB)
-	routes.RegisterMealEndpoints(api, "/meals", mealRunner, lazyDB)
+	routes.RegisterMealEndpoints(api, "/meals", mealRun, mealCreateSession, lazyDB)
 	routes.RegisterAnalyticsEndpoints(api, "/analytics", lazyDB)
 	routes.RegisterConversationEndpoints(api, "/conversations", lazyDB)
 	routes.RegisterTranscriptionEndpoints(api, "/transcription")

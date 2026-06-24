@@ -4,13 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/simhozebs/mugo/internal/adk"
 	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"github.com/simhozebs/mugo/internal/models"
+	"github.com/simhozebs/mugo/internal/runner"
 )
 
 type CreateMealRequest struct {
@@ -61,7 +60,7 @@ type ListMealsByDateRangeRequest struct {
 
 const mealLogTags = "Logs"
 
-func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.AgentRunner, provider db.DBProvider) {
+func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRun runner.RunFunc, mealCreateSession runner.CreateSessionFunc, provider db.DBProvider) {
 	mealsGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(mealsGroup, huma.Operation{
@@ -71,15 +70,9 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 		Summary:     "Create a new meal-log",
 		Tags:        []string{mealLogTags},
 	}, func(ctx context.Context, input *CreateMealRequest) (*CreateMealResponse, error) {
-		if mealRunner == nil {
+		if mealRun == nil {
 			return nil, huma.Error503ServiceUnavailable("AI meal parsing is currently disabled (missing configuration)")
 		}
-
-		fmt.Printf("Creating meal: %s (user: %s, session: %s)\n",
-			input.Body.Description, input.Body.UserID, input.Body.SessionID)
-
-		today := time.Now().Format("2006-01-02")
-		message := fmt.Sprintf("Today's date is %s. %s", today, input.Body.Description)
 
 		database, err := GetDB(provider)
 		if err != nil {
@@ -91,63 +84,19 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 			return nil, huma.Error400BadRequest("invalid user ID", err)
 		}
 
-		conv, err := database.Conversations().Create(ctx, userUUID, input.Body.SessionID, "New Meal Log")
+		result, err := CreateMeal(ctx, CreateMealInput{
+			UserUUID:    userUUID,
+			UserID:      input.Body.UserID,
+			SessionID:   input.Body.SessionID,
+			Description: input.Body.Description,
+		}, mealRun, mealCreateSession, database)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create new conversation: %w", err)
-		}
-
-		convUUID, err := pgutil.ParseUUID(conv.ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse conversation ID: %w", err)
-		}
-
-		// Create the ADK session for this new conversation so the runner can
-		// find it. Only done here — update/correction handlers expect the
-		// session to already exist and will fail if it doesn't.
-		if err := mealRunner.CreateSession(ctx, input.Body.UserID, conv.SessionID); err != nil {
-			return nil, fmt.Errorf("failed to create ADK session: %w", err)
-		}
-
-		// Run the nutrition agent using the string-based sessionID for ADK tracking
-		result, err := mealRunner.Run(ctx, input.Body.UserID, conv.SessionID, message)
-		if err != nil {
-			return nil, fmt.Errorf("nutrition agent processing failed: %w", err)
-		}
-
-		var batch models.MealsBatchPayload
-		if err := json.Unmarshal([]byte(result.FinalText), &batch); err != nil {
-			return nil, huma.Error422UnprocessableEntity("failed to parse nutrition response", err)
-		}
-
-		var meals []*models.MealLog
-		for _, payload := range batch.Meals {
-			mealDate := parseMealDate(payload.Date)
-			// Apply default units since LLM now implies grams
-			for i := range payload.Assumptions {
-				payload.Assumptions[i].Unit = "g"
-			}
-
-			// Use conv.ID (the internal UUID) for the meal log's foreign key
-			meal, err := database.Meals().Create(ctx,
-				userUUID,
-				convUUID,
-				payload.Name,
-				string(payload.MealType),
-				mealDate,
-				payload.Macros,
-				payload.Assumptions,
-				"ai_estimated",
-				payload,
-			)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create meal: %w", err)
-			}
-			meals = append(meals, meal)
+			return nil, err
 		}
 
 		resp := &CreateMealResponse{}
-		resp.Body.SessionID = conv.SessionID
-		resp.Body.Meals = meals
+		resp.Body.SessionID = result.SessionID
+		resp.Body.Meals = result.Meals
 		return resp, nil
 	})
 
@@ -176,11 +125,11 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner adk.Agent
 		fmt.Printf("Updating meal %s with correction: %s (session: %s)\n",
 			input.MealID, input.Body.Correction, adkSessionID)
 
-		if mealRunner == nil {
+		if mealRun == nil {
 			return nil, huma.Error503ServiceUnavailable("AI meal parsing is currently disabled (missing configuration)")
 		}
 
-		result, err := mealRunner.Run(ctx, meal.UserID, adkSessionID, input.Body.Correction)
+		result, err := mealRun(ctx, meal.UserID, adkSessionID, input.Body.Correction)
 		if err != nil {
 			return nil, fmt.Errorf("nutrition agent processing failed: %w", err)
 		}

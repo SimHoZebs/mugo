@@ -8,8 +8,7 @@ import (
 	"time"
 
 	"github.com/danielgtaylor/huma/v2/humatest"
-	"github.com/simhozebs/mugo/internal/adk"
-	adkmocks "github.com/simhozebs/mugo/internal/adk/mocks"
+	"github.com/simhozebs/mugo/internal/runner"
 	"github.com/simhozebs/mugo/internal/db/mocks"
 	"github.com/simhozebs/mugo/internal/db/pgutil"
 	repomocks "github.com/simhozebs/mugo/internal/db/repository/mocks"
@@ -65,19 +64,16 @@ func TestCreateMealLog(t *testing.T) {
 	payloadJSON, _ := json.Marshal(batch)
 
 	var createSessionCalled bool
-	mockRunner := &adkmocks.MockAgentRunner{
-		CreateSessionFunc: func(ctx context.Context, uid, sid string) error {
-			assert.Equal(t, userID, uid)
-			assert.Equal(t, sessionID, sid)
-			createSessionCalled = true
-			return nil
-		},
-		RunFunc: func(ctx context.Context, uid, sid, text string) (*adk.RunResult, error) {
-			return &adk.RunResult{
-				FinalText: string(payloadJSON),
-			}, nil
-		},
-		NameFunc: func() string { return "meal_orchestrator" },
+	mockRun := func(ctx context.Context, uid, sid, text string) (*runner.RunResult, error) {
+		return &runner.RunResult{
+			FinalText: string(payloadJSON),
+		}, nil
+	}
+	mockCreateSession := func(ctx context.Context, uid, sid string) error {
+		assert.Equal(t, userID, uid)
+		assert.Equal(t, sessionID, sid)
+		createSessionCalled = true
+		return nil
 	}
 
 	expectedMeal := &models.MealLog{
@@ -91,7 +87,7 @@ func TestCreateMealLog(t *testing.T) {
 	mealRepoMock.On("Create", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(expectedMeal, nil)
 
-	routes.RegisterMealEndpoints(api, "/meals", mockRunner, dbProviderMock)
+	routes.RegisterMealEndpoints(api, "/meals", mockRun, mockCreateSession, dbProviderMock)
 
 	resp := api.Post("/meals", struct {
 		UserID      string `json:"user_id"`

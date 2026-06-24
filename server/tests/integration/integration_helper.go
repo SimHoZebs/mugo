@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/danielgtaylor/huma/v2/humatest"
-	"github.com/simhozebs/mugo/internal/adk"
+	"github.com/simhozebs/mugo/internal/runner"
 	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/routes"
 	"github.com/stretchr/testify/require"
@@ -65,7 +65,7 @@ func (s *TestSuite) Teardown() {
 	}
 }
 
-// RegisterMeals registers the meal endpoints with a specific runner.
-func (s *TestSuite) RegisterMeals(runner adk.AgentRunner) {
-	routes.RegisterMealEndpoints(s.API, "/meals", runner, s.DBProvider)
+// RegisterMeals registers the meal endpoints with specific run and createSession functions.
+func (s *TestSuite) RegisterMeals(run runner.RunFunc, createSession runner.CreateSessionFunc) {
+	routes.RegisterMealEndpoints(s.API, "/meals", run, createSession, s.DBProvider)
 }
