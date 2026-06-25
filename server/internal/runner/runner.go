@@ -10,10 +10,6 @@ import (
 	"google.golang.org/genai"
 )
 
-type RunFunc func(ctx context.Context, userID, sessionID, text string) (*RunResult, error)
-
-type CreateSessionFunc func(ctx context.Context, userID, sessionID string) error
-
 type RunResult struct {
 	Events    []*session.Event
 	FinalText string

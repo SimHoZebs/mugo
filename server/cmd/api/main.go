@@ -16,7 +16,6 @@ import (
 	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/routes"
 	"github.com/simhozebs/mugo/internal/runner"
-	"google.golang.org/adk/agent"
 )
 
 type GreetingOutput struct {
@@ -67,30 +66,18 @@ func main() {
 		log.Printf("Weather Agent could not be initialized: %v", err)
 	}
 
-	createRunner := func(id string, a agent.Agent) (runner.RunFunc, runner.CreateSessionFunc) {
-		if a == nil || sessionService == nil {
-			return nil, nil
-		}
-		r, err := runner.NewRunner(id, a, sessionService)
-		if err != nil {
-			log.Printf("Warning: Failed to create runner for %s: %v", id, err)
-			return nil, nil
-		}
-		run := func(ctx context.Context, userID, sessionID, text string) (*runner.RunResult, error) {
-			return runner.Run(ctx, r, userID, sessionID, text)
-		}
-		createSession := func(ctx context.Context, userID, sessionID string) error {
-			return runner.CreateSession(ctx, sessionService, id, userID, sessionID)
-		}
-		return run, createSession
-	}
-
 	mealRunner, err := runner.NewRunner("meal_orchestrator", orchestratorAgent, sessionService)
 	if err != nil {
 		log.Printf("Warning: Failed to create runner for meal_orchestrator: %v", err)
 	}
-	echoRun, echoCreateSession := createRunner("echo_agent", echoAgent)
-	weatherRun, weatherCreateSession := createRunner("weather_agent", weatherAgent)
+	echoRunner, err := runner.NewRunner("echo_agent", echoAgent, sessionService)
+	if err != nil {
+		log.Printf("Warning: Failed to create runner for echo_agent: %v", err)
+	}
+	weatherRunner, err := runner.NewRunner("weather_agent", weatherAgent, sessionService)
+	if err != nil {
+		log.Printf("Warning: Failed to create runner for weather_agent: %v", err)
+	}
 
 	r := chi.NewMux()
 	api := humachi.New(r, huma.DefaultConfig("Mugo API", "0.1.0"))
@@ -110,7 +97,7 @@ func main() {
 		return resp, nil
 	})
 
-	routes.RegisterAgentEndpoints(api, "/agents", echoRun, echoCreateSession, weatherRun, weatherCreateSession)
+	routes.RegisterAgentEndpoints(api, "/agents", echoRunner, sessionService, "echo_agent", weatherRunner, sessionService, "weather_agent")
 	routes.RegisterDebugEndpoints(api, "/debug", sessionService, lazyDB)
 	routes.RegisterUserEndpoints(api, "/users", lazyDB)
 	routes.RegisterMealEndpoints(api, "/meals", mealRunner, sessionService, "meal_orchestrator", lazyDB)

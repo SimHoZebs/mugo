@@ -9,6 +9,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/db/pgutil"
+	"github.com/simhozebs/mugo/internal/loggingsessions"
 	"github.com/simhozebs/mugo/internal/models"
 	"github.com/simhozebs/mugo/internal/runner"
 	adkrunner "google.golang.org/adk/runner"
@@ -87,14 +88,9 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner *adkrunne
 			return nil, huma.Error400BadRequest("invalid user ID", err)
 		}
 
-		conv, err := database.LoggingSessions().Create(ctx, userUUID, input.Body.SessionID, "New Meal Log")
+		conv, convUUID, err := loggingsessions.Create(ctx, database, userUUID, input.Body.SessionID, "New Meal Log")
 		if err != nil {
-			return nil, fmt.Errorf("failed to create new logging session: %w", err)
-		}
-
-		convUUID, err := pgutil.ParseUUID(conv.ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse logging session ID: %w", err)
+			return nil, err
 		}
 
 		if err := runner.CreateSession(ctx, sessionService, appName, input.Body.UserID, conv.SessionID); err != nil {
