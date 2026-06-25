@@ -12,8 +12,6 @@ import (
 	"github.com/simhozebs/mugo/internal/loggingsessions"
 	"github.com/simhozebs/mugo/internal/models"
 	"github.com/simhozebs/mugo/internal/runner"
-	adkrunner "google.golang.org/adk/runner"
-	"google.golang.org/adk/session"
 )
 
 type CreateMealRequest struct {
@@ -64,7 +62,7 @@ type ListMealsByDateRangeRequest struct {
 
 const mealLogTags = "Logs"
 
-func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner *adkrunner.Runner, sessionService session.Service, appName string, provider db.DBProvider) {
+func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner *runner.AgentRunner, provider db.DBProvider) {
 	mealsGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(mealsGroup, huma.Operation{
@@ -93,14 +91,14 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner *adkrunne
 			return nil, err
 		}
 
-		if err := runner.CreateSession(ctx, sessionService, appName, input.Body.UserID, conv.SessionID); err != nil {
+		if err := mealRunner.CreateSession(ctx, input.Body.UserID, conv.SessionID); err != nil {
 			return nil, fmt.Errorf("failed to create ADK session: %w", err)
 		}
 
 		today := time.Now().Format("2006-01-02")
 		message := fmt.Sprintf("Today's date is %s. %s", today, input.Body.Description)
 
-		runResult, err := runner.Run(ctx, mealRunner, input.Body.UserID, conv.SessionID, message)
+		runResult, err := mealRunner.Run(ctx, input.Body.UserID, conv.SessionID, message)
 		if err != nil {
 			return nil, fmt.Errorf("nutrition agent processing failed: %w", err)
 		}
@@ -145,7 +143,7 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner *adkrunne
 			return nil, huma.Error503ServiceUnavailable("AI meal parsing is currently disabled (missing configuration)")
 		}
 
-		result, err := runner.Run(ctx, mealRunner, meal.UserID, adkSessionID, input.Body.Correction)
+		result, err := mealRunner.Run(ctx, meal.UserID, adkSessionID, input.Body.Correction)
 		if err != nil {
 			return nil, fmt.Errorf("nutrition agent processing failed: %w", err)
 		}

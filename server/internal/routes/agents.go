@@ -7,11 +7,9 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/simhozebs/mugo/internal/api"
 	"github.com/simhozebs/mugo/internal/runner"
-	adkrunner "google.golang.org/adk/runner"
-	"google.golang.org/adk/session"
 )
 
-func RegisterAgentEndpoints(humaAPI huma.API, prefix string, echoRunner *adkrunner.Runner, echoSessionService session.Service, echoAppName string, weatherRunner *adkrunner.Runner, weatherSessionService session.Service, weatherAppName string) {
+func RegisterAgentEndpoints(humaAPI huma.API, prefix string, echoRunner *runner.AgentRunner, weatherRunner *runner.AgentRunner) {
 	agentsGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(agentsGroup, huma.Operation{
@@ -26,11 +24,11 @@ func RegisterAgentEndpoints(humaAPI huma.API, prefix string, echoRunner *adkrunn
 			return nil, huma.Error503ServiceUnavailable("echo_agent not found")
 		}
 
-		if err := runner.CreateSession(ctx, echoSessionService, echoAppName, input.Body.UserID, input.Body.SessionID); err != nil {
+		if err := echoRunner.CreateSession(ctx, input.Body.UserID, input.Body.SessionID); err != nil {
 			return nil, huma.Error500InternalServerError(fmt.Sprintf("failed to create echo session: %v", err))
 		}
 
-		result, err := runner.Run(ctx, echoRunner, input.Body.UserID, input.Body.SessionID, input.Body.Message)
+		result, err := echoRunner.Run(ctx, input.Body.UserID, input.Body.SessionID, input.Body.Message)
 		if err != nil {
 			return nil, huma.Error500InternalServerError(fmt.Sprintf("echo agent processing failed: %v", err))
 		}
@@ -52,11 +50,11 @@ func RegisterAgentEndpoints(humaAPI huma.API, prefix string, echoRunner *adkrunn
 			return nil, huma.Error503ServiceUnavailable("weather_agent not found")
 		}
 
-		if err := runner.CreateSession(ctx, weatherSessionService, weatherAppName, input.Body.UserID, input.Body.SessionID); err != nil {
+		if err := weatherRunner.CreateSession(ctx, input.Body.UserID, input.Body.SessionID); err != nil {
 			return nil, huma.Error500InternalServerError(fmt.Sprintf("failed to create weather session: %v", err))
 		}
 
-		result, err := runner.Run(ctx, weatherRunner, input.Body.UserID, input.Body.SessionID, input.Body.City)
+		result, err := weatherRunner.Run(ctx, input.Body.UserID, input.Body.SessionID, input.Body.City)
 		if err != nil {
 			return nil, huma.Error500InternalServerError(fmt.Sprintf("weather agent processing failed: %v", err))
 		}

@@ -15,7 +15,13 @@ type RunResult struct {
 	FinalText string
 }
 
-func NewRunner(appName string, ag agent.Agent, ss session.Service) (*runner.Runner, error) {
+type AgentRunner struct {
+	Runner         *runner.Runner
+	SessionService session.Service
+	AppName        string
+}
+
+func NewAgentRunner(appName string, ag agent.Agent, ss session.Service) (*AgentRunner, error) {
 	r, err := runner.New(runner.Config{
 		AppName:        appName,
 		Agent:          ag,
@@ -24,7 +30,19 @@ func NewRunner(appName string, ag agent.Agent, ss session.Service) (*runner.Runn
 	if err != nil {
 		return nil, fmt.Errorf("failed to create runner for %s: %w", appName, err)
 	}
-	return r, nil
+	return &AgentRunner{
+		Runner:         r,
+		SessionService: ss,
+		AppName:        appName,
+	}, nil
+}
+
+func (a *AgentRunner) Run(ctx context.Context, userID, sessionID, text string) (*RunResult, error) {
+	return Run(ctx, a.Runner, userID, sessionID, text)
+}
+
+func (a *AgentRunner) CreateSession(ctx context.Context, userID, sessionID string) error {
+	return CreateSession(ctx, a.SessionService, a.AppName, userID, sessionID)
 }
 
 func Run(ctx context.Context, r *runner.Runner, userID, sessionID, text string) (*RunResult, error) {

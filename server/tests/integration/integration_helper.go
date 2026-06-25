@@ -8,18 +8,16 @@ import (
 	"github.com/danielgtaylor/huma/v2/humatest"
 	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/routes"
-	adkrunner "google.golang.org/adk/runner"
-	"google.golang.org/adk/session"
+	"github.com/simhozebs/mugo/internal/runner"
 	"github.com/stretchr/testify/require"
 )
 
 // TestSuite represents the context for integration tests, including database and API.
 type TestSuite struct {
-	T              *testing.T
-	Ctx            context.Context
-	DBProvider     *db.LazyDatabase
-	API            humatest.TestAPI
-	SessionService session.Service
+	T          *testing.T
+	Ctx        context.Context
+	DBProvider *db.LazyDatabase
+	API        humatest.TestAPI
 }
 
 // SetupTestSuite initializes the dependencies for an integration test.
@@ -32,18 +30,13 @@ func SetupTestSuite(t *testing.T) *TestSuite {
 
 	ctx := context.Background()
 
-	// Initialize real database connection
-	// We use LazyDatabase which handles migrations on first use
 	provider := db.NewLazyDatabase(ctx)
 
-	// Verify connection immediately for early failure if DB is down
 	_, err := provider.GetDatabase()
 	require.NoError(t, err, "Failed to connect to database for integration test")
 
-	// Create test API
 	_, api := humatest.New(t)
 
-	// Register common endpoints
 	routes.RegisterUserEndpoints(api, "/users", provider)
 	routes.RegisterAnalyticsEndpoints(api, "/analytics", provider)
 	routes.RegisterLoggingSessionEndpoints(api, "/loggingsessions", provider)
@@ -56,14 +49,12 @@ func SetupTestSuite(t *testing.T) *TestSuite {
 	}
 }
 
-// Teardown cleans up resources used by the test suite.
 func (s *TestSuite) Teardown() {
 	if s.DBProvider != nil {
 		s.DBProvider.Close()
 	}
 }
 
-// RegisterMeals registers the meal endpoints with a specific runner.
-func (s *TestSuite) RegisterMeals(mealRunner *adkrunner.Runner, sessionService session.Service, appName string) {
-	routes.RegisterMealEndpoints(s.API, "/meals", mealRunner, sessionService, appName, s.DBProvider)
+func (s *TestSuite) RegisterMeals(mealRunner *runner.AgentRunner) {
+	routes.RegisterMealEndpoints(s.API, "/meals", mealRunner, s.DBProvider)
 }

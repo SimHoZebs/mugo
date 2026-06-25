@@ -66,15 +66,15 @@ func main() {
 		log.Printf("Weather Agent could not be initialized: %v", err)
 	}
 
-	mealRunner, err := runner.NewRunner("meal_orchestrator", orchestratorAgent, sessionService)
+	mealRunner, err := runner.NewAgentRunner("meal_orchestrator", orchestratorAgent, sessionService)
 	if err != nil {
 		log.Printf("Warning: Failed to create runner for meal_orchestrator: %v", err)
 	}
-	echoRunner, err := runner.NewRunner("echo_agent", echoAgent, sessionService)
+	echoRunner, err := runner.NewAgentRunner("echo_agent", echoAgent, sessionService)
 	if err != nil {
 		log.Printf("Warning: Failed to create runner for echo_agent: %v", err)
 	}
-	weatherRunner, err := runner.NewRunner("weather_agent", weatherAgent, sessionService)
+	weatherRunner, err := runner.NewAgentRunner("weather_agent", weatherAgent, sessionService)
 	if err != nil {
 		log.Printf("Warning: Failed to create runner for weather_agent: %v", err)
 	}
@@ -97,10 +97,10 @@ func main() {
 		return resp, nil
 	})
 
-	routes.RegisterAgentEndpoints(api, "/agents", echoRunner, sessionService, "echo_agent", weatherRunner, sessionService, "weather_agent")
+	routes.RegisterAgentEndpoints(api, "/agents", echoRunner, weatherRunner)
 	routes.RegisterDebugEndpoints(api, "/debug", sessionService, lazyDB)
 	routes.RegisterUserEndpoints(api, "/users", lazyDB)
-	routes.RegisterMealEndpoints(api, "/meals", mealRunner, sessionService, "meal_orchestrator", lazyDB)
+	routes.RegisterMealEndpoints(api, "/meals", mealRunner, lazyDB)
 	routes.RegisterAnalyticsEndpoints(api, "/analytics", lazyDB)
 	routes.RegisterLoggingSessionEndpoints(api, "/loggingsessions", lazyDB)
 	routes.RegisterTranscriptionEndpoints(api, "/transcription")
