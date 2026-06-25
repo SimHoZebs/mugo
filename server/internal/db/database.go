@@ -9,8 +9,8 @@ import (
 )
 
 type Database struct {
-	UserRepository         repository.UserRepository
-	ConversationRepository repository.ConversationRepository
+	UserRepository          repository.UserRepository
+	LoggingSessionRepository repository.LoggingSessionRepository
 	MealLogRepository      repository.MealLogRepository
 	NutritionRepository    repository.NutritionSummaryRepository
 	pool                   *Pool
@@ -23,8 +23,8 @@ func NewDatabase(ctx context.Context) (*Database, error) {
 	}
 
 	return &Database{
-		UserRepository:         repository.NewUserRepository(pool.Queries),
-		ConversationRepository: repository.NewConversationRepository(pool.Queries),
+		UserRepository:          repository.NewUserRepository(pool.Queries),
+		LoggingSessionRepository: repository.NewLoggingSessionRepository(pool.Queries),
 		MealLogRepository:      repository.NewMealLogRepository(pool.Queries),
 		NutritionRepository:    repository.NewNutritionSummaryRepository(pool.Queries),
 		pool:                   pool,
@@ -39,8 +39,8 @@ func (d *Database) Users() repository.UserRepository {
 	return d.UserRepository
 }
 
-func (d *Database) Conversations() repository.ConversationRepository {
-	return d.ConversationRepository
+func (d *Database) LoggingSessions() repository.LoggingSessionRepository {
+	return d.LoggingSessionRepository
 }
 
 func (d *Database) Meals() repository.MealLogRepository {

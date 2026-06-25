@@ -18,9 +18,9 @@ func (m *DBMock) Users() repository.UserRepository {
 	return args.Get(0).(repository.UserRepository)
 }
 
-func (m *DBMock) Conversations() repository.ConversationRepository {
+func (m *DBMock) LoggingSessions() repository.LoggingSessionRepository {
 	args := m.Called()
-	return args.Get(0).(repository.ConversationRepository)
+	return args.Get(0).(repository.LoggingSessionRepository)
 }
 
 func (m *DBMock) Meals() repository.MealLogRepository {

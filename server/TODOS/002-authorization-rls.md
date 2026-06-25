@@ -4,10 +4,10 @@
 ## Priority: Medium
 
 ### Summary
-Currently, any authenticated user (or in the current state, anyone) can access all data. This task aims to restrict data access so users only see their own records (meal logs, conversations, etc.).
+Currently, any authenticated user (or in the current state, anyone) can access all data. This task aims to restrict data access so users only see their own records (meal logs, logging sessions, etc.).
 
 ### Proposed Steps
-- [ ] Enable Row Level Security (RLS) on database tables (`meal_logs`, `conversations`, `daily_nutrition_summaries`, etc.).
+- [ ] Enable Row Level Security (RLS) on database tables (`meal_logs`, `logging_sessions`, `daily_nutrition_summaries`, etc.).
 - [ ] Create a database migration for PostgreSQL `CREATE POLICY` statements.
 - [ ] Update repository queries to handle user-based filtering.
 - [ ] Implement a mechanism for the application to set the `app.current_user_id` context for each database connection/transaction.

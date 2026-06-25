@@ -53,13 +53,13 @@ func RegisterDebugEndpoints(humaAPI huma.API, prefix string, sessionService sess
 				return nil, huma.Error400BadRequest(fmt.Sprintf("Invalid user ID: %v", err))
 			}
 
-			conversations, err := database.Conversations().ListByUser(ctx, userUUID)
+			sessions, err := database.LoggingSessions().ListByUser(ctx, userUUID)
 			if err != nil {
 				return nil, huma.Error500InternalServerError(fmt.Sprintf("Could not retrieve sessions for user: %s", input.UserID))
 			}
 
 			resp := &debugListSessionsResponse{}
-			for _, c := range conversations {
+			for _, c := range sessions {
 				resp.Body.SessionIDs = append(resp.Body.SessionIDs, c.SessionID)
 			}
 			return resp, nil

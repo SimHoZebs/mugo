@@ -64,52 +64,52 @@ func (m *UserRepositoryMock) Delete(ctx context.Context, id pgtype.UUID) error {
 	return args.Error(0)
 }
 
-// ConversationRepositoryMock is a mock implementation of the ConversationRepository interface.
-type ConversationRepositoryMock struct {
+// LoggingSessionRepositoryMock is a mock implementation of the LoggingSessionRepository interface.
+type LoggingSessionRepositoryMock struct {
 	mock.Mock
 }
 
-func (m *ConversationRepositoryMock) Create(ctx context.Context, userID pgtype.UUID, sessionID, title string) (*models.Conversation, error) {
+func (m *LoggingSessionRepositoryMock) Create(ctx context.Context, userID pgtype.UUID, sessionID, title string) (*models.LoggingSession, error) {
 	args := m.Called(ctx, userID, sessionID, title)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*models.Conversation), args.Error(1)
+	return args.Get(0).(*models.LoggingSession), args.Error(1)
 }
 
-func (m *ConversationRepositoryMock) GetByID(ctx context.Context, id pgtype.UUID) (*models.Conversation, error) {
+func (m *LoggingSessionRepositoryMock) GetByID(ctx context.Context, id pgtype.UUID) (*models.LoggingSession, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*models.Conversation), args.Error(1)
+	return args.Get(0).(*models.LoggingSession), args.Error(1)
 }
 
-func (m *ConversationRepositoryMock) GetBySessionID(ctx context.Context, userID pgtype.UUID, sessionID string) (*models.Conversation, error) {
+func (m *LoggingSessionRepositoryMock) GetBySessionID(ctx context.Context, userID pgtype.UUID, sessionID string) (*models.LoggingSession, error) {
 	args := m.Called(ctx, userID, sessionID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*models.Conversation), args.Error(1)
+	return args.Get(0).(*models.LoggingSession), args.Error(1)
 }
 
-func (m *ConversationRepositoryMock) ListByUser(ctx context.Context, userID pgtype.UUID) ([]*models.Conversation, error) {
+func (m *LoggingSessionRepositoryMock) ListByUser(ctx context.Context, userID pgtype.UUID) ([]*models.LoggingSession, error) {
 	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*models.Conversation), args.Error(1)
+	return args.Get(0).([]*models.LoggingSession), args.Error(1)
 }
 
-func (m *ConversationRepositoryMock) UpdateTitle(ctx context.Context, id pgtype.UUID, title string) (*models.Conversation, error) {
+func (m *LoggingSessionRepositoryMock) UpdateTitle(ctx context.Context, id pgtype.UUID, title string) (*models.LoggingSession, error) {
 	args := m.Called(ctx, id, title)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*models.Conversation), args.Error(1)
+	return args.Get(0).(*models.LoggingSession), args.Error(1)
 }
 
-func (m *ConversationRepositoryMock) Delete(ctx context.Context, id pgtype.UUID) error {
+func (m *LoggingSessionRepositoryMock) Delete(ctx context.Context, id pgtype.UUID) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)
 }
@@ -119,8 +119,8 @@ type MealLogRepositoryMock struct {
 	mock.Mock
 }
 
-func (m *MealLogRepositoryMock) Create(ctx context.Context, userID, conversationID pgtype.UUID, foodName, mealType string, recordedAt time.Time, macros models.Macros, assumptions []models.Assumption, foodSource string, rawResponse interface{}) (*models.MealLog, error) {
-	args := m.Called(ctx, userID, conversationID, foodName, mealType, recordedAt, macros, assumptions, foodSource, rawResponse)
+func (m *MealLogRepositoryMock) Create(ctx context.Context, userID, loggingSessionID pgtype.UUID, foodName, mealType string, recordedAt time.Time, macros models.Macros, assumptions []models.Assumption, foodSource string, rawResponse interface{}) (*models.MealLog, error) {
+	args := m.Called(ctx, userID, loggingSessionID, foodName, mealType, recordedAt, macros, assumptions, foodSource, rawResponse)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -159,8 +159,8 @@ func (m *MealLogRepositoryMock) ListByUserAndDateRange(ctx context.Context, user
 	return args.Get(0).([]*models.MealLog), args.Error(1)
 }
 
-func (m *MealLogRepositoryMock) ListByConversation(ctx context.Context, conversationID pgtype.UUID) ([]*models.MealLog, error) {
-	args := m.Called(ctx, conversationID)
+func (m *MealLogRepositoryMock) ListByLoggingSession(ctx context.Context, loggingSessionID pgtype.UUID) ([]*models.MealLog, error) {
+	args := m.Called(ctx, loggingSessionID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

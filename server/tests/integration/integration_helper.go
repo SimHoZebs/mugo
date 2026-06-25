@@ -6,18 +6,20 @@ import (
 	"testing"
 
 	"github.com/danielgtaylor/huma/v2/humatest"
-	"github.com/simhozebs/mugo/internal/runner"
 	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/routes"
+	adkrunner "google.golang.org/adk/runner"
+	"google.golang.org/adk/session"
 	"github.com/stretchr/testify/require"
 )
 
 // TestSuite represents the context for integration tests, including database and API.
 type TestSuite struct {
-	T          *testing.T
-	Ctx        context.Context
-	DBProvider *db.LazyDatabase
-	API        humatest.TestAPI
+	T              *testing.T
+	Ctx            context.Context
+	DBProvider     *db.LazyDatabase
+	API            humatest.TestAPI
+	SessionService session.Service
 }
 
 // SetupTestSuite initializes the dependencies for an integration test.
@@ -44,11 +46,7 @@ func SetupTestSuite(t *testing.T) *TestSuite {
 	// Register common endpoints
 	routes.RegisterUserEndpoints(api, "/users", provider)
 	routes.RegisterAnalyticsEndpoints(api, "/analytics", provider)
-	routes.RegisterConversationEndpoints(api, "/conversations", provider)
-
-	// Note: Meal endpoints require an AgentRunner which might need mocking
-	// or specific setup depending on the test. For now, we skip it here
-	// and let specific tests register it if needed, or we can add a mock runner.
+	routes.RegisterLoggingSessionEndpoints(api, "/loggingsessions", provider)
 
 	return &TestSuite{
 		T:          t,
@@ -65,7 +63,7 @@ func (s *TestSuite) Teardown() {
 	}
 }
 
-// RegisterMeals registers the meal endpoints with specific run and createSession functions.
-func (s *TestSuite) RegisterMeals(run runner.RunFunc, createSession runner.CreateSessionFunc) {
-	routes.RegisterMealEndpoints(s.API, "/meals", run, createSession, s.DBProvider)
+// RegisterMeals registers the meal endpoints with a specific runner.
+func (s *TestSuite) RegisterMeals(mealRunner *adkrunner.Runner, sessionService session.Service, appName string) {
+	routes.RegisterMealEndpoints(s.API, "/meals", mealRunner, sessionService, appName, s.DBProvider)
 }

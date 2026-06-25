@@ -27,7 +27,7 @@ func NewMealLogRepository(queries *dbgenerated.Queries) MealLogRepository {
 	return &mealLogRepository{queries: queries}
 }
 
-func (repo *mealLogRepository) Create(ctx context.Context, userID, conversationID pgtype.UUID, foodName, mealType string, recordedAt time.Time, macros models.Macros, assumptions []models.Assumption, foodSource string, rawResponse interface{}) (*models.MealLog, error) {
+func (repo *mealLogRepository) Create(ctx context.Context, userID, loggingSessionID pgtype.UUID, foodName, mealType string, recordedAt time.Time, macros models.Macros, assumptions []models.Assumption, foodSource string, rawResponse interface{}) (*models.MealLog, error) {
 	macrosJSON, err := json.Marshal(macros)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal macros: %w", err)
@@ -46,8 +46,8 @@ func (repo *mealLogRepository) Create(ctx context.Context, userID, conversationI
 	}
 
 	arg := dbgenerated.CreateMealLogParams{
-		UserID:         userID,
-		ConversationID: conversationID,
+		UserID:            userID,
+		LoggingSessionID:  loggingSessionID,
 		FoodName:       foodName,
 		MealType:       mealType,
 		RecordedAt:     pgutil.Timestamp(recordedAt),
@@ -79,9 +79,9 @@ func (repo *mealLogRepository) GetByIDWithSession(ctx context.Context, id pgtype
 
 	// Map GetMealLogWithSessionRow to dbgenerated.MealLog so we can reuse mapToMealLog
 	m := dbgenerated.MealLog{
-		ID:             result.ID,
-		UserID:         result.UserID,
-		ConversationID: result.ConversationID,
+		ID:                result.ID,
+		UserID:            result.UserID,
+		LoggingSessionID:  result.LoggingSessionID,
 		FoodName:       result.FoodName,
 		MealType:       result.MealType,
 		RecordedAt:     result.RecordedAt,
@@ -162,10 +162,10 @@ func (repo *mealLogRepository) ListByUserAndDateRange(ctx context.Context, userI
 	return mealLogs, nil
 }
 
-func (repo *mealLogRepository) ListByConversation(ctx context.Context, conversationID pgtype.UUID) ([]*models.MealLog, error) {
-	results, err := repo.q(ctx).ListMealLogsByConversation(ctx, conversationID)
+func (repo *mealLogRepository) ListByLoggingSession(ctx context.Context, loggingSessionID pgtype.UUID) ([]*models.MealLog, error) {
+	results, err := repo.q(ctx).ListMealLogsByLoggingSession(ctx, loggingSessionID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list meal logs by conversation: %w", err)
+		return nil, fmt.Errorf("failed to list meal logs by logging session: %w", err)
 	}
 	mealLogs := make([]*models.MealLog, len(results))
 	for i, m := range results {
@@ -237,10 +237,10 @@ func mapToMealLog(m dbgenerated.MealLog) (*models.MealLog, error) {
 		}
 	}
 
-	var conversationID *string
-	if m.ConversationID.Valid {
-		s := m.ConversationID.String()
-		conversationID = &s
+	var loggingSessionID *string
+	if m.LoggingSessionID.Valid {
+		s := m.LoggingSessionID.String()
+		loggingSessionID = &s
 	}
 
 	mealType, _ := m.MealType.(string)
@@ -249,7 +249,7 @@ func mapToMealLog(m dbgenerated.MealLog) (*models.MealLog, error) {
 	return &models.MealLog{
 		ID:             m.ID.String(),
 		UserID:         m.UserID.String(),
-		ConversationID: conversationID,
+		LoggingSessionID: loggingSessionID,
 		FoodName:       m.FoodName,
 		MealType:       mealType,
 		RecordedAt:     m.RecordedAt.Time.Format(time.RFC3339),

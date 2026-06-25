@@ -27,7 +27,7 @@ ld.ctx = ctx
 // Line 11
 type Database struct {
     UserRepository         UserRepository
-    ConversationRepository ConversationRepository
+    LoggingSessionRepository LoggingSessionRepository
     MealLogRepository     MealLogRepository
     NutritionRepository    NutritionRepository
     pool                  *pgxpool.Pool
@@ -35,7 +35,7 @@ type Database struct {
 // Line 54
 type TxDatabase struct {
     UserRepository         UserRepository
-    ConversationRepository ConversationRepository
+    LoggingSessionRepository LoggingSessionRepository
     MealLogRepository     MealLogRepository
     NutritionRepository    NutritionRepository
     tx                    pgx.Tx

@@ -9,7 +9,7 @@ import (
 // DB interface defines the accessors for all repositories.
 type DB interface {
 	Users() repository.UserRepository
-	Conversations() repository.ConversationRepository
+	LoggingSessions() repository.LoggingSessionRepository
 	Meals() repository.MealLogRepository
 	Nutrition() repository.NutritionSummaryRepository
 	WithTx(ctx context.Context, fn func(ctx context.Context, txDB DB) error) error

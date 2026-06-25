@@ -85,7 +85,10 @@ func main() {
 		return run, createSession
 	}
 
-	mealRun, mealCreateSession := createRunner("meal_orchestrator", orchestratorAgent)
+	mealRunner, err := runner.NewRunner("meal_orchestrator", orchestratorAgent, sessionService)
+	if err != nil {
+		log.Printf("Warning: Failed to create runner for meal_orchestrator: %v", err)
+	}
 	echoRun, echoCreateSession := createRunner("echo_agent", echoAgent)
 	weatherRun, weatherCreateSession := createRunner("weather_agent", weatherAgent)
 
@@ -110,9 +113,9 @@ func main() {
 	routes.RegisterAgentEndpoints(api, "/agents", echoRun, echoCreateSession, weatherRun, weatherCreateSession)
 	routes.RegisterDebugEndpoints(api, "/debug", sessionService, lazyDB)
 	routes.RegisterUserEndpoints(api, "/users", lazyDB)
-	routes.RegisterMealEndpoints(api, "/meals", mealRun, mealCreateSession, lazyDB)
+	routes.RegisterMealEndpoints(api, "/meals", mealRunner, sessionService, "meal_orchestrator", lazyDB)
 	routes.RegisterAnalyticsEndpoints(api, "/analytics", lazyDB)
-	routes.RegisterConversationEndpoints(api, "/conversations", lazyDB)
+	routes.RegisterLoggingSessionEndpoints(api, "/loggingsessions", lazyDB)
 	routes.RegisterTranscriptionEndpoints(api, "/transcription")
 
 	port := os.Getenv("PORT")

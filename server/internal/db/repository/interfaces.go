@@ -18,23 +18,23 @@ type UserRepository interface {
 	Delete(ctx context.Context, id pgtype.UUID) error
 }
 
-type ConversationRepository interface {
-	Create(ctx context.Context, userID pgtype.UUID, sessionID, title string) (*models.Conversation, error)
-	GetByID(ctx context.Context, id pgtype.UUID) (*models.Conversation, error)
-	GetBySessionID(ctx context.Context, userID pgtype.UUID, sessionID string) (*models.Conversation, error)
-	ListByUser(ctx context.Context, userID pgtype.UUID) ([]*models.Conversation, error)
-	UpdateTitle(ctx context.Context, id pgtype.UUID, title string) (*models.Conversation, error)
+type LoggingSessionRepository interface {
+	Create(ctx context.Context, userID pgtype.UUID, sessionID, title string) (*models.LoggingSession, error)
+	GetByID(ctx context.Context, id pgtype.UUID) (*models.LoggingSession, error)
+	GetBySessionID(ctx context.Context, userID pgtype.UUID, sessionID string) (*models.LoggingSession, error)
+	ListByUser(ctx context.Context, userID pgtype.UUID) ([]*models.LoggingSession, error)
+	UpdateTitle(ctx context.Context, id pgtype.UUID, title string) (*models.LoggingSession, error)
 	Delete(ctx context.Context, id pgtype.UUID) error
 }
 
 type MealLogRepository interface {
-	Create(ctx context.Context, userID, conversationID pgtype.UUID, foodName, mealType string, recordedAt time.Time, macros models.Macros, assumptions []models.Assumption, foodSource string, rawResponse interface{}) (*models.MealLog, error)
+	Create(ctx context.Context, userID, loggingSessionID pgtype.UUID, foodName, mealType string, recordedAt time.Time, macros models.Macros, assumptions []models.Assumption, foodSource string, rawResponse interface{}) (*models.MealLog, error)
 	GetByID(ctx context.Context, id pgtype.UUID) (*models.MealLog, error)
 	GetByIDWithSession(ctx context.Context, id pgtype.UUID) (*models.MealLog, string, error)
 	ListByUser(ctx context.Context, userID pgtype.UUID, limit, offset int) ([]*models.MealLog, error)
 	ListByUserAndDate(ctx context.Context, userID pgtype.UUID, date time.Time) ([]*models.MealLog, error)
 	ListByUserAndDateRange(ctx context.Context, userID pgtype.UUID, startDate, endDate time.Time) ([]*models.MealLog, error)
-	ListByConversation(ctx context.Context, conversationID pgtype.UUID) ([]*models.MealLog, error)
+	ListByLoggingSession(ctx context.Context, loggingSessionID pgtype.UUID) ([]*models.MealLog, error)
 	Update(ctx context.Context, id pgtype.UUID, foodName, mealType string, macros models.Macros, assumptions []models.Assumption, rawResponse interface{}) (*models.MealLog, error)
 	Delete(ctx context.Context, id pgtype.UUID) error
 }

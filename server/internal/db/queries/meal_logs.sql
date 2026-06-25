@@ -1,6 +1,6 @@
 -- name: CreateMealLog :one
 INSERT INTO meal_logs (
-    user_id, conversation_id, food_name, meal_type, recorded_at,
+    user_id, logging_session_id, food_name, meal_type, recorded_at,
     macros, assumptions, food_source, raw_response
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -14,7 +14,7 @@ SELECT
     m.*,
     c.session_id as adk_session_id
 FROM meal_logs m
-LEFT JOIN conversations c ON m.conversation_id = c.id
+LEFT JOIN logging_sessions c ON m.logging_session_id = c.id
 WHERE m.id = $1;
 
 -- name: ListMealLogsByUser :many
@@ -35,8 +35,8 @@ AND recorded_at >= sqlc.arg('start_date')
 AND recorded_at < sqlc.arg('end_date')
 ORDER BY recorded_at ASC;
 
--- name: ListMealLogsByConversation :many
-SELECT * FROM meal_logs WHERE conversation_id = $1 ORDER BY recorded_at ASC;
+-- name: ListMealLogsByLoggingSession :many
+SELECT * FROM meal_logs WHERE logging_session_id = $1 ORDER BY recorded_at ASC;
 
 -- name: CountMealLogsByUserAndDate :one
 SELECT COUNT(*) FROM meal_logs 

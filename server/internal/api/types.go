@@ -6,7 +6,7 @@ import "github.com/simhozebs/mugo/internal/models"
 type EchoRequest struct {
 	Body struct {
 		UserID    string `json:"user_id" example:"user_12345" doc:"User ID of the requester"`
-		SessionID string `json:"session_id" example:"session_12345" doc:"Session ID for the conversation"`
+		SessionID string `json:"session_id" example:"session_12345" doc:"Session ID for the logging session"`
 		Message   string `json:"message" example:"Hello, world!" doc:"Message to echo back"`
 	}
 }
@@ -22,7 +22,7 @@ type EchoResponse struct {
 type NutritionRequest struct {
 	Body struct {
 		UserID    string `json:"user_id" example:"user_12345" doc:"User ID of the requester"`
-		SessionID string `json:"session_id" example:"session_12345" doc:"Session ID for the conversation"`
+		SessionID string `json:"session_id" example:"session_12345" doc:"Session ID for the logging session"`
 		Text      string `json:"text" example:"I ate a chicken sandwich" doc:"Description of food eaten"`
 	}
 }
@@ -31,7 +31,7 @@ type NutritionRequest struct {
 type NutritionResponse struct {
 	Body struct {
 		Analysis  models.NutritionPayload `json:"analysis" doc:"Nutritional analysis and assumptions"`
-		SessionID string                  `json:"session_id" example:"session_67890" doc:"Session ID for continued conversation"`
+		SessionID string                  `json:"session_id" example:"session_67890" doc:"Session ID for continued logging session"`
 	}
 }
 
@@ -39,7 +39,7 @@ type NutritionResponse struct {
 type WeatherRequest struct {
 	Body struct {
 		UserID    string `json:"user_id" example:"user_12345" doc:"User ID of the requester"`
-		SessionID string `json:"session_id" example:"session_12345" doc:"Session ID for the conversation"`
+		SessionID string `json:"session_id" example:"session_12345" doc:"Session ID for the logging session"`
 		City      string `json:"city" example:"San Francisco" doc:"City to get weather for"`
 	}
 }

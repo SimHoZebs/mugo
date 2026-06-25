@@ -4,18 +4,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/simhozebs/mugo/internal/db"
 	"github.com/simhozebs/mugo/internal/db/pgutil"
 	"github.com/simhozebs/mugo/internal/models"
 	"github.com/simhozebs/mugo/internal/runner"
+	adkrunner "google.golang.org/adk/runner"
+	"google.golang.org/adk/session"
 )
 
 type CreateMealRequest struct {
 	Body struct {
 		UserID      string `json:"user_id" example:"user-123" doc:"User ID"`
-		SessionID   string `json:"session_id,omitempty" example:"session-456" doc:"Optional Session ID. If not provided, a new conversation will be created."`
+		SessionID   string `json:"session_id,omitempty" example:"session-456" doc:"Optional Session ID. If not provided, a new logging session will be created."`
 		Description string `json:"description" example:"I ate a chicken sandwich" doc:"Description of the meal"`
 	}
 }
@@ -60,7 +63,7 @@ type ListMealsByDateRangeRequest struct {
 
 const mealLogTags = "Logs"
 
-func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRun runner.RunFunc, mealCreateSession runner.CreateSessionFunc, provider db.DBProvider) {
+func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRunner *adkrunner.Runner, sessionService session.Service, appName string, provider db.DBProvider) {
 	mealsGroup := huma.NewGroup(humaAPI, prefix)
 
 	huma.Register(mealsGroup, huma.Operation{
@@ -70,7 +73,7 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRun runner.RunFu
 		Summary:     "Create a new meal-log",
 		Tags:        []string{mealLogTags},
 	}, func(ctx context.Context, input *CreateMealRequest) (*CreateMealResponse, error) {
-		if mealRun == nil {
+		if mealRunner == nil {
 			return nil, huma.Error503ServiceUnavailable("AI meal parsing is currently disabled (missing configuration)")
 		}
 
@@ -84,19 +87,36 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRun runner.RunFu
 			return nil, huma.Error400BadRequest("invalid user ID", err)
 		}
 
-		result, err := CreateMeal(ctx, CreateMealInput{
-			UserUUID:    userUUID,
-			UserID:      input.Body.UserID,
-			SessionID:   input.Body.SessionID,
-			Description: input.Body.Description,
-		}, mealRun, mealCreateSession, database)
+		conv, err := database.LoggingSessions().Create(ctx, userUUID, input.Body.SessionID, "New Meal Log")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create new logging session: %w", err)
+		}
+
+		convUUID, err := pgutil.ParseUUID(conv.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse logging session ID: %w", err)
+		}
+
+		if err := runner.CreateSession(ctx, sessionService, appName, input.Body.UserID, conv.SessionID); err != nil {
+			return nil, fmt.Errorf("failed to create ADK session: %w", err)
+		}
+
+		today := time.Now().Format("2006-01-02")
+		message := fmt.Sprintf("Today's date is %s. %s", today, input.Body.Description)
+
+		runResult, err := runner.Run(ctx, mealRunner, input.Body.UserID, conv.SessionID, message)
+		if err != nil {
+			return nil, fmt.Errorf("nutrition agent processing failed: %w", err)
+		}
+
+		meals, err := CreateMeal(ctx, userUUID, convUUID, runResult, database)
 		if err != nil {
 			return nil, err
 		}
 
 		resp := &CreateMealResponse{}
-		resp.Body.SessionID = result.SessionID
-		resp.Body.Meals = result.Meals
+		resp.Body.SessionID = conv.SessionID
+		resp.Body.Meals = meals
 		return resp, nil
 	})
 
@@ -125,11 +145,11 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRun runner.RunFu
 		fmt.Printf("Updating meal %s with correction: %s (session: %s)\n",
 			input.MealID, input.Body.Correction, adkSessionID)
 
-		if mealRun == nil {
+		if mealRunner == nil {
 			return nil, huma.Error503ServiceUnavailable("AI meal parsing is currently disabled (missing configuration)")
 		}
 
-		result, err := mealRun(ctx, meal.UserID, adkSessionID, input.Body.Correction)
+		result, err := runner.Run(ctx, mealRunner, meal.UserID, adkSessionID, input.Body.Correction)
 		if err != nil {
 			return nil, fmt.Errorf("nutrition agent processing failed: %w", err)
 		}
@@ -275,28 +295,28 @@ func RegisterMealEndpoints(humaAPI huma.API, prefix string, mealRun runner.RunFu
 	})
 
 	huma.Register(mealsGroup, huma.Operation{
-		OperationID: "list-meals-by-conversation",
+		OperationID: "list-meals-by-logging-session",
 		Method:      "GET",
-		Path:        "/{user_id}/conversation/{conversation_id}",
-		Summary:     "List meals for a user in a conversation",
+		Path:        "/{user_id}/logging_session/{logging_session_id}",
+		Summary:     "List meals for a user in a logging session",
 		Tags:        []string{mealLogTags},
 	}, func(ctx context.Context, input *struct {
-		UserID         string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
-		ConversationID string `path:"conversation_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Conversation ID"`
+		UserID           string `path:"user_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"User ID"`
+		LoggingSessionID string `path:"logging_session_id" example:"550e8400-e29b-41d4-a716-446655440000" doc:"Logging session ID"`
 	}) (*ListMealsResponse, error) {
 		database, err := GetDB(provider)
 		if err != nil {
 			return nil, err
 		}
 
-		convUUID, err := pgutil.ParseUUID(input.ConversationID)
+		sessionUUID, err := pgutil.ParseUUID(input.LoggingSessionID)
 		if err != nil {
-			return nil, huma.Error400BadRequest("invalid conversation ID", err)
+			return nil, huma.Error400BadRequest("invalid logging session ID", err)
 		}
 
-		meals, err := database.Meals().ListByConversation(ctx, convUUID)
+		meals, err := database.Meals().ListByLoggingSession(ctx, sessionUUID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list meals by conversation: %w", err)
+			return nil, fmt.Errorf("failed to list meals by logging session: %w", err)
 		}
 
 		resp := &ListMealsResponse{}
