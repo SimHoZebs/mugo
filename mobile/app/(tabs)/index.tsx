@@ -53,7 +53,7 @@ export default function HomeScreen() {
       setMeals([...useGlobalStore.getState().meals, ...newMealLogs]);
       setPendingMealId(null);
     } catch (error) {
-      console.error("Error submitting request to:", "/meals");
+      console.error("Error submitting request to:", getCreateMealLogUrl());
       console.error("Error:", error);
       setPendingMealId(null);
     }
