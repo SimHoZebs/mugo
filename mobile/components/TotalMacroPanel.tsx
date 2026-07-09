@@ -10,21 +10,15 @@ interface TotalMarcoPanelProps {
 export default function TotalMacroPanel(props: TotalMarcoPanelProps) {
   const meals = props.meals;
 
-  const totalCalories = meals.reduce(
-    (sum, meal) => sum + meal.nutrition.macros.calories,
-    0,
-  );
-  const totalProtein = meals.reduce(
-    (sum, meal) => sum + meal.nutrition.macros.protein,
-    0,
-  );
-  const totalCarbs = meals.reduce(
-    (sum, meal) => sum + meal.nutrition.macros.carbs,
-    0,
-  );
-  const totalFat = meals.reduce(
-    (sum, meal) => sum + meal.nutrition.macros.fat,
-    0,
+  const { totalCalories, totalProtein, totalCarbs, totalFat } = meals.reduce(
+    (acc, meal) => {
+      acc.totalCalories += meal.nutrition.macros.calories;
+      acc.totalProtein += meal.nutrition.macros.protein;
+      acc.totalCarbs += meal.nutrition.macros.carbs;
+      acc.totalFat += meal.nutrition.macros.fat;
+      return acc;
+    },
+    { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0 },
   );
 
   return (
