@@ -2,7 +2,6 @@ package agents
 
 import (
 	"context"
-	"os"
 
 	"github.com/simhozebs/mugo/internal/config"
 	"google.golang.org/adk/model"
@@ -14,6 +13,6 @@ func NewGeminiModel() (model.LLM, error) {
 	return gemini.NewModel(
 		context.Background(),
 		config.ModelName,
-		&genai.ClientConfig{APIKey: os.Getenv("GOOGLE_API_KEY")},
+		&genai.ClientConfig{APIKey: config.GetGoogleAPIKey()},
 	)
 }
