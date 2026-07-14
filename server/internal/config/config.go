@@ -31,6 +31,11 @@ func GetTranscriptionServerURL() string {
 	return url
 }
 
+// GetGoogleAPIKey returns the Google API key from environment variable.
+func GetGoogleAPIKey() string {
+	return os.Getenv("GOOGLE_API_KEY")
+}
+
 // GetDatabaseURL returns the database URL from environment variable.
 func GetDatabaseURL() string {
 	return os.Getenv("DATABASE_URL")
