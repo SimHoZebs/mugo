@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -11,6 +10,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/simhozebs/mugo/internal/config"
 	"github.com/simhozebs/mugo/internal/db"
 )
 
@@ -24,34 +24,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
-	lazyDB := db.NewLazyDatabase(ctx)
-	defer lazyDB.Close()
-
-	// We need to trigger the connection to get the URL
-	_, err := lazyDB.GetDatabase()
-	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
-	}
-
-	// This is a bit hacky but we need the raw URL in pgx5 format
-	// The internal/db package doesn't expose the formatting logic, so we replicate it or
-	// we could export a helper. For now, let's replicate to keep internal/db clean.
-
 	// We'll use the filesystem for migrations in the CLI for more flexibility,
 	// though we could also use the embedded ones.
 	migrationsPath := "file://internal/db/migrations"
 
-	// Get database URL from environment or fallback to formatted one from pool
-	// Note: In production/actual use, we'd probably want to pass the URL directly.
-	// But since this runs in the same environment as the app, we can use the same logic.
-
-	// Extract raw URL from the database instance if possible, or just look for DATABASE_URL
-	rawURL := os.Getenv("DATABASE_URL")
+	// Get database URL from environment
+	rawURL := config.GetDatabaseURL()
 	if rawURL == "" {
 		log.Fatal("DATABASE_URL environment variable is not set")
 	}
 
+	// Format it specifically for golang-migrate and pgx/v5
 	databaseURL := db.ToMigrateURL(rawURL)
 
 	m, err := migrate.New(migrationsPath, databaseURL)
